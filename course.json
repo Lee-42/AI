@@ -1,0 +1,3113 @@
+[
+    {
+        "title": "00 直播回放",
+        "children": [
+            {
+                "title": "01 直播答疑.mp4",
+                "size": 356155564,
+                "duration": "36:44"
+            },
+            {
+                "title": "02 直播-LLM原理01.mp4",
+                "size": 214183335,
+                "duration": "26:33"
+            },
+            {
+                "title": "03 直播-LLM原理02.mp4",
+                "size": 678148206,
+                "duration": "39:51"
+            },
+            {
+                "title": "04 直播-LLM原理03.mp4",
+                "size": 71990452,
+                "duration": "11:48"
+            },
+            {
+                "title": "05 重学langchain01.mp4",
+                "size": 376567867,
+                "duration": "36:11"
+            },
+            {
+                "title": "06 重学langchain02.mp4",
+                "size": 338685934,
+                "duration": "39:27"
+            },
+            {
+                "title": "07 1.19 看看行情.mp4",
+                "size": 434358649,
+                "duration": "32:45"
+            },
+            {
+                "title": "08 1.19 看看行情.mp4",
+                "size": 208822098,
+                "duration": "29:12"
+            },
+            {
+                "title": "09 1.27 什么是Skills.mp4",
+                "size": 131757633,
+                "duration": "22:04"
+            },
+            {
+                "title": "10 2.9 面试辅导01.mp4",
+                "size": 291056193,
+                "duration": "36:41"
+            },
+            {
+                "title": "11 2.9 面试辅导02.mp4",
+                "size": 260973483,
+                "duration": "38:26"
+            },
+            {
+                "title": "12 2.9 面试辅导03.mp4",
+                "size": 180564176,
+                "duration": "22:54"
+            },
+            {
+                "title": "13 3.2 评测集解析.mp4",
+                "size": 332994127,
+                "duration": "38:30"
+            },
+            {
+                "title": "14 3.2 面试题解读.mp4",
+                "size": 184188587,
+                "duration": "30:16"
+            },
+            {
+                "title": "15 3.4 如何用Ai写自己定制化业务的简历01.mp4",
+                "size": 509526917,
+                "duration": "37:20"
+            },
+            {
+                "title": "16 3.4 如何用Ai写定制化的业务简历02.mp4",
+                "size": 55127454,
+                "duration": "07:08"
+            },
+            {
+                "title": "17 3.8 字节面试题赏析.mp4",
+                "size": 368739888,
+                "duration": "39:02"
+            },
+            {
+                "title": "18 3.8 xixi同学模拟面试.mp4",
+                "size": 355046174,
+                "duration": "34:43"
+            },
+            {
+                "title": "19 3.16 鸭哥26k真题解析01.mp4",
+                "size": 262417531,
+                "duration": "39:51"
+            },
+            {
+                "title": "20 3.16 鸭哥26k真题解析02.mp4",
+                "size": 176808254,
+                "duration": "22:23"
+            },
+            {
+                "title": "21 新同学与面试题解读.mp4",
+                "size": 282850027,
+                "duration": "38:41"
+            },
+            {
+                "title": "22 Agent集群第二课.mp4",
+                "size": 413274259,
+                "duration": "36:44"
+            },
+            {
+                "title": "23 3.30 简历辅导.mp4",
+                "size": 515044907,
+                "duration": "52:49"
+            },
+            {
+                "title": "24 4.1 企业真题解析1.mp4",
+                "size": 295101682,
+                "duration": "50:33"
+            },
+            {
+                "title": "25 4.1 企业真题解析2.mp4",
+                "size": 79067963,
+                "duration": "36:44"
+            },
+            {
+                "title": "26 4.7 学习方法与看简历.mp4",
+                "size": 413703222,
+                "duration": "39:40"
+            },
+            {
+                "title": "27 4.7 看简历.mp4",
+                "size": 207029115,
+                "duration": "34:24"
+            }
+        ]
+    },
+    {
+        "title": "01 课程导学",
+        "children": [
+            {
+                "title": "01 Ai的十年我们如何快速成长起来？.mp4",
+                "size": 414338802,
+                "duration": "27:13"
+            },
+            {
+                "title": "02 课程导学（前端赠送视频不包含在本课程内，本课程是AI架构课内容）.mp4",
+                "size": 137438931,
+                "duration": "05:47"
+            },
+            {
+                "title": "03 如何交作业？.mp4",
+                "size": 32324982,
+                "duration": "03:11"
+            },
+            {
+                "title": "04 0基础同学看01.mp4",
+                "size": 139279597,
+                "duration": "36:01"
+            },
+            {
+                "title": "05 0基础同学看02.mp4",
+                "size": 145944055,
+                "duration": "26:36"
+            }
+        ]
+    },
+    {
+        "title": "02 Python从入门到精通",
+        "children": [
+            {
+                "title": "Ai版",
+                "children": [
+                    {
+                        "title": "01 conda环境安装.mp4",
+                        "size": 164548193,
+                        "duration": "06:57"
+                    },
+                    {
+                        "title": "02 conda和python venv虚拟环境的区别？.mp4",
+                        "size": 154902704,
+                        "duration": "06:01"
+                    },
+                    {
+                        "title": "03 conda的一些常用命令.mp4",
+                        "size": 106593692,
+                        "duration": "03:41"
+                    },
+                    {
+                        "title": "04 trae编辑器配置.mp4",
+                        "size": 56410908,
+                        "duration": "02:41"
+                    },
+                    {
+                        "title": "05 遇到conda初始化报错的问题解决.mp4",
+                        "size": 45094790,
+                        "duration": "02:16"
+                    },
+                    {
+                        "title": "06 python和js有什么本质区别？.mp4",
+                        "size": 196098903,
+                        "duration": "08:28"
+                    },
+                    {
+                        "title": "07 python为什么不做JIT性能优化？.mp4",
+                        "size": 151945983,
+                        "duration": "05:54"
+                    },
+                    {
+                        "title": "08 python迎来新的反转加入JIT.mp4",
+                        "size": 152199992,
+                        "duration": "08:37"
+                    },
+                    {
+                        "title": "09 Pyhton和JS JIT运行机制的区别？.mp4",
+                        "size": 136161335,
+                        "duration": "07:23"
+                    },
+                    {
+                        "title": "10 Python的前两行恶心的代码在干啥？.mp4",
+                        "size": 111414035,
+                        "duration": "05:23"
+                    },
+                    {
+                        "title": "11 python基本数据类型.mp4",
+                        "size": 131752927,
+                        "duration": "10:02"
+                    },
+                    {
+                        "title": "12 python蛋疼的小整数问题.mp4",
+                        "size": 223620588,
+                        "duration": "10:15"
+                    },
+                    {
+                        "title": "13 浮点数为什么计算不精准？.mp4",
+                        "size": 148425955,
+                        "duration": "06:37"
+                    },
+                    {
+                        "title": "14 python中字符串的一些常用方法.mp4",
+                        "size": 296908126,
+                        "duration": "15:31"
+                    },
+                    {
+                        "title": "15 列表和元组的使用.mp4",
+                        "size": 238846142,
+                        "duration": "11:54"
+                    },
+                    {
+                        "title": "16 字典的使用.mp4",
+                        "size": 256642745,
+                        "duration": "15:49"
+                    },
+                    {
+                        "title": "17 字典的items操作.mp4",
+                        "size": 20325671,
+                        "duration": "01:42"
+                    },
+                    {
+                        "title": "18 set的用法.mp4",
+                        "size": 115175419,
+                        "duration": "08:46"
+                    },
+                    {
+                        "title": "19 流程控制.mp4",
+                        "size": 59938360,
+                        "duration": "02:24"
+                    },
+                    {
+                        "title": "20 python中的遍历.mp4",
+                        "size": 75658131,
+                        "duration": "05:38"
+                    },
+                    {
+                        "title": "21 python中恶心的推导式.mp4",
+                        "size": 146892681,
+                        "duration": "09:19"
+                    },
+                    {
+                        "title": "22 python中的try except错误处理.mp4",
+                        "size": 161644542,
+                        "duration": "10:06"
+                    },
+                    {
+                        "title": "23 python常用的内置包.mp4",
+                        "size": 91259132,
+                        "duration": "06:00"
+                    },
+                    {
+                        "title": "24 python第三方包安装与导入.mp4",
+                        "size": 72239447,
+                        "duration": "05:36"
+                    },
+                    {
+                        "title": "25 python Class初探.mp4",
+                        "size": 65358706,
+                        "duration": "03:40"
+                    },
+                    {
+                        "title": "26 Class的私有属性.mp4",
+                        "size": 35622052,
+                        "duration": "05:07"
+                    },
+                    {
+                        "title": "27 继承多态与鸭子类型.mp4",
+                        "size": 95120433,
+                        "duration": "07:40"
+                    },
+                    {
+                        "title": "28 __slot__限制实例 的属性.mp4",
+                        "size": 16760986,
+                        "duration": "02:42"
+                    },
+                    {
+                        "title": "29 property装饰器和只读属性.mp4",
+                        "size": 29075196,
+                        "duration": "04:00"
+                    },
+                    {
+                        "title": "30 python中的多重继承.mp4",
+                        "size": 47561051,
+                        "duration": "04:35"
+                    },
+                    {
+                        "title": "31 python的文件读写.mp4",
+                        "size": 107374387,
+                        "duration": "08:33"
+                    },
+                    {
+                        "title": "32 python的异步文件读写.mp4",
+                        "size": 103285722,
+                        "duration": "05:40"
+                    },
+                    {
+                        "title": "33 使用多线程进行并发请求.mp4",
+                        "size": 157340578,
+                        "duration": "07:31"
+                    },
+                    {
+                        "title": "34 使用多进程cpu密集计算优化性能.mp4",
+                        "size": 119283088,
+                        "duration": "05:22"
+                    },
+                    {
+                        "title": "35 环境变量管理.mp4",
+                        "size": 119543199,
+                        "duration": "05:38"
+                    },
+                    {
+                        "title": "36 日志管理.mp4",
+                        "size": 104722143,
+                        "duration": "06:15"
+                    },
+                    {
+                        "title": "37 装饰器的使用.mp4",
+                        "size": 46174600,
+                        "duration": "03:09"
+                    },
+                    {
+                        "title": "38 生成器的使用与应用场景.mp4",
+                        "size": 76903861,
+                        "duration": "06:07"
+                    },
+                    {
+                        "title": "39 迭代器和生成器的核心区别.mp4",
+                        "size": 84500853,
+                        "duration": "04:52"
+                    },
+                    {
+                        "title": "40 Iterator的案例演示.mp4",
+                        "size": 36148893,
+                        "duration": "02:51"
+                    }
+                ]
+            },
+            {
+                "title": "基础班",
+                "children": [
+                    {
+                        "title": "01 课程导学.mp4",
+                        "size": 76440052,
+                        "duration": "04:50"
+                    },
+                    {
+                        "title": "02 python环境管理与选型.mp4",
+                        "size": 70276554,
+                        "duration": "05:34"
+                    },
+                    {
+                        "title": "03 安装conda环境.mp4",
+                        "size": 244491858,
+                        "duration": "10:32"
+                    },
+                    {
+                        "title": "04 使用conda安装python312.mp4",
+                        "size": 82131632,
+                        "duration": "04:51"
+                    },
+                    {
+                        "title": "05 python环境激活.mp4",
+                        "size": 86390419,
+                        "duration": "06:30"
+                    },
+                    {
+                        "title": "06 hello world.mp4",
+                        "size": 112528890,
+                        "duration": "08:56"
+                    },
+                    {
+                        "title": "07 如何理解变量？.mp4",
+                        "size": 62285153,
+                        "duration": "07:59"
+                    },
+                    {
+                        "title": "08 变量命名规范.mp4",
+                        "size": 83301433,
+                        "duration": "07:56"
+                    },
+                    {
+                        "title": "09 python中的整数和浮点数运算.mp4",
+                        "size": 150472304,
+                        "duration": "08:39"
+                    },
+                    {
+                        "title": "10 python中的布尔类型.mp4",
+                        "size": 94249239,
+                        "duration": "05:54"
+                    },
+                    {
+                        "title": "11 python中的字符串操作.mp4",
+                        "size": 124166794,
+                        "duration": "10:43"
+                    },
+                    {
+                        "title": "12 python中的一些字符串方法.mp4",
+                        "size": 126081050,
+                        "duration": "10:04"
+                    },
+                    {
+                        "title": "13 什么是None？.mp4",
+                        "size": 108815724,
+                        "duration": "07:40"
+                    },
+                    {
+                        "title": "14 类型转换与检查.mp4",
+                        "size": 105399078,
+                        "duration": "06:20"
+                    },
+                    {
+                        "title": "15 python中的运算符.mp4",
+                        "size": 61494391,
+                        "duration": "03:52"
+                    },
+                    {
+                        "title": "16 is和==的区别？.mp4",
+                        "size": 150728879,
+                        "duration": "15:12"
+                    },
+                    {
+                        "title": "17 位运算符.mp4",
+                        "size": 43375362,
+                        "duration": "03:33"
+                    },
+                    {
+                        "title": "18 列表.mp4",
+                        "size": 102778663,
+                        "duration": "07:01"
+                    },
+                    {
+                        "title": "19 对列表进行增删改查.mp4",
+                        "size": 123956280,
+                        "duration": "08:22"
+                    },
+                    {
+                        "title": "20 列表切片与排序.mp4",
+                        "size": 50025907,
+                        "duration": "05:46"
+                    },
+                    {
+                        "title": "21 深拷贝和浅拷贝的区别.mp4",
+                        "size": 169490177,
+                        "duration": "13:55"
+                    },
+                    {
+                        "title": "22 元组.mp4",
+                        "size": 62324670,
+                        "duration": "05:59"
+                    },
+                    {
+                        "title": "23 字典.mp4",
+                        "size": 148439785,
+                        "duration": "10:44"
+                    },
+                    {
+                        "title": "24 字典的各种遍历方法.mp4",
+                        "size": 111600227,
+                        "duration": "11:11"
+                    },
+                    {
+                        "title": "25 什么是json？.mp4",
+                        "size": 31221014,
+                        "duration": "04:43"
+                    },
+                    {
+                        "title": "26 集合.mp4",
+                        "size": 115159053,
+                        "duration": "11:49"
+                    },
+                    {
+                        "title": "27 推导式.mp4",
+                        "size": 40925207,
+                        "duration": "02:47"
+                    },
+                    {
+                        "title": "28 条件判断.mp4",
+                        "size": 92390476,
+                        "duration": "06:24"
+                    },
+                    {
+                        "title": "29 三元表达式.mp4",
+                        "size": 71391543,
+                        "duration": "04:45"
+                    },
+                    {
+                        "title": "30 for循环和range.mp4",
+                        "size": 80512219,
+                        "duration": "05:22"
+                    },
+                    {
+                        "title": "31 while循环01.mp4",
+                        "size": 21119441,
+                        "duration": "01:42"
+                    },
+                    {
+                        "title": "32 while循环02.mp4",
+                        "size": 75357053,
+                        "duration": "08:08"
+                    },
+                    {
+                        "title": "33 break continue.mp4",
+                        "size": 76255241,
+                        "duration": "08:15"
+                    },
+                    {
+                        "title": "34 match case匹配.mp4",
+                        "size": 76751544,
+                        "duration": "04:52"
+                    },
+                    {
+                        "title": "35 嵌套for循环.mp4",
+                        "size": 26917408,
+                        "duration": "01:58"
+                    },
+                    {
+                        "title": "36 函数的定义与Ai场景.mp4",
+                        "size": 130176331,
+                        "duration": "15:41"
+                    },
+                    {
+                        "title": "37 函数的参数.mp4",
+                        "size": 71778057,
+                        "duration": "05:12"
+                    },
+                    {
+                        "title": "38 可变参数.mp4",
+                        "size": 48224483,
+                        "duration": "03:50"
+                    },
+                    {
+                        "title": "39 函数的多个返回值.mp4",
+                        "size": 33338352,
+                        "duration": "02:20"
+                    },
+                    {
+                        "title": "40 LEGB作用域规则.mp4",
+                        "size": 153994363,
+                        "duration": "11:29"
+                    },
+                    {
+                        "title": "41 作用域与闭包.mp4",
+                        "size": 76032670,
+                        "duration": "09:25"
+                    },
+                    {
+                        "title": "42 匿名函数.mp4",
+                        "size": 46757811,
+                        "duration": "03:19"
+                    },
+                    {
+                        "title": "43 模块导入方式.mp4",
+                        "size": 155676491,
+                        "duration": "09:31"
+                    },
+                    {
+                        "title": "44 自定义模块.mp4",
+                        "size": 176148015,
+                        "duration": "14:27"
+                    },
+                    {
+                        "title": "45 模块中的name与main.mp4",
+                        "size": 75217916,
+                        "duration": "08:19"
+                    },
+                    {
+                        "title": "46 __init__ py的作用.mp4",
+                        "size": 71051408,
+                        "duration": "05:25"
+                    },
+                    {
+                        "title": "47 相对路径和绝对路径包导入.mp4",
+                        "size": 58652416,
+                        "duration": "03:42"
+                    },
+                    {
+                        "title": "48 __all__的作用.mp4",
+                        "size": 68106560,
+                        "duration": "02:59"
+                    },
+                    {
+                        "title": "49 为何做Ai应用开发不推荐使用Conda.mp4",
+                        "size": 92836576,
+                        "duration": "06:23"
+                    },
+                    {
+                        "title": "50 conda包管理.mp4",
+                        "size": 84598726,
+                        "duration": "05:58"
+                    },
+                    {
+                        "title": "51 pip包管理.mp4",
+                        "size": 50327913,
+                        "duration": "03:13"
+                    },
+                    {
+                        "title": "52 UV包管理方式.mp4",
+                        "size": 145112739,
+                        "duration": "08:12"
+                    },
+                    {
+                        "title": "53 在编辑器中切换uv环境.mp4",
+                        "size": 36325739,
+                        "duration": "02:48"
+                    },
+                    {
+                        "title": "54 什么是Venv.mp4",
+                        "size": 55314834,
+                        "duration": "02:22"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "title": "03 0基础到Ai衔接部分",
+        "children": [
+            {
+                "title": "01 0基础为什么自己学不会Ai？.mp4",
+                "size": 16696756,
+                "duration": "04:01"
+            },
+            {
+                "title": "02 前端和后台到底是啥玩意？.mp4",
+                "size": 216974761,
+                "duration": "12:59"
+            },
+            {
+                "title": "03 html、css、js分别作用是啥？.mp4",
+                "size": 228833111,
+                "duration": "11:42"
+            },
+            {
+                "title": "04 如何系统性学习前端.mp4",
+                "size": 22620404,
+                "duration": "02:01"
+            },
+            {
+                "title": "05 后台是什么，如何和前端通信的？.mp4",
+                "size": 135749310,
+                "duration": "14:35"
+            },
+            {
+                "title": "06 后台如何系统学习？.mp4",
+                "size": 82490932,
+                "duration": "03:59"
+            },
+            {
+                "title": "07 什么是Ai应用？.mp4",
+                "size": 167269987,
+                "duration": "07:38"
+            }
+        ]
+    },
+    {
+        "title": "04 Ai Agent技术栈概览",
+        "children": [
+            {
+                "title": "01 到底什么是Ai应用？.mp4",
+                "size": 157627442,
+                "duration": "08:12"
+            },
+            {
+                "title": "02 Ai应用目前的主流形态.mp4",
+                "size": 61138346,
+                "duration": "05:50"
+            },
+            {
+                "title": "03 Ai购买机票业务流程梳理.mp4",
+                "size": 143319510,
+                "duration": "05:24"
+            },
+            {
+                "title": "04 我们Ai应用学习的重点.mp4",
+                "size": 110481933,
+                "duration": "04:30"
+            },
+            {
+                "title": "05 Rag到底是什么？.mp4",
+                "size": 53341638,
+                "duration": "03:27"
+            },
+            {
+                "title": "06 LLM选型与对比.mp4",
+                "size": 128854218,
+                "duration": "05:21"
+            },
+            {
+                "title": "07 LLM在Ai应用中目前充当什么角色？.mp4",
+                "size": 39577766,
+                "duration": "03:43"
+            },
+            {
+                "title": "08 prompt提示词的5大要素.mp4",
+                "size": 75772645,
+                "duration": "03:22"
+            },
+            {
+                "title": "09 什么是MCP？.mp4",
+                "size": 114792992,
+                "duration": "06:35"
+            },
+            {
+                "title": "10 LangChian的作用？.mp4",
+                "size": 52489762,
+                "duration": "03:42"
+            }
+        ]
+    },
+    {
+        "title": "05 深入理解LLM原理",
+        "children": [
+            {
+                "title": "01 LLM原理学习思路.mp4",
+                "size": 130218893,
+                "duration": "05:51"
+            },
+            {
+                "title": "02 神经网络如何用向量解决语义问题？.mp4",
+                "size": 96087895,
+                "duration": "07:03"
+            },
+            {
+                "title": "03 神经网络的参数与权重设计.mp4",
+                "size": 203433313,
+                "duration": "08:58"
+            },
+            {
+                "title": "04 什么是反向传播？.mp4",
+                "size": 148651735,
+                "duration": "07:21"
+            },
+            {
+                "title": "05 如何解决过拟合的问题？.mp4",
+                "size": 125212178,
+                "duration": "04:35"
+            },
+            {
+                "title": "06 数据标注是反向传播吗？.mp4",
+                "size": 176337894,
+                "duration": "06:59"
+            },
+            {
+                "title": "07 什么梯度下降？解决了什么问题.mp4",
+                "size": 125447007,
+                "duration": "08:18"
+            },
+            {
+                "title": "08 神经网络调参的目的到底是什么？.mp4",
+                "size": 87711628,
+                "duration": "03:50"
+            },
+            {
+                "title": "09 LLM模型训练的核心流程.mp4",
+                "size": 183022439,
+                "duration": "06:59"
+            },
+            {
+                "title": "10 LLM的参数越多越聪明吗？.mp4",
+                "size": 78130199,
+                "duration": "04:25"
+            },
+            {
+                "title": "11 LLM参数到底作用于学习还是回答阶段？.mp4",
+                "size": 57057433,
+                "duration": "03:18"
+            },
+            {
+                "title": "12 LLM如何回答床前明月光下一句？.mp4",
+                "size": 102223241,
+                "duration": "05:47"
+            },
+            {
+                "title": "13 什么是蒸馏模型？.mp4",
+                "size": 178529774,
+                "duration": "10:09"
+            },
+            {
+                "title": "14 700亿参数的LLM大概需要什么配置的机器跑？.mp4",
+                "size": 103142903,
+                "duration": "06:02"
+            },
+            {
+                "title": "15 为什么LLM需要大量GPU运算？.mp4",
+                "size": 166538625,
+                "duration": "13:17"
+            },
+            {
+                "title": "16 什么前馈神经网络？解决什么问题.mp4",
+                "size": 98603543,
+                "duration": "05:15"
+            },
+            {
+                "title": "17 transformer架构中的残差连接.mp4",
+                "size": 56550294,
+                "duration": "03:55"
+            },
+            {
+                "title": "18 transformer中的问责机制.mp4",
+                "size": 49930948,
+                "duration": "03:48"
+            },
+            {
+                "title": "19 GPT为什么是纯解码器方案？.mp4",
+                "size": 150340234,
+                "duration": "05:28"
+            },
+            {
+                "title": "20 解码器+编码器的混合架构为什么不是主流？.mp4",
+                "size": 187965701,
+                "duration": "07:26"
+            },
+            {
+                "title": "21 LLM中的自回归.mp4",
+                "size": 40993310,
+                "duration": "02:07"
+            },
+            {
+                "title": "22 无监督学习的两种常见方案.mp4",
+                "size": 36675264,
+                "duration": "02:35"
+            },
+            {
+                "title": "23 为什么主流大模型都用NTP方案？.mp4",
+                "size": 88987196,
+                "duration": "05:14"
+            },
+            {
+                "title": "24 指令微调解决的核心问题.mp4",
+                "size": 46873567,
+                "duration": "03:30"
+            },
+            {
+                "title": "25 奖励打分机制和强化学习的核心区别？.mp4",
+                "size": 186864062,
+                "duration": "07:29"
+            },
+            {
+                "title": "26 700亿模型训练大概需要花多少成本？.mp4",
+                "size": 108748984,
+                "duration": "04:24"
+            },
+            {
+                "title": "27 Rag属于强化学习范畴吗？.mp4",
+                "size": 24394815,
+                "duration": "01:37"
+            },
+            {
+                "title": "28 大模型的安全与合规性.mp4",
+                "size": 40409960,
+                "duration": "02:09"
+            },
+            {
+                "title": "29 LLM神奇的涌现.mp4",
+                "size": 134971533,
+                "duration": "06:52"
+            },
+            {
+                "title": "30 如何理解LLM上下文窗口？.mp4",
+                "size": 140843021,
+                "duration": "06:38"
+            },
+            {
+                "title": "31 当问答太多，上下文不够咋办？.mp4",
+                "size": 111945594,
+                "duration": "06:55"
+            },
+            {
+                "title": "32 LLM为什么对话轮数变多了会变蠢？.mp4",
+                "size": 109784024,
+                "duration": "05:49"
+            },
+            {
+                "title": "33 LLM是如何配合Rag工作的？.mp4",
+                "size": 31471941,
+                "duration": "02:35"
+            },
+            {
+                "title": "34 LLM是如何识别图像的？学习和训练过程.mp4",
+                "size": 94528903,
+                "duration": "05:39"
+            },
+            {
+                "title": "35 transformer进行VIT图像处理的核心流程.mp4",
+                "size": 75858548,
+                "duration": "04:20"
+            },
+            {
+                "title": "36 LLM是如何学习和训练音频的？.mp4",
+                "size": 190284839,
+                "duration": "07:43"
+            },
+            {
+                "title": "37 LLM是如何理解和学习视频的？.mp4",
+                "size": 105416062,
+                "duration": "05:57"
+            }
+        ]
+    },
+    {
+        "title": "06 LLM API系统设计",
+        "children": [
+            {
+                "title": "01 LLM Api目前主流技术方案.mp4",
+                "size": 157263737,
+                "duration": "10:29"
+            },
+            {
+                "title": "02 LLM Api购买.mp4",
+                "size": 73057901,
+                "duration": "04:51"
+            },
+            {
+                "title": "03 安装SDK环境与技术选型.mp4",
+                "size": 98300063,
+                "duration": "03:46"
+            },
+            {
+                "title": "04 图片识别的应用场景.mp4",
+                "size": 68830809,
+                "duration": "05:48"
+            },
+            {
+                "title": "05 数据的结构化处理.mp4",
+                "size": 37884901,
+                "duration": "02:40"
+            },
+            {
+                "title": "06 使用系统提示词进行结构化输出.mp4",
+                "size": 33028133,
+                "duration": "01:46"
+            },
+            {
+                "title": "07 系统提示词和用户提示词的区别？.mp4",
+                "size": 59447484,
+                "duration": "04:36"
+            },
+            {
+                "title": "08 大模型如何保持历史会话？.mp4",
+                "size": 35038248,
+                "duration": "01:49"
+            },
+            {
+                "title": "09 如何追加assistant历史回复？.mp4",
+                "size": 44673855,
+                "duration": "03:18"
+            },
+            {
+                "title": "10 真实后端业务场景中提问追加如何设计？.mp4",
+                "size": 89432291,
+                "duration": "05:36"
+            },
+            {
+                "title": "11 LLM对回复进行stream流式输出.mp4",
+                "size": 32451714,
+                "duration": "01:54"
+            },
+            {
+                "title": "12 LLM调用工具方法逐行解读.mp4",
+                "size": 163663285,
+                "duration": "11:34"
+            },
+            {
+                "title": "13 为什么非深度思考会产生幻觉？.mp4",
+                "size": 153474918,
+                "duration": "08:29"
+            },
+            {
+                "title": "14 如何看到LLM的深度思考过程.mp4",
+                "size": 83973658,
+                "duration": "03:16"
+            },
+            {
+                "title": "15 一些常见优化建议.mp4",
+                "size": 64489090,
+                "duration": "03:35"
+            },
+            {
+                "title": "16 调节思考长度.mp4",
+                "size": 62355606,
+                "duration": "02:57"
+            },
+            {
+                "title": "17 回答长度和思维链长度限制.mp4",
+                "size": 179900285,
+                "duration": "07:20"
+            },
+            {
+                "title": "18 续写模式的应用场景.mp4",
+                "size": 105417164,
+                "duration": "05:21"
+            },
+            {
+                "title": "19 对JSON进行续写.mp4",
+                "size": 29772311,
+                "duration": "02:06"
+            },
+            {
+                "title": "20 对续写模式的残缺json进行修复.mp4",
+                "size": 105166975,
+                "duration": "05:45"
+            },
+            {
+                "title": "21 如果回复达到限制如何进行续写？.mp4",
+                "size": 181936240,
+                "duration": "08:01"
+            },
+            {
+                "title": "22 如果输入和输出都超过长度限制如何处理？.mp4",
+                "size": 34814923,
+                "duration": "03:15"
+            },
+            {
+                "title": "23 使用json schema进行格式化输出.mp4",
+                "size": 103507530,
+                "duration": "05:08"
+            },
+            {
+                "title": "24 使用json object模型格式化输出.mp4",
+                "size": 72995858,
+                "duration": "03:01"
+            },
+            {
+                "title": "25 Respense Api和Chat Api的区别？.mp4",
+                "size": 50421697,
+                "duration": "04:57"
+            },
+            {
+                "title": "26 本地图片解析与错误排查技巧.mp4",
+                "size": 125467818,
+                "duration": "05:09"
+            },
+            {
+                "title": "27 使用Files Api解析图片.mp4",
+                "size": 190976411,
+                "duration": "10:00"
+            },
+            {
+                "title": "28 在线图片url解析.mp4",
+                "size": 55284008,
+                "duration": "02:13"
+            },
+            {
+                "title": "29 图片的多种解析方式以及图片消耗token计算.mp4",
+                "size": 155711061,
+                "duration": "08:37"
+            },
+            {
+                "title": "30 使用流式输出查看图片解析消耗的token.mp4",
+                "size": 139100931,
+                "duration": "05:52"
+            },
+            {
+                "title": "31 多模态中视频的解析与原理.mp4",
+                "size": 137374113,
+                "duration": "07:17"
+            },
+            {
+                "title": "32 标注图片的位置.mp4",
+                "size": 249515885,
+                "duration": "12:07"
+            },
+            {
+                "title": "33 Reponse Api缓存机制.mp4",
+                "size": 111934992,
+                "duration": "06:01"
+            },
+            {
+                "title": "34 session缓存和前缀缓存的区别？.mp4",
+                "size": 209382861,
+                "duration": "09:25"
+            },
+            {
+                "title": "35 LLM联网搜索.mp4",
+                "size": 158797332,
+                "duration": "08:31"
+            },
+            {
+                "title": "36 联网搜索实现边想边搜功能.mp4",
+                "size": 104639322,
+                "duration": "04:14"
+            },
+            {
+                "title": "37 开通新的模型提供image工具调用能力.mp4",
+                "size": 214692211,
+                "duration": "08:46"
+            },
+            {
+                "title": "38 使用image工具数草莓.mp4",
+                "size": 91432066,
+                "duration": "04:07"
+            },
+            {
+                "title": "39 提示词prompt优化思路.mp4",
+                "size": 304165216,
+                "duration": "13:41"
+            }
+        ]
+    },
+    {
+        "title": "07 Rag检索增强架构设计",
+        "children": [
+            {
+                "title": "01 到底什么Rag检索增强？.mp4",
+                "size": 50049680,
+                "duration": "05:40"
+            },
+            {
+                "title": "02 市面主流Ai应用架构设计解析.mp4",
+                "size": 139075805,
+                "duration": "11:55"
+            },
+            {
+                "title": "03 为什么现在云服务是主流趋势？.mp4",
+                "size": 78429067,
+                "duration": "05:01"
+            }
+        ]
+    },
+    {
+        "title": "08 向量数据库原理解析",
+        "children": [
+            {
+                "title": "01 到底什么是向量？.mp4",
+                "size": 65377426,
+                "duration": "04:19"
+            },
+            {
+                "title": "02 点乘查询机制.mp4",
+                "size": 33392302,
+                "duration": "03:37"
+            },
+            {
+                "title": "03 向量数据库的索引机制.mp4",
+                "size": 113960831,
+                "duration": "03:30"
+            },
+            {
+                "title": "04 数据最终变成向量的产物与特征.mp4",
+                "size": 21101319,
+                "duration": "01:46"
+            },
+            {
+                "title": "05 数据转化向量的核心算法.mp4",
+                "size": 105485300,
+                "duration": "08:29"
+            },
+            {
+                "title": "06 向量查询点乘算法机制.mp4",
+                "size": 44056133,
+                "duration": "02:01"
+            },
+            {
+                "title": "07 向量维度是越多越好吗？.mp4",
+                "size": 44325643,
+                "duration": "02:19"
+            },
+            {
+                "title": "08 一本10w字的书是如何进行向量化的？.mp4",
+                "size": 51073483,
+                "duration": "03:17"
+            },
+            {
+                "title": "09 返回的内容太长了怎么办？.mp4",
+                "size": 177287725,
+                "duration": "11:27"
+            },
+            {
+                "title": "10 面试的核心是吹解决方案.mp4",
+                "size": 133709573,
+                "duration": "07:43"
+            },
+            {
+                "title": "11 大量短句如何向量化？.mp4",
+                "size": 153481692,
+                "duration": "06:43"
+            }
+        ]
+    },
+    {
+        "title": "09 深入浅出LangChain",
+        "children": [
+            {
+                "title": "01 环境准备.mp4",
+                "size": 106273097,
+                "duration": "07:00"
+            },
+            {
+                "title": "02 用一段代码来看langchain的全貌.mp4",
+                "size": 94047338,
+                "duration": "08:18"
+            },
+            {
+                "title": "03 LangChain是什么？.mp4",
+                "size": 17015530,
+                "duration": "02:17"
+            },
+            {
+                "title": "04 agent返回的response包含哪些内容？.mp4",
+                "size": 163239030,
+                "duration": "09:02"
+            },
+            {
+                "title": "05 agent返回的response数据类型到底是什么？.mp4",
+                "size": 57608494,
+                "duration": "04:45"
+            },
+            {
+                "title": "06 中间件中的request到底长啥样？.mp4",
+                "size": 227739791,
+                "duration": "13:40"
+            },
+            {
+                "title": "07 利用中间件动态选择LLM.mp4",
+                "size": 134693900,
+                "duration": "07:05"
+            },
+            {
+                "title": "08 提示词进行结构化输出和toolStrategy的区别.mp4",
+                "size": 64948683,
+                "duration": "05:20"
+            },
+            {
+                "title": "09 stream流式输出.mp4",
+                "size": 39561161,
+                "duration": "04:17"
+            },
+            {
+                "title": "10 stream的几种不同模式.mp4",
+                "size": 195454406,
+                "duration": "09:56"
+            },
+            {
+                "title": "11 我控制台的chunk打字机效果是如何实现的？.mp4",
+                "size": 157188862,
+                "duration": "12:02"
+            },
+            {
+                "title": "12 利用tools去查询今天的天气.mp4",
+                "size": 162728514,
+                "duration": "07:27"
+            },
+            {
+                "title": "13 使用value模式对tools调用进行流式输出.mp4",
+                "size": 94567873,
+                "duration": "05:54"
+            },
+            {
+                "title": "14 使用update模式对tools调用进行流式输出.mp4",
+                "size": 94439072,
+                "duration": "08:40"
+            },
+            {
+                "title": "15 message格式定义与建议.mp4",
+                "size": 57080090,
+                "duration": "03:24"
+            },
+            {
+                "title": "16 查看message内部结构到底长啥样？.mp4",
+                "size": 305057773,
+                "duration": "17:48"
+            },
+            {
+                "title": "17 llm Invoke和agent invoke有啥区别？.mp4",
+                "size": 56589456,
+                "duration": "03:55"
+            },
+            {
+                "title": "18 tools状态传递的三种方式.mp4",
+                "size": 113915346,
+                "duration": "08:37"
+            },
+            {
+                "title": "19 tools合并优化性能监控.mp4",
+                "size": 89517166,
+                "duration": "10:02"
+            },
+            {
+                "title": "20 tools调用性能优化从28s到9s.mp4",
+                "size": 226121781,
+                "duration": "14:05"
+            },
+            {
+                "title": "21 max token的核心作用.mp4",
+                "size": 70969147,
+                "duration": "06:57"
+            },
+            {
+                "title": "22 看LLM的决策推理和调用tools的过程.mp4",
+                "size": 34631448,
+                "duration": "03:23"
+            },
+            {
+                "title": "23 短期记忆state的metadata解析.mp4",
+                "size": 135020331,
+                "duration": "09:08"
+            },
+            {
+                "title": "24 短期记忆state全量数据解析.mp4",
+                "size": 137055874,
+                "duration": "09:58"
+            },
+            {
+                "title": "25 内置工具解读01.mp4",
+                "size": 107638530,
+                "duration": "09:03"
+            },
+            {
+                "title": "26 内置工具解读02.mp4",
+                "size": 197631769,
+                "duration": "20:40"
+            },
+            {
+                "title": "27 agent调用的生命周期.mp4",
+                "size": 31572491,
+                "duration": "03:09"
+            },
+            {
+                "title": "28 wrap tools和model的生命周期.mp4",
+                "size": 58041802,
+                "duration": "03:26"
+            },
+            {
+                "title": "29 动态提示词生命周期钩子.mp4",
+                "size": 24053466,
+                "duration": "01:46"
+            },
+            {
+                "title": "30 生命周期钩子的各种应用场景.mp4",
+                "size": 61227498,
+                "duration": "04:01"
+            },
+            {
+                "title": "31 定义个最小化的mcp服务.mp4",
+                "size": 38914877,
+                "duration": "03:42"
+            },
+            {
+                "title": "32 到底什么是MCP？.mp4",
+                "size": 122649945,
+                "duration": "09:00"
+            },
+            {
+                "title": "33 在langchain中调用天气查询mcp服务.mp4",
+                "size": 34002629,
+                "duration": "03:21"
+            },
+            {
+                "title": "34 mcp改成http服务.mp4",
+                "size": 115820594,
+                "duration": "11:25"
+            }
+        ]
+    },
+    {
+        "title": "10 LangGraph深入浅出",
+        "children": [
+            {
+                "title": "01 LangGraph你好.mp4",
+                "size": 97119878,
+                "duration": "06:40"
+            },
+            {
+                "title": "02 LangGraph条件判断.mp4",
+                "size": 155706857,
+                "duration": "10:40"
+            },
+            {
+                "title": "03 逐行解读LangGraph入门案例.mp4",
+                "size": 153732625,
+                "duration": "11:49"
+            },
+            {
+                "title": "04 checkpointer属性解读.mp4",
+                "size": 172188665,
+                "duration": "10:44"
+            },
+            {
+                "title": "05 查看LLM、tools调用之后的checkpointer.mp4",
+                "size": 141303491,
+                "duration": "06:34"
+            },
+            {
+                "title": "06 中断流程业务与思路梳理.mp4",
+                "size": 97016998,
+                "duration": "05:01"
+            },
+            {
+                "title": "07 用graph实现一个完整的中断恢复案例01.mp4",
+                "size": 146653796,
+                "duration": "07:14"
+            },
+            {
+                "title": "08 用graph实现一个完整的中断恢复案例02.mp4",
+                "size": 141355379,
+                "duration": "09:36"
+            },
+            {
+                "title": "09 用graph实现一个完整的中断恢复案例03.mp4",
+                "size": 438051574,
+                "duration": "22:16"
+            },
+            {
+                "title": "10 用graph实现一个完整的中断恢复案例04.mp4",
+                "size": 123678066,
+                "duration": "09:36"
+            },
+            {
+                "title": "11 用graph实现一个完整的中断恢复案例05.mp4",
+                "size": 79264319,
+                "duration": "05:04"
+            },
+            {
+                "title": "12 InMemoryStore和InMemorySaver的区别？.mp4",
+                "size": 232792286,
+                "duration": "15:00"
+            },
+            {
+                "title": "13 SubGraph是什么以及应用场景.mp4",
+                "size": 152101728,
+                "duration": "07:50"
+            }
+        ]
+    },
+    {
+        "title": "11 LangGraph全解析",
+        "children": [
+            {
+                "title": "01 node和edge核心概念.mp4",
+                "size": 95814640,
+                "duration": "07:59"
+            },
+            {
+                "title": "02 流程条件判断.mp4",
+                "size": 162785805,
+                "duration": "10:54"
+            },
+            {
+                "title": "03 langGraph意图识别回复邮件案例.mp4",
+                "size": 128203956,
+                "duration": "11:54"
+            },
+            {
+                "title": "04 讲笑话流程案例.mp4",
+                "size": 128660729,
+                "duration": "10:02"
+            },
+            {
+                "title": "05 并行讲故事、合并案例.mp4",
+                "size": 39505256,
+                "duration": "03:50"
+            },
+            {
+                "title": "06 用路由决定讲故事案例.mp4",
+                "size": 66487896,
+                "duration": "04:57"
+            },
+            {
+                "title": "07 工作流程-剩余内容.mp4",
+                "size": 60847759,
+                "duration": "03:18"
+            },
+            {
+                "title": "08 持久化-存档点位信息.mp4",
+                "size": 78466965,
+                "duration": "04:28"
+            },
+            {
+                "title": "09 持久化-命名空间.mp4",
+                "size": 91596836,
+                "duration": "07:25"
+            },
+            {
+                "title": "10 持久化-对store进行向量存储.mp4",
+                "size": 60685680,
+                "duration": "05:07"
+            },
+            {
+                "title": "11 持久化工作流.mp4",
+                "size": 65161722,
+                "duration": "05:28"
+            },
+            {
+                "title": "12 graph中的stream.mp4",
+                "size": 39601459,
+                "duration": "02:32"
+            },
+            {
+                "title": "13 中断实际场景中3方的配合.mp4",
+                "size": 59532140,
+                "duration": "03:44"
+            },
+            {
+                "title": "14 中断在Ai应用中前端、后台、Ai是如何配合的？.mp4",
+                "size": 168853560,
+                "duration": "09:27"
+            },
+            {
+                "title": "15 关于中断有几点要特别注意的.mp4",
+                "size": 80192493,
+                "duration": "06:30"
+            },
+            {
+                "title": "16 利用时间旅行恢复节点运行.mp4",
+                "size": 32065338,
+                "duration": "02:22"
+            },
+            {
+                "title": "17 graph中子图的作用.mp4",
+                "size": 67842183,
+                "duration": "05:50"
+            }
+        ]
+    },
+    {
+        "title": "12 LangChain实战案例",
+        "children": [
+            {
+                "title": "01 跑通豆包embedding模型api.mp4",
+                "size": 68282240,
+                "duration": "06:38"
+            },
+            {
+                "title": "02 利用豆包进行store向量化模糊搜索.mp4",
+                "size": 157993545,
+                "duration": "09:29"
+            },
+            {
+                "title": "03 ChromaDB向量数据库-补充.mp4",
+                "size": 155074489,
+                "duration": "10:14"
+            },
+            {
+                "title": "04 向量数据库的训练过程.mp4",
+                "size": 110752106,
+                "duration": "08:00"
+            },
+            {
+                "title": "05 向量数据库的存储和查询过程.mp4",
+                "size": 43900689,
+                "duration": "02:41"
+            },
+            {
+                "title": "06 ChromaDB最简案例.mp4",
+                "size": 54699075,
+                "duration": "06:04"
+            },
+            {
+                "title": "07 向量数据库中的距离表示.mp4",
+                "size": 114885501,
+                "duration": "08:55"
+            },
+            {
+                "title": "08 为什么笔记本屏幕不错和笔记本毫不相关？.mp4",
+                "size": 51971369,
+                "duration": "03:59"
+            },
+            {
+                "title": "09 如何提升向量数据库的检索精度？.mp4",
+                "size": 218319757,
+                "duration": "18:35"
+            },
+            {
+                "title": "10 改成cosine方式优化文本检索精度.mp4",
+                "size": 44964011,
+                "duration": "02:28"
+            },
+            {
+                "title": "11 ChromaDB中的查询操作符.mp4",
+                "size": 59077531,
+                "duration": "04:48"
+            },
+            {
+                "title": "12 ChromaDB查询、删除操作.mp4",
+                "size": 58535029,
+                "duration": "04:37"
+            },
+            {
+                "title": "13 长文本切片存储与向量查询.mp4",
+                "size": 260360429,
+                "duration": "14:41"
+            },
+            {
+                "title": "14 为什么我用ChromaDB查询原文都查不到？.mp4",
+                "size": 70908346,
+                "duration": "06:29"
+            },
+            {
+                "title": "15 解决ChromaDB查询中文不精准问题.mp4",
+                "size": 181198990,
+                "duration": "11:54"
+            },
+            {
+                "title": "16 为什么distance最小的结果反而不准？.mp4",
+                "size": 65435359,
+                "duration": "07:04"
+            },
+            {
+                "title": "17 ChromaDB查询之后给到什么数据LLM？.mp4",
+                "size": 62367794,
+                "duration": "05:49"
+            },
+            {
+                "title": "18 向量存储的ID设计.mp4",
+                "size": 51238646,
+                "duration": "03:05"
+            },
+            {
+                "title": "19 ChromaDB实现文搜图.mp4",
+                "size": 102134196,
+                "duration": "11:56"
+            },
+            {
+                "title": "20 如何理解机器学习中的张量？.mp4",
+                "size": 94864384,
+                "duration": "06:49"
+            },
+            {
+                "title": "21 ChromaDB实现图搜图.mp4",
+                "size": 53836921,
+                "duration": "04:35"
+            },
+            {
+                "title": "22 观察图片处理之后实际存储到向量数据库中的大小.mp4",
+                "size": 55362653,
+                "duration": "03:20"
+            }
+        ]
+    },
+    {
+        "title": "13 LangSmith链路追踪监控",
+        "children": [
+            {
+                "title": "01 开通langSmith账户.mp4",
+                "size": 49014895,
+                "duration": "05:37"
+            },
+            {
+                "title": "02 用LangSmith对火山引擎的数据进行监控.mp4",
+                "size": 35515365,
+                "duration": "02:13"
+            },
+            {
+                "title": "03 改写LangChain底层的Embbeding类兼容火山引擎.mp4",
+                "size": 147544272,
+                "duration": "07:45"
+            },
+            {
+                "title": "04 traceable中支持的run_type类型.mp4",
+                "size": 45162926,
+                "duration": "04:24"
+            },
+            {
+                "title": "05 改进之后的trace追踪.mp4",
+                "size": 97342442,
+                "duration": "09:14"
+            },
+            {
+                "title": "06 逐行断点解读trace业务代码.mp4",
+                "size": 79812407,
+                "duration": "08:56"
+            },
+            {
+                "title": "07 Rag检索增强架构改造.mp4",
+                "size": 92928602,
+                "duration": "05:27"
+            },
+            {
+                "title": "08 查看Smith检索LLM数据.mp4",
+                "size": 63649741,
+                "duration": "04:14"
+            }
+        ]
+    },
+    {
+        "title": "14 项目1：Ai实时语音对话-智能客服",
+        "children": [
+            {
+                "title": "01 项目规划.mp4",
+                "size": 76474720,
+                "duration": "07:36"
+            },
+            {
+                "title": "02 项目架构设计与梳理.mp4",
+                "size": 43666213,
+                "duration": "04:04"
+            },
+            {
+                "title": "03 Ai应用开发前端、后台、Ai是如何配合工作的？.mp4",
+                "size": 60407803,
+                "duration": "06:36"
+            },
+            {
+                "title": "04 复杂的Ai应用开发到底应该做什么？.mp4",
+                "size": 67993171,
+                "duration": "09:23"
+            },
+            {
+                "title": "05 我们的项目结构设计.mp4",
+                "size": 20194145,
+                "duration": "01:33"
+            },
+            {
+                "title": "06 环境安装，运行前端、后台项目.mp4",
+                "size": 57272455,
+                "duration": "08:31"
+            },
+            {
+                "title": "07 项目底座介绍.mp4",
+                "size": 186059773,
+                "duration": "09:01"
+            },
+            {
+                "title": "08 使用Trae和Cursor改写Nodejs服务为Python版本.mp4",
+                "size": 219854586,
+                "duration": "12:03"
+            },
+            {
+                "title": "09 使用Gemini3 Por生成Python版本服务.mp4",
+                "size": 120284869,
+                "duration": "08:28"
+            },
+            {
+                "title": "10 优化Gemini3生成版本.mp4",
+                "size": 74426978,
+                "duration": "06:08"
+            },
+            {
+                "title": "11 api密钥与服务开通.mp4",
+                "size": 307109824,
+                "duration": "18:58"
+            },
+            {
+                "title": "12 逐行解读python main流程1.mp4",
+                "size": 356113147,
+                "duration": "15:56"
+            },
+            {
+                "title": "13 逐行解读python main流程2.mp4",
+                "size": 96979198,
+                "duration": "04:42"
+            },
+            {
+                "title": "14 RTC业务逻辑梳理1.mp4",
+                "size": 214668542,
+                "duration": "14:28"
+            },
+            {
+                "title": "15 Rtc业务架构设计2.mp4",
+                "size": 151344038,
+                "duration": "12:26"
+            },
+            {
+                "title": "16 RTC业务流程梳理3.mp4",
+                "size": 167801283,
+                "duration": "11:05"
+            },
+            {
+                "title": "17 RTC业务流程梳理4.mp4",
+                "size": 127035442,
+                "duration": "07:19"
+            },
+            {
+                "title": "18 RTC业务流程梳理5.mp4",
+                "size": 189312257,
+                "duration": "13:14"
+            },
+            {
+                "title": "19 RTC业务梳理6.mp4",
+                "size": 55590919,
+                "duration": "05:03"
+            },
+            {
+                "title": "20 RTC业务流程梳理7.mp4",
+                "size": 54335374,
+                "duration": "06:09"
+            },
+            {
+                "title": "21 RTC业务流程梳理8.mp4",
+                "size": 142927028,
+                "duration": "07:58"
+            },
+            {
+                "title": "22 RTC业务流程梳理9.mp4",
+                "size": 72815327,
+                "duration": "05:54"
+            },
+            {
+                "title": "23 RTC业务流程梳理10-1.mp4",
+                "size": 308062473,
+                "duration": "15:39"
+            },
+            {
+                "title": "23 RTC业务流程梳理10-2.mp4",
+                "size": 47746706,
+                "duration": "01:56"
+            },
+            {
+                "title": "24 RTC业务流程梳理11.mp4",
+                "size": 53356728,
+                "duration": "04:34"
+            }
+        ]
+    },
+    {
+        "title": "15 项目1：LLM RAG架构",
+        "children": [
+            {
+                "title": "01 项目架构设计核心思路.mp4",
+                "size": 42414862,
+                "duration": "04:58"
+            },
+            {
+                "title": "02 将LLM部分独立出来.mp4",
+                "size": 77374960,
+                "duration": "03:35"
+            },
+            {
+                "title": "03 Rtc给第三方LLM推流架构解析.mp4",
+                "size": 180256610,
+                "duration": "15:55"
+            },
+            {
+                "title": "04 uv和ngrok环境准备.mp4",
+                "size": 114030048,
+                "duration": "07:19"
+            },
+            {
+                "title": "05 LLM的欢迎语是哪里来的？.mp4",
+                "size": 43649832,
+                "duration": "03:33"
+            },
+            {
+                "title": "06 项目改造的核心第一步.mp4",
+                "size": 67702638,
+                "duration": "04:05"
+            },
+            {
+                "title": "07 getScenes接口逻辑梳理.mp4",
+                "size": 118553091,
+                "duration": "06:44"
+            },
+            {
+                "title": "08 配置密钥环境.mp4",
+                "size": 87717386,
+                "duration": "07:46"
+            },
+            {
+                "title": "09 远程启动、停止agent接口服务实现.mp4",
+                "size": 136797988,
+                "duration": "11:18"
+            },
+            {
+                "title": "10 指挥ai生成符合sse协议llm回复.mp4",
+                "size": 194165389,
+                "duration": "08:31"
+            },
+            {
+                "title": "11 callback生成sse协议stream流.mp4",
+                "size": 86430809,
+                "duration": "07:10"
+            },
+            {
+                "title": "12 什么是sse协议？.mp4",
+                "size": 93173416,
+                "duration": "05:47"
+            },
+            {
+                "title": "13 梳理前端数据交互逻辑1.mp4",
+                "size": 33384736,
+                "duration": "03:33"
+            },
+            {
+                "title": "14 梳理前端数据交互逻辑2.mp4",
+                "size": 66895447,
+                "duration": "04:54"
+            },
+            {
+                "title": "15 客户端接收rtc推送的二进制message消息.mp4",
+                "size": 76120351,
+                "duration": "07:00"
+            },
+            {
+                "title": "16 安装浏览器插件查看状态变化.mp4",
+                "size": 25262094,
+                "duration": "03:12"
+            }
+        ]
+    },
+    {
+        "title": "16 项目1：LLM改造",
+        "children": [
+            {
+                "title": "01 利用swagger搭建LLM调试环境.mp4",
+                "size": 217827706,
+                "duration": "18:55"
+            },
+            {
+                "title": "02 定制LLM系统提示词与欢迎语.mp4",
+                "size": 156962121,
+                "duration": "11:29"
+            },
+            {
+                "title": "03 设置temperature对回复的影响.mp4",
+                "size": 43505443,
+                "duration": "04:59"
+            },
+            {
+                "title": "04 优化提示词格式.mp4",
+                "size": 172908427,
+                "duration": "11:15"
+            },
+            {
+                "title": "05 创建知识库环境.mp4",
+                "size": 161068943,
+                "duration": "14:40"
+            },
+            {
+                "title": "06 rag知识库技术选型思路.mp4",
+                "size": 90548632,
+                "duration": "08:07"
+            },
+            {
+                "title": "07 对LLM的调用时长进行时间监控.mp4",
+                "size": 200860200,
+                "duration": "10:49"
+            },
+            {
+                "title": "08 Ai帮我参考知识库文档生成可运行业务代码.mp4",
+                "size": 169018520,
+                "duration": "12:23"
+            },
+            {
+                "title": "09 添加知识库service服务.mp4",
+                "size": 94747960,
+                "duration": "10:33"
+            },
+            {
+                "title": "10 知识库检索返回的原始信息.mp4",
+                "size": 223727924,
+                "duration": "19:28"
+            },
+            {
+                "title": "11 跑通Rag服务并兼容多条数据返回.mp4",
+                "size": 215844322,
+                "duration": "11:24"
+            },
+            {
+                "title": "12 将Rag服务接入到测试Api.mp4",
+                "size": 46658154,
+                "duration": "04:15"
+            },
+            {
+                "title": "13 修复Rag接入实时对话bug1.mp4",
+                "size": 102115264,
+                "duration": "08:14"
+            },
+            {
+                "title": "14 修复Rag接入实时对话bug2.mp4",
+                "size": 81970534,
+                "duration": "05:18"
+            },
+            {
+                "title": "15 修复Rag接入实时对话bug3.mp4",
+                "size": 40391527,
+                "duration": "02:35"
+            },
+            {
+                "title": "16 修复Rag接入实时对话bug4.mp4",
+                "size": 10208854,
+                "duration": "01:11"
+            },
+            {
+                "title": "17 Ai应用开发工程师的核心职能和在企业的工作流程.mp4",
+                "size": 117429195,
+                "duration": "09:34"
+            }
+        ]
+    },
+    {
+        "title": "17 项目1：难点亮点与优化",
+        "children": [
+            {
+                "title": "01 利用prompt pilot优化提示词.mp4",
+                "size": 131463969,
+                "duration": "10:34"
+            },
+            {
+                "title": "02 LLM中的Temperature和Top P参数的区别？.mp4",
+                "size": 79203324,
+                "duration": "08:14"
+            },
+            {
+                "title": "03 temperature参数为何可以设置0-2.mp4",
+                "size": 51499853,
+                "duration": "04:16"
+            },
+            {
+                "title": "04 利用pilot的测试集去优化prompt提示词提示词.mp4",
+                "size": 100578204,
+                "duration": "06:48"
+            },
+            {
+                "title": "05 利用Pilot自动对回复进行评分.mp4",
+                "size": 102748272,
+                "duration": "08:04"
+            },
+            {
+                "title": "06 如何将pilot提示词优化写进简历.mp4",
+                "size": 146609751,
+                "duration": "10:03"
+            },
+            {
+                "title": "07 知识库检索优化的思路与方向.mp4",
+                "size": 134377273,
+                "duration": "13:07"
+            },
+            {
+                "title": "08 稠密向量和稀疏向量的区别.mp4",
+                "size": 181242755,
+                "duration": "13:11"
+            },
+            {
+                "title": "09 知识库检索支持的字段与解读.mp4",
+                "size": 174153044,
+                "duration": "08:42"
+            },
+            {
+                "title": "10 知识库文档切片优化与辩证思维.mp4",
+                "size": 154132625,
+                "duration": "13:33"
+            },
+            {
+                "title": "11 知识库index索引优化.mp4",
+                "size": 49580142,
+                "duration": "06:54"
+            },
+            {
+                "title": "12 知识库指定索引算法优化.mp4",
+                "size": 75729826,
+                "duration": "06:39"
+            },
+            {
+                "title": "13 知识库检索参数极致优化.mp4",
+                "size": 130542058,
+                "duration": "10:04"
+            },
+            {
+                "title": "14 ReRank重排开启和关闭带来的性能影响.mp4",
+                "size": 103181127,
+                "duration": "07:19"
+            },
+            {
+                "title": "15 Ai应用项目的性能优化核心思想方针.mp4",
+                "size": 99528875,
+                "duration": "06:06"
+            },
+            {
+                "title": "16 在简历中写上项目经历2、3.mp4",
+                "size": 180963054,
+                "duration": "15:47"
+            },
+            {
+                "title": "17 python热更新速度优化.mp4",
+                "size": 87266217,
+                "duration": "06:05"
+            },
+            {
+                "title": "18 使用Swagger UI构Ai业务调试环境.mp4",
+                "size": 49291389,
+                "duration": "07:01"
+            },
+            {
+                "title": "19 从15s到2s极致深度优化LLM推理 01.mp4",
+                "size": 203659401,
+                "duration": "12:20"
+            },
+            {
+                "title": "20 从15s到2s极致深度优化LLM推理 02.mp4",
+                "size": 165569587,
+                "duration": "09:46"
+            },
+            {
+                "title": "21 利用LLM批量推理构建评测集.mp4",
+                "size": 89076929,
+                "duration": "09:03"
+            },
+            {
+                "title": "22 LLM  flash、lite、标准版区别.mp4",
+                "size": 53688583,
+                "duration": "03:56"
+            },
+            {
+                "title": "23 LLM4种思考模式区别minimal、low、medium、high .mp4",
+                "size": 167500947,
+                "duration": "09:22"
+            },
+            {
+                "title": "24 从15s到2s极致深度优化LLM推理 03.mp4",
+                "size": 147214976,
+                "duration": "11:20"
+            },
+            {
+                "title": "25 从15s到2s极致深度优化LLM推理 04.mp4",
+                "size": 201947670,
+                "duration": "15:54"
+            },
+            {
+                "title": "26 从15s到2s极致深度优化LLM推理 05.mp4",
+                "size": 83661386,
+                "duration": "06:11"
+            },
+            {
+                "title": "27 从15s到2s极致深度优化LLM推理 06.mp4",
+                "size": 54268234,
+                "duration": "03:56"
+            },
+            {
+                "title": "28 从15s到2s极致深度优化LLM推理 07.mp4",
+                "size": 160917366,
+                "duration": "11:20"
+            },
+            {
+                "title": "29 KV缓存和前缀缓存的核心区别.mp4",
+                "size": 47090769,
+                "duration": "03:28"
+            },
+            {
+                "title": "30 利用前缀缓存优化LLM性能.mp4",
+                "size": 113744356,
+                "duration": "11:18"
+            },
+            {
+                "title": "31 Chat Api和Response Api的区别？.mp4",
+                "size": 100127577,
+                "duration": "08:31"
+            },
+            {
+                "title": "32 补充简历经历4、5条.mp4",
+                "size": 55399704,
+                "duration": "06:46"
+            },
+            {
+                "title": "33 豆包1.8版本LLM参数解析.mp4",
+                "size": 54235590,
+                "duration": "04:34"
+            },
+            {
+                "title": "34 max token调整的意义与作用.mp4",
+                "size": 61442266,
+                "duration": "05:34"
+            },
+            {
+                "title": "35 Ai实时对话的Max token设置多少合适？.mp4",
+                "size": 105677361,
+                "duration": "07:06"
+            },
+            {
+                "title": "36 Asr双向流优化版带来的性能影响.mp4",
+                "size": 144102622,
+                "duration": "10:47"
+            },
+            {
+                "title": "37 Asr情绪检测、敏感词、热词优化.mp4",
+                "size": 143083077,
+                "duration": "10:11"
+            },
+            {
+                "title": "38 Asr上层参数调节.mp4",
+                "size": 48590332,
+                "duration": "04:33"
+            },
+            {
+                "title": "39 TTS业务参数调节.mp4",
+                "size": 30178196,
+                "duration": "04:06"
+            },
+            {
+                "title": "40 TTS上层业务参数解析.mp4",
+                "size": 26430937,
+                "duration": "04:03"
+            },
+            {
+                "title": "41 TTS1.0 和 2.0端到端版本的区别.mp4",
+                "size": 73961377,
+                "duration": "04:28"
+            },
+            {
+                "title": "42 声音复刻服务开通与配置.mp4",
+                "size": 111253081,
+                "duration": "08:11"
+            },
+            {
+                "title": "43 接入声音复刻功能.mp4",
+                "size": 53833235,
+                "duration": "02:30"
+            },
+            {
+                "title": "44 火山引擎veRTC服务特点与亮点.mp4",
+                "size": 348647797,
+                "duration": "15:07"
+            },
+            {
+                "title": "45 实时语音Agent服务业务优化设计.mp4",
+                "size": 146353548,
+                "duration": "07:56"
+            },
+            {
+                "title": "46 补充简历6、7条.mp4",
+                "size": 147907380,
+                "duration": "09:41"
+            }
+        ]
+    },
+    {
+        "title": "18 项目2：自媒体运营Agent",
+        "children": [
+            {
+                "title": "01 项目介绍.mp4",
+                "size": 93117100,
+                "duration": "06:49"
+            },
+            {
+                "title": "02 项目方案架构设计.mp4",
+                "size": 190740483,
+                "duration": "15:50"
+            },
+            {
+                "title": "03 让Gemini生成喂给Claude4.5的提示词.mp4",
+                "size": 256781744,
+                "duration": "15:46"
+            },
+            {
+                "title": "04 cursor实现业务功能01.mp4",
+                "size": 27272787,
+                "duration": "03:32"
+            },
+            {
+                "title": "05 cursor实现业务功能02.mp4",
+                "size": 75117182,
+                "duration": "06:06"
+            },
+            {
+                "title": "06 cursor实现业务功能03.mp4",
+                "size": 198720799,
+                "duration": "12:32"
+            },
+            {
+                "title": "07 cursor实现业务功能04.mp4",
+                "size": 78602458,
+                "duration": "09:10"
+            },
+            {
+                "title": "08 Main.py生命周期管理.mp4",
+                "size": 56984497,
+                "duration": "04:13"
+            },
+            {
+                "title": "09 workflow入口逻辑解读.mp4",
+                "size": 102268723,
+                "duration": "04:47"
+            },
+            {
+                "title": "10 graph业务流程图梳理.mp4",
+                "size": 80153852,
+                "duration": "06:24"
+            },
+            {
+                "title": "11 逐行解读start接口调用流程与状态流转01.mp4",
+                "size": 242778253,
+                "duration": "14:12"
+            },
+            {
+                "title": "12 逐行解读start接口调用流程与状态流转02.mp4",
+                "size": 141276651,
+                "duration": "08:21"
+            },
+            {
+                "title": "13 逐行解读resume中断恢复流程与状态流转.mp4",
+                "size": 316630326,
+                "duration": "19:14"
+            },
+            {
+                "title": "14 逐行解读审核通过流程结束.mp4",
+                "size": 187349334,
+                "duration": "07:54"
+            },
+            {
+                "title": "15 逐行解读审核拒绝流程.mp4",
+                "size": 181967569,
+                "duration": "14:38"
+            },
+            {
+                "title": "16 项目版本切换学习方法.mp4",
+                "size": 46412428,
+                "duration": "03:15"
+            },
+            {
+                "title": "17 接入LLM Api版本01.mp4",
+                "size": 48469218,
+                "duration": "03:35"
+            },
+            {
+                "title": "18 接入LLM Api版本02.mp4",
+                "size": 171470556,
+                "duration": "10:19"
+            },
+            {
+                "title": "19 接入LLM Api版本03.mp4",
+                "size": 172102639,
+                "duration": "09:48"
+            },
+            {
+                "title": "20 接入LLM Api版本04.mp4",
+                "size": 167320228,
+                "duration": "08:06"
+            },
+            {
+                "title": "21 接入LLM Api版本05.mp4",
+                "size": 124402870,
+                "duration": "09:28"
+            },
+            {
+                "title": "22 接入LLM Api版本06.mp4",
+                "size": 395420984,
+                "duration": "21:20"
+            },
+            {
+                "title": "23 接入LLM Api版本07.mp4",
+                "size": 187358682,
+                "duration": "14:11"
+            },
+            {
+                "title": "24 Claude生成vue3.0前端界面.mp4",
+                "size": 133048475,
+                "duration": "08:19"
+            },
+            {
+                "title": "25 前端完整流程功能演示.mp4",
+                "size": 43391374,
+                "duration": "04:01"
+            },
+            {
+                "title": "26 使用PostgreSQL持久化graph状态01.mp4",
+                "size": 35056140,
+                "duration": "04:15"
+            },
+            {
+                "title": "27 postgresql数据库安装.mp4",
+                "size": 25823967,
+                "duration": "02:35"
+            },
+            {
+                "title": "28 使用PostgreSQL持久化graph状态02.mp4",
+                "size": 118166504,
+                "duration": "10:19"
+            },
+            {
+                "title": "29 使用PostgreSQL持久化graph状态03.mp4",
+                "size": 112778447,
+                "duration": "06:08"
+            },
+            {
+                "title": "30 AsyncConnectionPool数据库连接池的作用.mp4",
+                "size": 171515485,
+                "duration": "11:56"
+            },
+            {
+                "title": "31 PostgreSQL同步Checkpointer数据核心4个步骤.mp4",
+                "size": 163504542,
+                "duration": "10:36"
+            },
+            {
+                "title": "32 postgre中的4张表到底存的啥？01.mp4",
+                "size": 56549404,
+                "duration": "04:04"
+            },
+            {
+                "title": "33 postgre中的4张表到底存的啥？02.mp4",
+                "size": 132093698,
+                "duration": "09:18"
+            },
+            {
+                "title": "34 新增graph历史记录功能.mp4",
+                "size": 59423639,
+                "duration": "07:43"
+            },
+            {
+                "title": "35 新增graph历史记录功能02.mp4",
+                "size": 88956361,
+                "duration": "05:48"
+            },
+            {
+                "title": "36 新增graph历史记录功能03.mp4",
+                "size": 113179754,
+                "duration": "08:54"
+            },
+            {
+                "title": "37 项目重点梳理与学习重点.mp4",
+                "size": 57304856,
+                "duration": "04:22"
+            }
+        ]
+    },
+    {
+        "title": "19 项目2：难点亮点与优化",
+        "children": [
+            {
+                "title": "01 难点亮点梳理.mp4",
+                "size": 235005530,
+                "duration": "23:29"
+            },
+            {
+                "title": "02 难点亮点梳理.mp4",
+                "size": 91480396,
+                "duration": "06:57"
+            },
+            {
+                "title": "03 LLM耗时统计与token使用量核心逻辑梳理.mp4",
+                "size": 168899876,
+                "duration": "10:02"
+            },
+            {
+                "title": "04 SubGraph子图设计模式解析.mp4",
+                "size": 72512535,
+                "duration": "07:50"
+            },
+            {
+                "title": "05 将选题流程抽象为subgraph.mp4",
+                "size": 308898336,
+                "duration": "18:27"
+            },
+            {
+                "title": "06 将图片生成改为并行模式.mp4",
+                "size": 179965781,
+                "duration": "15:09"
+            },
+            {
+                "title": "07 新增流式输出功能.mp4",
+                "size": 210547095,
+                "duration": "14:41"
+            },
+            {
+                "title": "08 流式输出核心思路解析与踩坑.mp4",
+                "size": 211029817,
+                "duration": "09:24"
+            },
+            {
+                "title": "09 多模型路由策略针对性优化链路性能.mp4",
+                "size": 21082914,
+                "duration": "01:49"
+            },
+            {
+                "title": "10 流式输出和非流式输出影响checkpointer存储的结果吗？.mp4",
+                "size": 228004370,
+                "duration": "17:11"
+            },
+            {
+                "title": "11 graph流式输出逐行解读.mp4",
+                "size": 448275374,
+                "duration": "23:34"
+            },
+            {
+                "title": "12 LLM结构化输出优化.mp4",
+                "size": 80770282,
+                "duration": "09:30"
+            },
+            {
+                "title": "13 LLM结构化输出功能验证.mp4",
+                "size": 94174675,
+                "duration": "06:46"
+            },
+            {
+                "title": "14 Rag检索增强优化.mp4",
+                "size": 61022235,
+                "duration": "05:30"
+            },
+            {
+                "title": "15 数据库连接池参数调整与优化.mp4",
+                "size": 63306779,
+                "duration": "05:51"
+            },
+            {
+                "title": "16. 全链路状态追踪LangSmith接入.mp4",
+                "size": 87741948,
+                "duration": "08:58"
+            },
+            {
+                "title": "17 B端C端业务指标埋点.mp4",
+                "size": 151225380,
+                "duration": "15:40"
+            },
+            {
+                "title": "18 业务日志收集与服务.mp4",
+                "size": 184415710,
+                "duration": "09:57"
+            },
+            {
+                "title": "19 内容安全审查与用户数据脱敏.mp4",
+                "size": 121800499,
+                "duration": "09:36"
+            },
+            {
+                "title": "20 JWT认证授权机制.mp4",
+                "size": 59369727,
+                "duration": "08:07"
+            },
+            {
+                "title": "21 JWT补充内容.mp4",
+                "size": 49697273,
+                "duration": "06:49"
+            },
+            {
+                "title": "22 SSO单点登录与Auth2.0.mp4",
+                "size": 130207118,
+                "duration": "15:33"
+            },
+            {
+                "title": "23 关于项目面试技巧的思考.mp4",
+                "size": 42811431,
+                "duration": "04:59"
+            },
+            {
+                "title": "24 配置管理与灰度AB测试.mp4",
+                "size": 143434405,
+                "duration": "15:25"
+            },
+            {
+                "title": "25 不同业务的模板扩展.mp4",
+                "size": 22993037,
+                "duration": "03:24"
+            },
+            {
+                "title": "26 MCP服务划分与设计.mp4",
+                "size": 37087184,
+                "duration": "03:32"
+            },
+            {
+                "title": "27 健康检查与优雅关闭.mp4",
+                "size": 79886148,
+                "duration": "06:52"
+            },
+            {
+                "title": "28 Api版本控制.mp4",
+                "size": 34416300,
+                "duration": "03:06"
+            },
+            {
+                "title": "29 Api限流与熔断真实企业的四层架构.mp4",
+                "size": 94943398,
+                "duration": "09:11"
+            },
+            {
+                "title": "30 用户反馈闭环建立评测集.mp4",
+                "size": 54391725,
+                "duration": "05:33"
+            },
+            {
+                "title": "31 错误处理降级和熔断的区别？.mp4",
+                "size": 59039242,
+                "duration": "03:54"
+            },
+            {
+                "title": "32 项目中__init__py的作用？.mp4",
+                "size": 57254242,
+                "duration": "06:21"
+            },
+            {
+                "title": "33 图片生成失败与敏感信息处理.mp4",
+                "size": 45738015,
+                "duration": "03:50"
+            },
+            {
+                "title": "34 Graph流程节点性能优化.mp4",
+                "size": 62283041,
+                "duration": "04:04"
+            },
+            {
+                "title": "35 图片大模型升级到顶级Nano Banan模型.mp4",
+                "size": 76283807,
+                "duration": "05:39"
+            }
+        ]
+    },
+    {
+        "title": "20 项目2：逐行解读项目代码",
+        "children": [
+            {
+                "title": "01 入口文件解读.mp4",
+                "size": 74057050,
+                "duration": "04:49"
+            },
+            {
+                "title": "02 日志系统 ContextVar管理requestid.mp4",
+                "size": 103976674,
+                "duration": "08:21"
+            },
+            {
+                "title": "03 逐行解读日志系统.mp4",
+                "size": 315175193,
+                "duration": "15:37"
+            },
+            {
+                "title": "04 graph主流程源码解析.mp4",
+                "size": 150223141,
+                "duration": "09:40"
+            },
+            {
+                "title": "05 thread接口解析.mp4",
+                "size": 18994420,
+                "duration": "01:09"
+            },
+            {
+                "title": "06 流式输出代码解析.mp4",
+                "size": 128633221,
+                "duration": "06:25"
+            },
+            {
+                "title": "07 文章生成是如何进行六十输出的？.mp4",
+                "size": 468015681,
+                "duration": "20:08"
+            },
+            {
+                "title": "08 图片生成逻辑解读.mp4",
+                "size": 128238116,
+                "duration": "04:34"
+            },
+            {
+                "title": "09 系统日志与LLM脱敏设计.mp4",
+                "size": 197273740,
+                "duration": "09:32"
+            },
+            {
+                "title": "10 整体项目的架构设计.mp4",
+                "size": 36411766,
+                "duration": "03:34"
+            },
+            {
+                "title": "11 登录逻辑解读 01.mp4",
+                "size": 104343210,
+                "duration": "07:43"
+            },
+            {
+                "title": "12 登录逻辑解读 02.mp4",
+                "size": 107076035,
+                "duration": "06:05"
+            },
+            {
+                "title": "13 登录逻辑解读 03.mp4",
+                "size": 38803016,
+                "duration": "01:57"
+            },
+            {
+                "title": "14 登录逻辑解读 04.mp4",
+                "size": 139860041,
+                "duration": "09:31"
+            },
+            {
+                "title": "15 为什么现在流行JWT？.mp4",
+                "size": 189556860,
+                "duration": "15:49"
+            }
+        ]
+    },
+    {
+        "title": "21 数据标注平台搭建与Label Studio实战",
+        "children": [
+            {
+                "title": "01 什么是数据标注.mp4",
+                "size": 51829931,
+                "duration": "05:10"
+            },
+            {
+                "title": "02 标注出来的数据到底是做什么用的？.mp4",
+                "size": 153208097,
+                "duration": "08:35"
+            },
+            {
+                "title": "03 Label Studio环境安装.mp4",
+                "size": 58143041,
+                "duration": "04:45"
+            },
+            {
+                "title": "04 案例1： 电商评论情绪识别.mp4",
+                "size": 126105478,
+                "duration": "10:47"
+            },
+            {
+                "title": "05 案例2：图片标注案例.mp4",
+                "size": 69792975,
+                "duration": "03:44"
+            },
+            {
+                "title": "06 案例3：用选择题训练模型.mp4",
+                "size": 47639769,
+                "duration": "04:06"
+            }
+        ]
+    },
+    {
+        "title": "22 模型微调与主流方案解析",
+        "children": [
+            {
+                "title": "01 SFT和DPO的区别？.mp4",
+                "size": 98759218,
+                "duration": "07:14"
+            },
+            {
+                "title": "02 SFT的两种主流训练数据格式.mp4",
+                "size": 89302035,
+                "duration": "04:45"
+            },
+            {
+                "title": "03 SFT中的数据清洗与数据质量.mp4",
+                "size": 87766674,
+                "duration": "08:55"
+            },
+            {
+                "title": "04 模型训练Lora方案解读.mp4",
+                "size": 70990952,
+                "duration": "04:30"
+            },
+            {
+                "title": "05 Lora的4个核心调节参数解析.mp4",
+                "size": 137762101,
+                "duration": "07:50"
+            },
+            {
+                "title": "05 偏好对齐Dto的数据格式要求.mp4",
+                "size": 77809868,
+                "duration": "05:56"
+            },
+            {
+                "title": "06 DPO方案的局限与未来展望.mp4",
+                "size": 43055581,
+                "duration": "03:36"
+            }
+        ]
+    },
+    {
+        "title": "23 项目3：LLaMA-Factory+Lora模型微调实战",
+        "children": [
+            {
+                "title": "01 环境安装.mp4",
+                "size": 165002169,
+                "duration": "08:09"
+            },
+            {
+                "title": "02 lora环境搭建.mp4",
+                "size": 130474013,
+                "duration": "08:44"
+            },
+            {
+                "title": "03 Cuda环境问题解决与显卡驱动.mp4",
+                "size": 338672976,
+                "duration": "25:30"
+            },
+            {
+                "title": "04 Lora训练结果解析.mp4",
+                "size": 79249040,
+                "duration": "05:33"
+            },
+            {
+                "title": "05 案例1 电商评论情感分析.mp4",
+                "size": 174221314,
+                "duration": "06:58"
+            },
+            {
+                "title": "06 案例1 开始训练Qwen模型.mp4",
+                "size": 62798969,
+                "duration": "04:12"
+            },
+            {
+                "title": "07 案例1 真实企业场景对数据量的要求？.mp4",
+                "size": 151320904,
+                "duration": "10:03"
+            },
+            {
+                "title": "08 案例1 学习率参数应该如何调整？.mp4",
+                "size": 54735392,
+                "duration": "05:07"
+            },
+            {
+                "title": "09 案例1 训练轮数参数调节.mp4",
+                "size": 38544238,
+                "duration": "02:52"
+            },
+            {
+                "title": "10 案例1 模型参数的选择.mp4",
+                "size": 40590309,
+                "duration": "03:49"
+            },
+            {
+                "title": "11 案例1 模型训练完的效果.mp4",
+                "size": 79330171,
+                "duration": "04:37"
+            },
+            {
+                "title": "12 案例1 模型第二次训练效果2.mp4",
+                "size": 130647414,
+                "duration": "10:19"
+            },
+            {
+                "title": "13 案例1 模型第3、4次训练与优化.mp4",
+                "size": 322892509,
+                "duration": "27:41"
+            },
+            {
+                "title": "14 案例1 Warmup Ratio参数在哪？.mp4",
+                "size": 29599209,
+                "duration": "01:51"
+            }
+        ]
+    },
+    {
+        "title": "24 Agent集群架构与部署",
+        "children": [
+            {
+                "title": "01 项目部署方案解读.mp4",
+                "size": 300919933,
+                "duration": "25:00"
+            },
+            {
+                "title": "02 集群模式下的Ai服务部署方案.mp4",
+                "size": 281179957,
+                "duration": "35:45"
+            },
+            {
+                "title": "03 集群模式下的ai服务部署方案.mp4",
+                "size": 222703203,
+                "duration": "23:31"
+            },
+            {
+                "title": "04 Agent集群方案设计.mp4",
+                "size": 57641201,
+                "duration": "27:10"
+            },
+            {
+                "title": "05 审核Agent集群方案.mp4",
+                "size": 101359635,
+                "duration": "25:00"
+            },
+            {
+                "title": "06 完成项目step1.mp4",
+                "size": 44040884,
+                "duration": "28:11"
+            },
+            {
+                "title": "07 环境配置.mp4",
+                "size": 171314370,
+                "duration": "25:00"
+            },
+            {
+                "title": "08 验证step1.mp4",
+                "size": 64917051,
+                "duration": "29:33"
+            },
+            {
+                "title": "09 MCP服务为什么不用SSE？.mp4",
+                "size": 92995822,
+                "duration": "25:00"
+            },
+            {
+                "title": "10 遇到Ai解决不掉的Bug怎么办？.mp4",
+                "size": 74721136,
+                "duration": "21:10"
+            },
+            {
+                "title": "11 解析LLM GateWay.mp4",
+                "size": 236341092,
+                "duration": "25:00"
+            },
+            {
+                "title": "12 逐行解读LLm gateway.mp4",
+                "size": 128475863,
+                "duration": "15:12"
+            },
+            {
+                "title": "13 LLM gateway完整调用链路梳理.mp4",
+                "size": 86170560,
+                "duration": "25:00"
+            },
+            {
+                "title": "14 LLM gateway整体架构梳理.mp4",
+                "size": 79805250,
+                "duration": "22:00"
+            },
+            {
+                "title": "15 测试Rag service.mp4",
+                "size": 59341531,
+                "duration": "26:00"
+            },
+            {
+                "title": "16 rag service逐行解读.mp4",
+                "size": 159249340,
+                "duration": "29:00"
+            },
+            {
+                "title": "17 Rag架构流程解析.mp4",
+                "size": 105502572,
+                "duration": "23:11"
+            },
+            {
+                "title": "18 memory_service架构解析.mp4",
+                "size": 79826505,
+                "duration": "25:00"
+            },
+            {
+                "title": "19 测试memory功能.mp4",
+                "size": 50427652,
+                "duration": "45:11"
+            },
+            {
+                "title": "20 解读memory代码实现.mp4",
+                "size": 50817374,
+                "duration": "25:00"
+            },
+            {
+                "title": "21 memory服务业务流程解析.mp4",
+                "size": 60096045,
+                "duration": "28:12"
+            },
+            {
+                "title": "22 Memory服务为何要做MCP？.mp4",
+                "size": 36889220,
+                "duration": "25:00"
+            },
+            {
+                "title": "23 Prompt MCP架构解析.mp4",
+                "size": 57270689,
+                "duration": "43:33"
+            },
+            {
+                "title": "24 Prompt测试代码.mp4",
+                "size": 55384364,
+                "duration": "25:00"
+            },
+            {
+                "title": "25 Prompt MCP服务输入与输出.mp4",
+                "size": 93953934,
+                "duration": "21:09"
+            },
+            {
+                "title": "26 Gateway架构解析.mp4",
+                "size": 80524355,
+                "duration": "25:00"
+            },
+            {
+                "title": "27 Gateway源码设计解析.mp4",
+                "size": 102407004,
+                "duration": "23:55"
+            },
+            {
+                "title": "28 gateway整体调用链路解析.mp4",
+                "size": 65378091,
+                "duration": "25:00"
+            },
+            {
+                "title": "29 gateway中的3个核心问题.mp4",
+                "size": 68129242,
+                "duration": "22:12"
+            },
+            {
+                "title": "30 服务全部启动脚本.mp4",
+                "size": 107274860,
+                "duration": "25:00"
+            },
+            {
+                "title": "31 跨项目功能演示与解析.mp4",
+                "size": 94447270,
+                "duration": "29:35"
+            },
+            {
+                "title": "32 日志调用链路架构解析.mp4",
+                "size": 88140332,
+                "duration": "25:00"
+            },
+            {
+                "title": "33 查看日志系统log.mp4",
+                "size": 104947855,
+                "duration": "28:22"
+            },
+            {
+                "title": "34 智能客服项目核心代码解析.mp4",
+                "size": 153440015,
+                "duration": "25:00"
+            },
+            {
+                "title": "35 智能客服项目核心架构解析.mp4",
+                "size": 80369190,
+                "duration": "21:56"
+            }
+        ]
+    },
+    {
+        "title": "25 项目4：线上企业版",
+        "children": [
+            {
+                "title": "01 环境配置.mp4",
+                "size": 147044440,
+                "duration": "15:51"
+            },
+            {
+                "title": "02 环境配置02.mp4",
+                "size": 153734542,
+                "duration": "11:50"
+            },
+            {
+                "title": "03 更多内容.....更新中"
+            }
+        ]
+    },
+    {
+        "title": "26 实战面试",
+        "children": [
+            {
+                "title": "2.25 武汉18k 教授.mp4",
+                "size": 249493118,
+                "duration": "39:18"
+            },
+            {
+                "title": "2.25 武汉25k 电商头部 - Trim.mp4",
+                "size": 1027195658,
+                "duration": "40:27"
+            },
+            {
+                "title": "2.26 武汉边缘面试官18k.mp4",
+                "size": 130348266,
+                "duration": "23:37"
+            },
+            {
+                "title": "2.26 深信服18k （重点看）.mp4",
+                "size": 1579242572,
+                "duration": "01:10:07"
+            },
+            {
+                "title": "3.9 创业无限画布深圳30k(重点看)-裁切.mp3",
+                "size": 151023770
+            },
+            {
+                "title": "3.9 字节外包-裁切.mp3",
+                "size": 78727460
+            },
+            {
+                "title": "3.9 重庆50k-裁切.mp3",
+                "size": 74853866
+            },
+            {
+                "title": "3.16 深圳30k 两轮已经过了.mp3",
+                "size": 237092862
+            },
+            {
+                "title": "4.22 上海35K实战面试-1面裁切.mp3",
+                "size": 92059935
+            },
+            {
+                "title": "4.23 上海35K实战面试-2面裁切.mp3",
+                "size": 147720570
+            }
+        ]
+    },
+    {
+        "title": "课件资料",
+        "children": [
+            {
+                "title": "课件资料-url合集.pdf",
+                "size": 748094
+            }
+        ]
+    }
+]
