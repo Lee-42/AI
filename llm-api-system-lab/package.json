@@ -1,0 +1,26 @@
+{
+  "name": "llm-api-system-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript lab for learning LLM API system design.",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "check": "tsc --noEmit",
+    "example:basic": "tsx src/examples/01-basic-text.ts",
+    "example:stream": "tsx src/examples/02-stream.ts",
+    "example:json": "tsx src/examples/03-json-output.ts",
+    "example:vision": "tsx src/examples/04-vision-url.ts",
+    "example:deepseek": "tsx src/examples/05-deepseek-compatible.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.0",
+    "openai": "^5.8.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}
