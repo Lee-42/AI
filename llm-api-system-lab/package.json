@@ -11,7 +11,8 @@
     "example:stream": "tsx src/examples/02-stream.ts",
     "example:json": "tsx src/examples/03-json-output.ts",
     "example:vision": "tsx src/examples/04-vision-url.ts",
-    "example:deepseek": "tsx src/examples/05-deepseek-compatible.ts"
+    "example:deepseek": "tsx src/examples/05-deepseek-compatible.ts",
+    "example:tool": "tsx src/examples/06-tool-call.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.0",

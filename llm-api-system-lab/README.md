@@ -22,6 +22,7 @@ LLM_PROVIDER=deepseek pnpm example:basic
 LLM_PROVIDER=deepseek pnpm example:stream
 LLM_PROVIDER=deepseek pnpm example:json
 LLM_PROVIDER=deepseek pnpm example:vision
+LLM_PROVIDER=deepseek pnpm example:tool
 ```
 
 If `LLM_PROVIDER` is omitted, the app chooses OpenAI when `OPENAI_API_KEY` exists, then DeepSeek when `DEEPSEEK_API_KEY` exists.
@@ -35,6 +36,7 @@ pnpm example:stream
 pnpm example:json
 pnpm example:vision
 pnpm example:deepseek
+pnpm example:tool
 pnpm check
 ```
 
@@ -55,6 +57,7 @@ src/
     03-json-output.ts
     04-vision-url.ts
     05-deepseek-compatible.ts
+    06-tool-call.ts
 ```
 
 The project starts with a small `src/llm` facade. Examples call the facade, and provider adapters translate requests to OpenAI Responses API or DeepSeek Chat Completions.
