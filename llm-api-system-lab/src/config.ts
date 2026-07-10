@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 export type ProviderName = "openai" | "deepseek";
+export type DeepSeekReasoningEffort = "high" | "max";
 
 // Empty strings should behave like missing env vars.
 function optionalEnv(name: string): string | undefined {
@@ -24,6 +25,20 @@ export function requireEnv(name: string): string {
   return value;
 }
 
+function optionalDeepSeekReasoningEffort(): DeepSeekReasoningEffort | undefined {
+  const value = optionalEnv("DEEPSEEK_REASONING_EFFORT");
+
+  if (!value) {
+    return undefined;
+  }
+
+  if (value === "high" || value === "max") {
+    return value;
+  }
+
+  throw new Error("Invalid DEEPSEEK_REASONING_EFFORT. Expected 'high' or 'max'.");
+}
+
 // Keep provider defaults in one place so examples stay focused on API usage.
 export const config = {
   llm: {
@@ -38,7 +53,10 @@ export const config = {
     apiKey: optionalEnv("DEEPSEEK_API_KEY"),
     baseURL: optionalEnv("DEEPSEEK_BASE_URL") ?? "https://api.deepseek.com",
     model: optionalEnv("DEEPSEEK_MODEL") ?? "deepseek-chat",
-    visionModel: optionalEnv("DEEPSEEK_VISION_MODEL") ?? optionalEnv("DEEPSEEK_MODEL") ?? "deepseek-chat"
+    visionModel: optionalEnv("DEEPSEEK_VISION_MODEL") ?? optionalEnv("DEEPSEEK_MODEL") ?? "deepseek-chat",
+    // 思维链示例需要支持 thinking mode 的模型，不能默认跟随普通 chat 模型。
+    reasoningModel: optionalEnv("DEEPSEEK_REASONING_MODEL") ?? "deepseek-v4-pro",
+    reasoningEffort: optionalDeepSeekReasoningEffort() ?? "high"
   },
   examples: {
     imageUrl: optionalEnv("IMAGE_URL")
