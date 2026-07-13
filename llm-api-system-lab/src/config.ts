@@ -59,7 +59,8 @@ export const config = {
     reasoningEffort: optionalDeepSeekReasoningEffort() ?? "high"
   },
   examples: {
-    imageUrl: optionalEnv("IMAGE_URL")
+    imageUrl: optionalEnv("IMAGE_URL"),
+    imagePath: optionalEnv("IMAGE_PATH")
   }
 } as const;
 

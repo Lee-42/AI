@@ -11,10 +11,16 @@
     "example:stream": "tsx src/examples/02-stream.ts",
     "example:json": "tsx src/examples/03-json-output.ts",
     "example:vision": "tsx src/examples/04-vision-url.ts",
+    "example:vision:url": "tsx src/examples/04-vision-url.ts",
     "example:deepseek": "tsx src/examples/05-deepseek-compatible.ts",
     "example:tool": "tsx src/examples/06-tool-call.ts",
     "example:reasoning": "tsx src/examples/07-reasoning-comparison.ts",
-    "example:cot": "tsx src/examples/08-deepseek-cot-stream.ts"
+    "example:cot": "tsx src/examples/08-deepseek-cot-stream.ts",
+    "example:continue": "tsx src/examples/09-continuation.ts",
+    "example:schema": "tsx src/examples/10-json-schema-format.ts",
+    "example:vision:file": "tsx src/examples/11-vision-file.ts",
+    "example:vision:stream-usage": "tsx src/examples/12-vision-stream-usage.ts",
+    "example:deepseek:web-search": "tsx src/examples/13-deepseek-web-search.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.0",
