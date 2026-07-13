@@ -12909,3 +12909,540 @@ DeepSeek 本身负责推理和综合，后端负责真正搜索。
 - DeepSeek Models & Pricing：https://api-docs.deepseek.com/quick_start/pricing/
 - DeepSeek Claude Code Web Search 集成说明：https://api-docs.deepseek.com/quick_start/agent_integrations/claude_code
 - OpenAI Function Calling 文档：https://developers.openai.com/api/docs/guides/function-calling
+
+## 29 开通新的模型提供 image 工具调用能力
+
+这一节讨论的是：
+
+```text
+主模型本身不一定支持图片；
+但是系统可以开通一个新的视觉模型，
+把它包装成 image 工具，
+再让主模型通过 Tool Calling 调用它。
+```
+
+这不是单纯“换一个能看图的模型”。
+
+它真正想讲的是 LLM API 系统里的一个重要设计思想：
+
+```text
+工具不一定只是普通函数；
+工具背后也可以是另一个模型。
+```
+
+例如：
+
+```text
+DeepSeek / 推理模型：负责规划、推理、中文表达。
+OpenAI / Claude / Gemini / Qwen-VL：负责图片理解。
+OCR 模型：负责读图片里的文字。
+检测模型：负责定位物体。
+后端系统：负责路由、调用、缓存、成本控制。
+```
+
+### 1. 为什么有些模型支持图片，有些模型不支持？
+
+图片能力不是一个简单开关。
+
+文本模型主要处理：
+
+```text
+文字 token -> 推理 -> 文字 token
+```
+
+多模态模型还要处理：
+
+```text
+图片 -> 视觉编码器 -> visual tokens / image embeddings
+     -> 与文字 token 对齐
+     -> 推理
+     -> 文字输出
+```
+
+所以一个模型要支持图片识别，至少需要：
+
+- 模型结构支持图像输入。
+- 训练数据支持图文对齐。
+- 推理服务支持图片上传、URL、Base64 或 file_id。
+- API 产品侧开放图片能力。
+- 安全策略能处理人脸、证件、医疗、隐私等图片风险。
+- 计费和限流系统能处理视觉 token。
+
+因此，某些模型不支持图片，并不只是“没加功能”。
+
+它可能是：
+
+- 模型架构没有视觉编码器。
+- 模型训练目标主要是文本。
+- 服务商暂时没有开放视觉 API。
+- 图片输入成本太高。
+- 安全审核和合规成本更复杂。
+
+### 2. 为什么不直接全部使用多模态模型？
+
+趋势上，底层模型会越来越多模态。
+
+但在工程系统里，不会简单变成：
+
+```text
+所有任务都直接丢给一个最强多模态模型。
+```
+
+原因是：
+
+- 多模态模型通常更贵。
+- 图片和视频会带来额外 token。
+- 视觉推理通常更慢。
+- OCR、检测、计数等任务有时专用模型更稳定。
+- 很多业务请求根本不需要图片能力。
+- 企业系统需要按成本、延迟和准确率做路由。
+
+更实际的架构是：
+
+```text
+用户只看到一个 AI 助手；
+系统内部有主模型、视觉模型、搜索工具、数据库工具、文件工具等多个能力模块。
+```
+
+也就是：
+
+```text
+底层模型越来越多模态；
+应用架构越来越工具化和 Agent 化。
+```
+
+### 3. image 工具的基本流程
+
+假设用户问：
+
+```text
+这张图里有几个草莓？
+```
+
+如果主模型不支持图片，可以这样做：
+
+```text
+用户问题 + 图片 URL
+  ↓
+主模型判断需要看图
+  ↓
+主模型发起 tool_call: image_analyze
+  ↓
+后端执行 image_analyze 工具
+  ↓
+后端调用真正的视觉模型
+  ↓
+视觉模型返回图片识别结果
+  ↓
+后端把结果作为 tool 消息回传给主模型
+  ↓
+主模型整理最终答案
+```
+
+这里的关键是：
+
+```text
+主模型不直接看图；
+主模型调用一个 image 工具；
+image 工具背后再调用支持图片的模型。
+```
+
+### 4. image 工具可以返回什么？
+
+不要把视觉模型的一大段自然语言原样塞给主模型。
+
+更推荐让 image 工具返回结构化结果。
+
+例如数草莓：
+
+```json
+{
+  "task": "count_objects",
+  "object": "strawberry",
+  "count": 8,
+  "confidence": "medium",
+  "uncertain_regions": 2,
+  "notes": "右下角有两个草莓被遮挡，计数可能存在 1 个误差。"
+}
+```
+
+这样做的好处是：
+
+- 主模型更容易推理。
+- token 更少。
+- 更容易做前端展示。
+- 更容易记录日志。
+- 更容易做模型评测。
+
+如果是图片位置标注，可以返回：
+
+```json
+{
+  "imageWidth": 1024,
+  "imageHeight": 768,
+  "objects": [
+    {
+      "label": "strawberry",
+      "bbox": {
+        "x": 120,
+        "y": 240,
+        "width": 80,
+        "height": 70
+      },
+      "confidence": 0.86
+    }
+  ]
+}
+```
+
+### 5. Tool 定义示例
+
+可以把图片理解能力定义成工具：
+
+```ts
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "image_analyze",
+      description: "Analyze an image with a vision model and return structured visual facts.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        required: ["imageUrl", "task"],
+        properties: {
+          imageUrl: {
+            type: "string",
+            description: "The public image URL to analyze."
+          },
+          task: {
+            type: "string",
+            enum: ["describe", "ocr", "count_objects", "locate_objects"],
+            description: "The image analysis task."
+          },
+          targetObject: {
+            type: "string",
+            description: "Object to count or locate, such as strawberry."
+          }
+        }
+      }
+    }
+  }
+];
+```
+
+后端拿到 tool call 后，真正执行：
+
+```text
+image_analyze -> 调用视觉模型 -> 返回结构化结果
+```
+
+### 6. 直接多模态 vs 推理模型 + 识图模型
+
+同一个推理识图任务，常见有两条路径。
+
+第一种：直接使用多模态模型。
+
+```text
+用户问题 + 图片
+  ↓
+多模态模型
+  ↓
+最终答案
+```
+
+第二种：推理模型 + image 工具。
+
+```text
+用户问题
+  ↓
+推理模型判断需要看图
+  ↓
+image 工具调用视觉模型
+  ↓
+视觉模型返回结构化图片结果
+  ↓
+推理模型继续回答
+```
+
+如果只看 token 数，直接多模态通常更省。
+
+因为组合方案多了：
+
+- 第一次推理模型输入和输出。
+- tool schema。
+- tool_call。
+- 视觉模型输出的中间结果。
+- 第二次推理模型输入和输出。
+- 多轮 messages 历史。
+
+但是，如果看总账单，答案不一定。
+
+因为总成本不是：
+
+```text
+token 数
+```
+
+而是：
+
+```text
+总成本 = token 数 × 模型单价
+      + 工具调用费用
+      + 多轮重试成本
+      + 延迟成本
+      + 错误答案带来的返工成本
+```
+
+直接多模态可能是：
+
+```text
+贵模型同时看图 + 推理
+```
+
+组合方案可能是：
+
+```text
+便宜视觉模型看图；
+贵推理模型只阅读短 JSON。
+```
+
+所以：
+
+```text
+token 更多，不一定钱更多；
+token 更少，也不一定整体更划算。
+```
+
+### 7. 如何选择路径？
+
+可以按任务类型选择。
+
+简单图片问答：
+
+```text
+直接多模态模型。
+```
+
+例如：
+
+```text
+这张图里有什么？
+```
+
+图片 + 简单计数：
+
+```text
+直接多模态通常更快、更省 token。
+```
+
+例如：
+
+```text
+图里有几个草莓？
+```
+
+主模型不支持图片：
+
+```text
+推理模型 + image 工具。
+```
+
+复杂图片推理：
+
+```text
+视觉模型先提取事实；
+推理模型再分析。
+```
+
+例如：
+
+```text
+请根据这张商品图、价格规则和库存策略，判断是否应该上架。
+```
+
+大量图片批处理：
+
+```text
+专用视觉模型 / OCR / 检测模型 + 队列 + 缓存。
+```
+
+高风险任务：
+
+```text
+强模型复核 + 人工审核。
+```
+
+### 8. 做 token 最省路径系统有意义吗？
+
+有意义。
+
+但更准确的名字不是：
+
+```text
+token 最省路径系统
+```
+
+而是：
+
+```text
+成本感知路由系统
+Cost-aware routing
+Budget-aware AI pipeline
+```
+
+因为生产系统真正要优化的是：
+
+```text
+在满足质量阈值的前提下，选择最低成本路径。
+```
+
+不是单纯 token 越少越好。
+
+一个实用的路由系统可以分四层。
+
+第一层：任务分类。
+
+```text
+文本问答；
+图片描述；
+OCR；
+物体计数；
+位置标注；
+复杂推理；
+联网搜索；
+RAG 查询。
+```
+
+第二层：路径选择。
+
+```text
+简单任务 -> 小模型；
+图片问答 -> 多模态模型；
+复杂图片推理 -> image 工具 + 推理模型；
+最新信息 -> web_search 工具；
+企业知识 -> RAG。
+```
+
+第三层：置信度判断。
+
+```text
+便宜路径高置信度 -> 直接返回；
+便宜路径低置信度 -> 升级强模型；
+模型结果冲突 -> 复核或人工审核。
+```
+
+第四层：缓存。
+
+```text
+同一张图片；
+同一份文件；
+同一个搜索结果；
+同一个结构化识别结果；
+都不应该重复花钱。
+```
+
+### 9. 工程上要记录哪些指标？
+
+要记录每条路径的成本和质量。
+
+至少包括：
+
+- 用户任务类型。
+- 使用了哪个模型。
+- 是否调用 image 工具。
+- 图片 token 或视觉 token。
+- 文本 input token。
+- output token。
+- 工具调用次数。
+- 总耗时。
+- 模型置信度。
+- 是否升级模型。
+- 用户是否接受答案。
+- 是否发生重试。
+
+没有这些日志，就无法判断：
+
+```text
+到底直接多模态更划算？
+还是推理模型 + image 工具更划算？
+```
+
+### 10. 本章代码示例
+
+示例文件：
+
+```text
+llm-api-system-lab/src/examples/15-deepseek-image-tool-count-strawberries.ts
+```
+
+运行：
+
+```bash
+pnpm example:deepseek:image-tool
+```
+
+需要配置：
+
+```text
+DEEPSEEK_API_KEY=...
+OPENAI_API_KEY=...
+DEEPSEEK_MODEL=deepseek-v4-pro
+OPENAI_VISION_MODEL=gpt-4.1-mini
+```
+
+可选配置：
+
+```text
+STRAWBERRY_IMAGE_URL=https://example.com/strawberries.jpg
+```
+
+如果不配置 `STRAWBERRY_IMAGE_URL`，示例会使用一张公开的 Wikimedia 草莓图片。
+
+这个示例的调用链是：
+
+```text
+DeepSeek 主模型
+  ↓
+tool_call: image_analyze
+  ↓
+OpenAI 视觉模型数草莓
+  ↓
+结构化 JSON 结果
+  ↓
+DeepSeek 生成最终中文回答
+```
+
+### 11. 一句话总结
+
+这一节的核心不是“数图片”。
+
+而是：
+
+```text
+把图片能力抽象成 image 工具；
+让主模型通过工具调用获得视觉能力；
+再用成本感知路由决定什么时候直接多模态，什么时候多模型协作。
+```
+
+模型趋势是：
+
+```text
+越来越多模态。
+```
+
+系统趋势是：
+
+```text
+越来越工具化、Agent 化、可路由、可观测、可控成本。
+```
+
+参考资料：
+
+- OpenAI Images and Vision 文档：https://developers.openai.com/api/docs/guides/images-vision
+- OpenAI Function Calling 文档：https://developers.openai.com/api/docs/guides/function-calling
+- Claude Vision 文档：https://docs.anthropic.com/en/docs/build-with-claude/vision
+- Claude Tool Use 文档：https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview
+- Gemini Image Understanding 文档：https://ai.google.dev/gemini-api/docs/image-understanding
+- Gemini Function Calling 文档：https://ai.google.dev/gemini-api/docs/function-calling
+- DeepSeek Tool Calls 文档：https://api-docs.deepseek.com/guides/tool_calls/

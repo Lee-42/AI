@@ -20,7 +20,9 @@
     "example:schema": "tsx src/examples/10-json-schema-format.ts",
     "example:vision:file": "tsx src/examples/11-vision-file.ts",
     "example:vision:stream-usage": "tsx src/examples/12-vision-stream-usage.ts",
-    "example:deepseek:web-search": "tsx src/examples/13-deepseek-web-search.ts"
+    "example:deepseek:web-search": "tsx src/examples/13-deepseek-web-search.ts",
+    "example:deepseek:thinking-web-search": "tsx src/examples/14-deepseek-thinking-web-search.ts",
+    "example:deepseek:image-tool": "tsx src/examples/15-deepseek-image-tool-count-strawberries.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.0",

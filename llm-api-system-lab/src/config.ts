@@ -60,7 +60,8 @@ export const config = {
   },
   examples: {
     imageUrl: optionalEnv("IMAGE_URL"),
-    imagePath: optionalEnv("IMAGE_PATH")
+    imagePath: optionalEnv("IMAGE_PATH"),
+    strawberryImageUrl: optionalEnv("STRAWBERRY_IMAGE_URL")
   }
 } as const;
 
