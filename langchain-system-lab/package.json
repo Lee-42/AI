@@ -1,0 +1,30 @@
+{
+  "name": "langchain-system-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript lab for learning LangChain system design.",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "check": "tsc --noEmit",
+    "example:env": "tsx src/examples/01-env-check.ts",
+    "example:overview": "tsx src/examples/02-agent-overview.ts",
+    "example:middleware:basic": "tsx src/examples/03-middleware-basic.ts",
+    "example:middleware:request": "tsx src/examples/04-middleware-request-shape.ts",
+    "example:middleware:dynamic-model": "tsx src/examples/05-dynamic-model-middleware.ts",
+    "example:structured:strategies": "tsx src/examples/06-structured-output-strategies.ts",
+    "example:stream": "tsx src/examples/07-stream-output.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.0.0",
+    "@langchain/openai": "^1.0.0",
+    "dotenv": "^17.2.0",
+    "langchain": "^1.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  }
+}

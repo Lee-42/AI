@@ -1,0 +1,288 @@
+{
+    "messages": [
+        {
+            "message_class": "HumanMessage",
+            "lc_serializable": true,
+            "lc_kwargs": {
+                "content": "请查询上海今天的天气，并用一句话告诉我适合不适合出门散步。",
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "0d3fa51a-12ec-4e13-ac5f-b76cd982d4df"
+            },
+            "lc_namespace": [
+                "langchain_core",
+                "messages"
+            ],
+            "id": "0d3fa51a-12ec-4e13-ac5f-b76cd982d4df",
+            "name": null,
+            "content": "请查询上海今天的天气，并用一句话告诉我适合不适合出门散步。",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "human",
+            "langchain_message": true
+        },
+        {
+            "message_class": "AIMessage",
+            "lc_serializable": true,
+            "lc_kwargs": {
+                "id": "8ad91e76-85e6-4b13-a50e-687f98fb952b",
+                "name": "model",
+                "content": "",
+                "additional_kwargs": {
+                    "function_call": null,
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "id": "call_00_5SC7CudeSDLWMlDwP8tc1709",
+                            "type": "function",
+                            "function": {
+                                "name": "get_weather",
+                                "arguments": "{\"city\":\"上海\"}"
+                            }
+                        }
+                    ]
+                },
+                "response_metadata": {
+                    "model_provider": "openai",
+                    "model_name": "deepseek-v4-flash",
+                    "usage": {
+                        "prompt_tokens": 345,
+                        "completion_tokens": 44,
+                        "total_tokens": 389,
+                        "prompt_tokens_details": {
+                            "cached_tokens": 0
+                        },
+                        "prompt_cache_hit_tokens": 0,
+                        "prompt_cache_miss_tokens": 345
+                    },
+                    "system_fingerprint": "fp_8b330d02d0_prod0820_fp8_kvcache_20260402"
+                },
+                "type": "ai",
+                "tool_calls": [
+                    {
+                        "name": "get_weather",
+                        "args": {
+                            "city": "上海"
+                        },
+                        "type": "tool_call",
+                        "id": "call_00_5SC7CudeSDLWMlDwP8tc1709"
+                    }
+                ],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                    "output_tokens": 44,
+                    "input_tokens": 345,
+                    "total_tokens": 389,
+                    "input_token_details": {
+                        "audio": null,
+                        "cache_read": 0
+                    },
+                    "output_token_details": {
+                        "audio": null,
+                        "reasoning": null
+                    }
+                }
+            },
+            "lc_namespace": [
+                "langchain_core",
+                "messages"
+            ],
+            "id": "8ad91e76-85e6-4b13-a50e-687f98fb952b",
+            "name": "model",
+            "content": "",
+            "additional_kwargs": {
+                "function_call": null,
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_00_5SC7CudeSDLWMlDwP8tc1709",
+                        "type": "function",
+                        "function": {
+                            "name": "get_weather",
+                            "arguments": "{\"city\":\"上海\"}"
+                        }
+                    }
+                ]
+            },
+            "response_metadata": {
+                "tokenUsage": {
+                    "promptTokens": 345,
+                    "completionTokens": 44,
+                    "totalTokens": 389
+                },
+                "finish_reason": "tool_calls",
+                "model_provider": "openai",
+                "model_name": "deepseek-v4-flash",
+                "usage": {
+                    "prompt_tokens": 345,
+                    "completion_tokens": 44,
+                    "total_tokens": 389,
+                    "prompt_tokens_details": {
+                        "cached_tokens": 0
+                    },
+                    "prompt_cache_hit_tokens": 0,
+                    "prompt_cache_miss_tokens": 345
+                },
+                "system_fingerprint": "fp_8b330d02d0_prod0820_fp8_kvcache_20260402"
+            },
+            "type": "ai",
+            "tool_calls": [
+                {
+                    "name": "get_weather",
+                    "args": {
+                        "city": "上海"
+                    },
+                    "type": "tool_call",
+                    "id": "call_00_5SC7CudeSDLWMlDwP8tc1709"
+                }
+            ],
+            "invalid_tool_calls": [],
+            "usage_metadata": {
+                "output_tokens": 44,
+                "input_tokens": 345,
+                "total_tokens": 389,
+                "input_token_details": {
+                    "audio": null,
+                    "cache_read": 0
+                },
+                "output_token_details": {
+                    "audio": null,
+                    "reasoning": null
+                }
+            },
+            "langchain_message": true
+        },
+        {
+            "message_class": "ToolMessage",
+            "lc_serializable": true,
+            "lc_kwargs": {
+                "status": "success",
+                "content": "Weather tool result: 上海 is sunny, 26C, with light wind.",
+                "artifact": null,
+                "tool_call_id": "call_00_5SC7CudeSDLWMlDwP8tc1709",
+                "name": "get_weather",
+                "metadata": {
+                    "versions": {
+                        "@langchain/core": "1.2.3"
+                    }
+                },
+                "additional_kwargs": {},
+                "response_metadata": {},
+                "id": "39418778-bf1d-48e5-af5b-cd2ce9e3241c"
+            },
+            "lc_namespace": [
+                "langchain_core",
+                "messages"
+            ],
+            "id": "39418778-bf1d-48e5-af5b-cd2ce9e3241c",
+            "name": "get_weather",
+            "content": "Weather tool result: 上海 is sunny, 26C, with light wind.",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "lc_direct_tool_output": true,
+            "type": "tool",
+            "status": "success",
+            "tool_call_id": "call_00_5SC7CudeSDLWMlDwP8tc1709",
+            "metadata": {
+                "versions": {
+                    "@langchain/core": "1.2.3"
+                }
+            },
+            "artifact": null,
+            "langchain_message": true
+        },
+        {
+            "message_class": "AIMessage",
+            "lc_serializable": true,
+            "lc_kwargs": {
+                "id": "d07cc879-151e-453e-b67d-fb1cc5613091",
+                "name": "model",
+                "content": "上海今天天气晴朗，26°C，微风，非常适合出门散步！🌤️",
+                "additional_kwargs": {
+                    "function_call": null,
+                    "tool_calls": null
+                },
+                "response_metadata": {
+                    "model_provider": "openai",
+                    "model_name": "deepseek-v4-flash",
+                    "usage": {
+                        "prompt_tokens": 417,
+                        "completion_tokens": 18,
+                        "total_tokens": 435,
+                        "prompt_tokens_details": {
+                            "cached_tokens": 384
+                        },
+                        "prompt_cache_hit_tokens": 384,
+                        "prompt_cache_miss_tokens": 33
+                    },
+                    "system_fingerprint": "fp_8b330d02d0_prod0820_fp8_kvcache_20260402"
+                },
+                "type": "ai",
+                "tool_calls": [],
+                "invalid_tool_calls": [],
+                "usage_metadata": {
+                    "output_tokens": 18,
+                    "input_tokens": 417,
+                    "total_tokens": 435,
+                    "input_token_details": {
+                        "audio": null,
+                        "cache_read": 384
+                    },
+                    "output_token_details": {
+                        "audio": null,
+                        "reasoning": null
+                    }
+                }
+            },
+            "lc_namespace": [
+                "langchain_core",
+                "messages"
+            ],
+            "id": "d07cc879-151e-453e-b67d-fb1cc5613091",
+            "name": "model",
+            "content": "上海今天天气晴朗，26°C，微风，非常适合出门散步！🌤️",
+            "additional_kwargs": {
+                "function_call": null,
+                "tool_calls": null
+            },
+            "response_metadata": {
+                "tokenUsage": {
+                    "promptTokens": 417,
+                    "completionTokens": 18,
+                    "totalTokens": 435
+                },
+                "finish_reason": "stop",
+                "model_provider": "openai",
+                "model_name": "deepseek-v4-flash",
+                "usage": {
+                    "prompt_tokens": 417,
+                    "completion_tokens": 18,
+                    "total_tokens": 435,
+                    "prompt_tokens_details": {
+                        "cached_tokens": 384
+                    },
+                    "prompt_cache_hit_tokens": 384,
+                    "prompt_cache_miss_tokens": 33
+                },
+                "system_fingerprint": "fp_8b330d02d0_prod0820_fp8_kvcache_20260402"
+            },
+            "type": "ai",
+            "tool_calls": [],
+            "invalid_tool_calls": [],
+            "usage_metadata": {
+                "output_tokens": 18,
+                "input_tokens": 417,
+                "total_tokens": 435,
+                "input_token_details": {
+                    "audio": null,
+                    "cache_read": 384
+                },
+                "output_token_details": {
+                    "audio": null,
+                    "reasoning": null
+                }
+            },
+            "langchain_message": true
+        }
+    ]
+}
