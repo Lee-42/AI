@@ -13,7 +13,13 @@
     "example:middleware:request": "tsx src/examples/04-middleware-request-shape.ts",
     "example:middleware:dynamic-model": "tsx src/examples/05-dynamic-model-middleware.ts",
     "example:structured:strategies": "tsx src/examples/06-structured-output-strategies.ts",
-    "example:stream": "tsx src/examples/07-stream-output.ts"
+    "example:stream": "tsx src/examples/07-stream-output.ts",
+    "example:stream:modes": "tsx src/examples/08-stream-modes.ts",
+    "example:stream:tools:values": "tsx src/examples/09-stream-tools-values.ts",
+    "example:stream:tools:updates": "tsx src/examples/10-stream-tools-updates.ts",
+    "example:messages": "tsx src/examples/11-message-format-shape.ts",
+    "example:invoke:compare": "tsx src/examples/12-llm-vs-agent-invoke.ts",
+    "example:tools:state": "tsx src/examples/13-tool-state-passing.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.0.0",

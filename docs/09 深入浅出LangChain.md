@@ -4373,3 +4373,2473 @@ Fastify、Next.js Route Handler、Express、Hono 这些 Web 框架解决的是�
 ```text
 stream 不是让模型“更快生成”，而是让应用“更早拿到正在生成的内容”。
 ```
+
+## 11 stream的几种不同模式
+
+上一节我们讲了：
+
+```text
+model.stream()
+agent.streamEvents(..., { version: "v3" })
+```
+
+这一节补一个容易混淆的问题：
+
+```text
+stream 到底有哪些模式？
+```
+
+先给结论：
+
+```text
+新应用优先用 streamEvents v3。
+需要看更底层的 LangGraph 执行过程时，再用 streamMode。
+```
+
+`streamEvents v3` 更像面向应用开发者的高级接口。
+
+它把 Agent 运行过程整理成：
+
+```text
+run.messages
+run.toolCalls
+run.values
+run.output
+```
+
+而 `streamMode` 更像底层调试和运行时观察接口。
+
+它会让你选择：
+
+```text
+我到底想看状态？
+想看 token？
+想看工具生命周期？
+还是想看所有 debug 信息？
+```
+
+### 1. 本节示例
+
+对应文件：
+
+```text
+langchain-system-lab/src/examples/08-stream-modes.ts
+```
+
+运行方式：
+
+```bash
+cd langchain-system-lab
+pnpm example:stream:modes
+```
+
+这个示例会演示：
+
+```text
+streamMode: "updates"
+streamMode: "values"
+streamMode: "messages"
+streamMode: "tools"
+streamMode: ["updates", "messages", "tools"]
+```
+
+注意：
+
+```text
+这个示例会多次调用模型。
+真实运行会消耗 API 额度。
+```
+
+如果只是学习概念，可以先看代码和文档，不一定每次都真实执行。
+
+### 2. 两套流式接口
+
+LangChain / LangGraph 里现在会看到两套流式写法。
+
+第一套是：
+
+```ts
+const run = await agent.streamEvents(input, { version: "v3" });
+```
+
+它适合应用层消费。
+
+比如：
+
+```ts
+for await (const message of run.messages) {
+  for await (const token of message.text) {
+    process.stdout.write(token);
+  }
+}
+```
+
+或者：
+
+```ts
+for await (const call of run.toolCalls) {
+  console.log(call.name, call.input);
+  console.log(await call.output);
+}
+```
+
+第二套是：
+
+```ts
+const stream = await agent.stream(input, {
+  streamMode: "updates"
+});
+```
+
+它适合看底层执行过程。
+
+比如：
+
+```ts
+for await (const chunk of stream) {
+  console.dir(chunk, { depth: null });
+}
+```
+
+可以这样区分：
+
+```text
+streamEvents v3:
+  更适合写产品功能。
+
+streamMode:
+  更适合理解 Agent/Graph 内部怎么跑。
+```
+
+### 3. streamMode: updates
+
+`updates` 表示：
+
+```text
+每个节点执行完之后，只返回这一步对 state 的增量更新。
+```
+
+示例：
+
+```ts
+const stream = await agent.stream(
+  {
+    messages: [
+      {
+        role: "user",
+        content: "请查询苏州今天的天气，并用一句话告诉我适不适合散步。"
+      }
+    ]
+  },
+  { streamMode: "updates" }
+);
+```
+
+消费：
+
+```ts
+for await (const chunk of stream) {
+  console.dir(chunk, { depth: null });
+}
+```
+
+你可能会看到类似：
+
+```text
+{
+  agent: {
+    messages: [...]
+  }
+}
+```
+
+或者：
+
+```text
+{
+  tools: {
+    messages: [...]
+  }
+}
+```
+
+这里重点是：
+
+```text
+updates 只告诉你“这一步更新了什么”。
+```
+
+它适合观察：
+
+```text
+Agent 跑到了哪个节点
+模型节点产生了什么新消息
+工具节点产生了什么新消息
+每一步 state 如何变化
+```
+
+所以 `updates` 很适合调试 Agent 执行链路。
+
+### 4. streamMode: values
+
+`values` 表示：
+
+```text
+每一步执行后，返回完整 state。
+```
+
+如果 `updates` 是：
+
+```text
+只看这一步改了什么。
+```
+
+那 `values` 是：
+
+```text
+看当前完整状态长什么样。
+```
+
+示例：
+
+```ts
+const stream = await agent.stream(input, {
+  streamMode: "values"
+});
+```
+
+你可能会看到：
+
+```text
+{
+  messages: [
+    HumanMessage,
+    AIMessage,
+    ToolMessage,
+    AIMessage
+  ]
+}
+```
+
+它适合观察：
+
+```text
+完整 messages 历史
+当前 state 的全量内容
+每一步结束后 Agent 看到的上下文
+```
+
+不过要注意：
+
+```text
+values 通常比 updates 更大。
+```
+
+因为它每一步都返回完整 state。
+
+如果 messages 很长，`values` 的输出会很啰嗦。
+
+### 5. updates 和 values 的区别
+
+可以用一个简单例子理解。
+
+假设当前 state 是：
+
+```json
+{
+  "messages": ["user: hello"]
+}
+```
+
+模型节点生成了一条 AI 消息。
+
+`updates` 可能像：
+
+```json
+{
+  "agent": {
+    "messages": ["assistant: 我来帮你"]
+  }
+}
+```
+
+它强调的是：
+
+```text
+agent 节点新增了这条消息。
+```
+
+`values` 可能像：
+
+```json
+{
+  "messages": [
+    "user: hello",
+    "assistant: 我来帮你"
+  ]
+}
+```
+
+它强调的是：
+
+```text
+现在完整 state 是这样。
+```
+
+所以：
+
+```text
+想看过程差量：用 updates。
+想看当前全量：用 values。
+```
+
+### 6. streamMode: messages
+
+`messages` 表示：
+
+```text
+流式输出 LLM token/message chunk。
+```
+
+它返回的不是完整 state。
+
+而是类似：
+
+```text
+[messageChunk, metadata]
+```
+
+其中：
+
+```text
+messageChunk:
+  模型这次生成的一小段内容。
+
+metadata:
+  这段内容来自哪个节点、哪个模型调用、有哪些 tags。
+```
+
+示例：
+
+```ts
+const stream = await agent.stream(input, {
+  streamMode: "messages"
+});
+```
+
+消费：
+
+```ts
+for await (const [messageChunk, metadata] of stream) {
+  const text = contentToText(messageChunk.content);
+  process.stdout.write(text);
+}
+```
+
+它适合：
+
+```text
+做打字机效果
+实时显示模型输出
+按节点过滤 token
+区分不同模型调用产生的 token
+```
+
+上一节的 `model.stream()` 只能看单个模型调用。
+
+而 `streamMode: "messages"` 可以看：
+
+```text
+Agent/Graph 里面所有 LLM 调用产生的 token。
+```
+
+### 7. streamMode: tools
+
+`tools` 表示：
+
+```text
+观察工具调用生命周期。
+```
+
+它关注的不是 token。
+
+它关注：
+
+```text
+工具什么时候开始
+工具输入是什么
+工具有没有中间事件
+工具什么时候结束
+工具结果是什么
+工具有没有报错
+```
+
+常见事件包括：
+
+```text
+on_tool_start
+on_tool_event
+on_tool_end
+on_tool_error
+```
+
+示例：
+
+```ts
+const stream = await agent.stream(input, {
+  streamMode: "tools"
+});
+```
+
+可能看到：
+
+```text
+{
+  event: "on_tool_start",
+  name: "get_weather",
+  input: { city: "苏州" }
+}
+```
+
+然后：
+
+```text
+{
+  event: "on_tool_end",
+  name: "get_weather",
+  output: "Weather tool result: 苏州 is sunny..."
+}
+```
+
+它适合：
+
+```text
+前端展示“正在调用某某工具”
+后台记录工具输入和输出
+排查工具为什么没执行
+排查工具为什么失败
+```
+
+如果你想做一个类似 ChatGPT 的工具调用 UI，`tools` 模式就很有用。
+
+### 8. streamMode: custom
+
+`custom` 表示：
+
+```text
+让节点或工具主动发出自定义进度事件。
+```
+
+它不是模型自动产生的。
+
+它需要你在 Graph 节点或工具内部主动写：
+
+```ts
+config.writer({
+  type: "progress",
+  message: "已经处理 50%"
+});
+```
+
+然后调用时：
+
+```ts
+const stream = await graph.stream(input, {
+  streamMode: "custom"
+});
+```
+
+它适合：
+
+```text
+长任务进度条
+批处理进度
+工具内部阶段展示
+下载/检索/解析等非 LLM 过程
+```
+
+比如一个 RAG 工具可以发：
+
+```text
+正在检索文档
+找到 12 个候选片段
+正在 rerank
+已选出 4 个上下文
+```
+
+这些不一定来自模型。
+
+它们来自你的程序逻辑。
+
+### 9. streamMode: debug
+
+`debug` 表示：
+
+```text
+尽可能输出图执行过程中的调试信息。
+```
+
+它通常很啰嗦。
+
+适合：
+
+```text
+本地调试
+排查 Agent 为什么停不下来
+排查节点执行顺序
+排查 state 写入
+排查 checkpoint/task 信息
+```
+
+不太适合直接给前端用户看。
+
+生产里更常见的是：
+
+```text
+用户侧看 messages/tools/custom
+开发者侧用 debug 或 LangSmith tracing
+```
+
+### 10. checkpoints 和 tasks
+
+除了上面这些，底层还会看到：
+
+```text
+checkpoints
+tasks
+```
+
+它们更偏 LangGraph 运行时。
+
+`checkpoints` 关注：
+
+```text
+状态快照
+恢复点
+持久化执行进度
+```
+
+`tasks` 关注：
+
+```text
+任务创建
+任务完成
+任务中断
+任务结果
+```
+
+如果你只是写普通 LangChain Agent 应用，前期可以先不用管。
+
+等你开始做：
+
+```text
+长任务
+可恢复工作流
+human-in-the-loop
+分布式 Agent 执行
+```
+
+再深入理解它们。
+
+### 11. 多个 streamMode 同时使用
+
+`streamMode` 可以传数组。
+
+比如：
+
+```ts
+const stream = await agent.stream(input, {
+  streamMode: ["updates", "messages", "tools"]
+});
+```
+
+这时每个 chunk 通常会带上模式名。
+
+你可以这样处理：
+
+```ts
+for await (const chunk of stream) {
+  const [mode, payload] = chunk;
+
+  if (mode === "messages") {
+    // 处理 token
+  }
+
+  if (mode === "tools") {
+    // 处理工具事件
+  }
+
+  if (mode === "updates") {
+    // 处理状态增量
+  }
+}
+```
+
+多模式适合真实应用。
+
+比如一个聊天 UI 可能需要同时显示：
+
+```text
+messages:
+  AI 正在打字。
+
+tools:
+  正在查询天气工具。
+
+updates:
+  Agent 当前完成了哪一步。
+```
+
+但是多模式也会让处理逻辑更复杂。
+
+所以学习时可以先单独看每一种模式。
+
+### 12. streamEvents v3 和 streamMode 怎么选？
+
+优先级可以这样记：
+
+```text
+只想做普通聊天打字机:
+  model.stream() 或 streamEvents 的 run.messages。
+
+想做 Agent UI:
+  agent.streamEvents(..., { version: "v3" })。
+
+想看图执行时每一步 state:
+  agent.stream(..., { streamMode: "updates" })。
+
+想看每一步完整 state:
+  agent.stream(..., { streamMode: "values" })。
+
+想看底层 token chunk 和 metadata:
+  agent.stream(..., { streamMode: "messages" })。
+
+想看工具生命周期:
+  agent.stream(..., { streamMode: "tools" })。
+
+想发自定义进度:
+  streamMode: "custom"。
+
+想调试内部执行细节:
+  streamMode: "debug"。
+```
+
+对于我们现在的学习阶段，最重要的是三个：
+
+```text
+updates:
+  看 Agent 每一步更新。
+
+messages:
+  看模型 token。
+
+tools:
+  看工具调用。
+```
+
+### 13. 和上一节的关系
+
+上一节讲的是：
+
+```text
+stream 是什么？
+```
+
+这一节讲的是：
+
+```text
+stream 的内容可以按什么视角观察？
+```
+
+可以这么理解：
+
+```text
+model.stream():
+  我只关心模型吐字。
+
+agent.streamEvents():
+  我关心 Agent 运行过程的应用层事件。
+
+agent.stream({ streamMode }):
+  我关心 LangGraph 运行时某个维度的底层输出。
+```
+
+它们不是互相替代。
+
+而是抽象层次不同。
+
+### 14. 本节小结
+
+这一节记住六句话：
+
+```text
+1. streamEvents v3 是更推荐的应用层 Agent 流式接口。
+2. streamMode 是更底层的 LangGraph 运行时流式模式。
+3. updates 看状态增量。
+4. values 看完整状态。
+5. messages 看 LLM token/message chunk。
+6. tools 看工具生命周期。
+```
+
+一句话总结：
+
+```text
+streamMode 不是“流式输出开关”，而是“你选择从哪个角度观察 Agent 的执行过程”。
+```
+
+## 12 使用value模式对tools调用进行流式输出
+
+这一节我们把代码降到最简单。
+
+先纠正一个小命名：
+
+```text
+课程里可以口头说 value 模式。
+代码里要写 streamMode: "values"。
+```
+
+`values` 是复数。
+
+它的含义是：
+
+```text
+每一步执行后，都把当前完整 state 返回给你。
+```
+
+当 Agent 调用 tool 时，完整 state 里的 `messages` 会逐步变成：
+
+```text
+HumanMessage
+AIMessage       // 里面带 tool_calls
+ToolMessage     // 工具执行结果
+AIMessage       // 最终自然语言回答
+```
+
+### 1. 本节示例
+
+对应文件：
+
+```text
+langchain-system-lab/src/examples/09-stream-tools-values.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:stream:tools:values
+```
+
+这个示例只有一个工具：
+
+```ts
+const getWeather = tool(
+  async ({ city }) => {
+    return `${city} 今天晴天，气温 25C，微风。`;
+  },
+  {
+    name: "get_weather",
+    description: "查询某个城市的天气。",
+    schema: z.object({
+      city: z.string().describe("城市名")
+    })
+  }
+);
+```
+
+Agent 创建也很普通：
+
+```ts
+const agent = createAgent({
+  model: createChatModel(activeModel),
+  tools: [getWeather],
+  systemPrompt: "你是一个简洁的中文助手。需要天气时必须调用 get_weather 工具。"
+});
+```
+
+关键代码只有这一段：
+
+```ts
+const stream = await agent.stream(
+  {
+    messages: [
+      {
+        role: "user",
+        content: "请查询杭州今天的天气，并告诉我适不适合散步。"
+      }
+    ]
+  },
+  { streamMode: "values" }
+);
+
+for await (const state of stream) {
+  console.log("\n--- values chunk: 当前完整 state ---");
+  printStateMessages(state);
+}
+```
+
+### 2. values 模式看什么？
+
+`values` 模式每次给你的都是：
+
+```text
+当前完整 state
+```
+
+所以示例里打印：
+
+```ts
+function printStateMessages(state: { messages?: unknown[] }) {
+  const messages = state.messages ?? [];
+
+  console.log(`当前完整 messages 数量: ${messages.length}`);
+
+  messages.forEach((message, index) => {
+    const toolCalls = (message as { tool_calls?: unknown[] }).tool_calls;
+    const text = messageText(message);
+
+    console.log(`${index + 1}. ${messageType(message)} ${text ? `- ${text}` : ""}`);
+
+    if (toolCalls?.length) {
+      console.log(`   tool_calls: ${JSON.stringify(toolCalls)}`);
+    }
+  });
+}
+```
+
+你要观察的重点不是 token。
+
+而是：
+
+```text
+完整 messages 是怎么一步步变长的。
+```
+
+比如：
+
+```text
+第一次：
+HumanMessage
+
+第二次：
+HumanMessage
+AIMessage(tool_calls: get_weather)
+
+第三次：
+HumanMessage
+AIMessage(tool_calls: get_weather)
+ToolMessage(杭州 今天晴天...)
+
+第四次：
+HumanMessage
+AIMessage(tool_calls: get_weather)
+ToolMessage(杭州 今天晴天...)
+AIMessage(适合散步...)
+```
+
+这就是 `values` 模式的价值：
+
+```text
+它让你看到 Agent 当前完整上下文。
+```
+
+### 3. values 适合什么时候用？
+
+适合：
+
+```text
+学习 Agent 状态变化
+调试 messages 历史
+确认 tool_calls 有没有进入上下文
+确认 ToolMessage 有没有被放回模型上下文
+观察最终 state 里到底有哪些消息
+```
+
+不太适合：
+
+```text
+直接做前端打字机
+长对话高频输出
+只关心新增消息
+```
+
+因为完整 state 可能越来越大。
+
+一句话：
+
+```text
+values 模式看的是“当前完整状态”，不是“这一步新增了什么”。
+```
+
+## 13 使用update模式对tools调用进行流式输出
+
+这一节讲 `updates`。
+
+同样先纠正命名：
+
+```text
+课程里可以口头说 update 模式。
+代码里要写 streamMode: "updates"。
+```
+
+`updates` 也是复数。
+
+它的含义是：
+
+```text
+每一步执行后，只返回这一步的增量更新。
+```
+
+和 `values` 相比：
+
+```text
+values:
+  给你完整 state。
+
+updates:
+  只告诉你这一步哪个节点新增了什么。
+```
+
+### 1. 本节示例
+
+对应文件：
+
+```text
+langchain-system-lab/src/examples/10-stream-tools-updates.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:stream:tools:updates
+```
+
+关键代码：
+
+```ts
+const stream = await agent.stream(
+  {
+    messages: [
+      {
+        role: "user",
+        content: "请查询杭州今天的天气，并告诉我适不适合散步。"
+      }
+    ]
+  },
+  { streamMode: "updates" }
+);
+
+for await (const update of stream) {
+  console.log("\n--- updates chunk: 这一步的增量更新 ---");
+
+  for (const [nodeName, nodeUpdate] of Object.entries(update)) {
+    console.log(`节点: ${nodeName}`);
+    printUpdateMessages((nodeUpdate as { messages?: unknown[] }).messages);
+  }
+}
+```
+
+### 2. updates 模式看什么？
+
+`updates` 模式给你的不是完整 messages。
+
+它更像这样：
+
+```text
+这一步 agent 节点新增了一条 AIMessage。
+这一步 tools 节点新增了一条 ToolMessage。
+这一步 agent 节点又新增了一条最终 AIMessage。
+```
+
+所以你可能看到类似流程：
+
+```text
+--- updates chunk ---
+节点: agent
+  AIMessage
+  tool_calls: get_weather({ city: "杭州" })
+
+--- updates chunk ---
+节点: tools
+  ToolMessage - 杭州 今天晴天，气温 25C，微风。
+
+--- updates chunk ---
+节点: agent
+  AIMessage - 今天杭州天气晴朗，适合散步。
+```
+
+这比 `values` 更适合观察：
+
+```text
+Agent 每一步到底是谁在输出。
+```
+
+### 3. 为什么 tools 调用会出现在 updates 里？
+
+因为在 Agent 图里，通常可以粗略理解成两个节点在轮流工作：
+
+```text
+agent 节点:
+  调模型，决定是否调用工具。
+
+tools 节点:
+  真正执行工具，返回 ToolMessage。
+```
+
+当模型决定调用工具时，`agent` 节点会输出：
+
+```text
+AIMessage(tool_calls: ...)
+```
+
+当工具执行完成时，`tools` 节点会输出：
+
+```text
+ToolMessage(...)
+```
+
+然后 Agent 再把 ToolMessage 交回模型，生成最终回答：
+
+```text
+AIMessage(final answer)
+```
+
+所以 `updates` 模式特别适合看：
+
+```text
+模型是不是发起了工具调用？
+工具节点是不是执行了？
+工具结果是不是回到了模型上下文？
+模型是不是基于工具结果生成了最终回答？
+```
+
+### 4. values 和 updates 怎么选？
+
+可以这样记：
+
+```text
+我想看完整对话状态:
+  用 values。
+
+我想看每一步新增了什么:
+  用 updates。
+```
+
+对工具调用来说：
+
+```text
+values:
+  看完整 messages 里是否包含 AIMessage(tool_calls)、ToolMessage、最终 AIMessage。
+
+updates:
+  看 agent 节点和 tools 节点分别新增了哪些消息。
+```
+
+学习时建议先看 `updates`。
+
+因为它更容易看出：
+
+```text
+模型 -> 工具 -> 模型
+```
+
+这个 Agent 工具调用循环。
+
+### 5. 本节小结
+
+记住两句话：
+
+```text
+values 看完整状态。
+updates 看增量变化。
+```
+
+再具体一点：
+
+```text
+values 更像“当前聊天记录全量快照”。
+updates 更像“Agent 每一步执行日志”。
+```
+
+## 14 message格式定义与建议，以及内部结构查看
+
+这一节把两个问题放在一起讲：
+
+```text
+message 格式到底怎么定义？
+message 内部结构到底长什么样？
+```
+
+因为这两个问题其实是一件事的两面。
+
+对外使用时，message 可以很简单。
+
+进入 LangChain 运行时以后，message 会变成更完整的对象。
+
+### 1. 先看本节示例
+
+对应文件：
+
+```text
+langchain-system-lab/src/examples/11-message-format-shape.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:messages
+```
+
+这个例子不会调用模型，也不需要 API Key。
+
+它只是手动构造几条 message，然后把它们打印出来。
+
+### 2. 最推荐的输入格式
+
+在业务代码里，最推荐先用普通对象：
+
+```ts
+const messages = [
+  {
+    role: "system",
+    content: "你是一个简洁的中文助手。"
+  },
+  {
+    role: "user",
+    content: "请查询杭州今天的天气，并告诉我适不适合散步。"
+  }
+];
+```
+
+也就是：
+
+```text
+role + content
+```
+
+这对初学和大多数业务场景都最友好。
+
+常见 `role` 可以这样理解：
+
+```text
+system:
+  系统规则，告诉模型应该扮演什么角色、遵守什么边界。
+
+user:
+  用户输入。
+
+assistant:
+  模型回复。
+
+tool:
+  工具调用结果。
+```
+
+不过在 LangChain 内部，名字会稍微不一样：
+
+```text
+system    -> SystemMessage
+user      -> HumanMessage
+assistant -> AIMessage
+tool      -> ToolMessage
+```
+
+注意这里的 `user` 到内部会叫 `human`。
+
+所以你在流式输出里经常看到：
+
+```text
+system
+human
+ai
+tool
+```
+
+这不是多出来了一套概念，只是 LangChain 的内部命名。
+
+### 3. message 内部不是普通 JSON
+
+在 LangChain 里，message 通常会被转成 `BaseMessage` 的不同子类。
+
+比如本节例子里手动构造了：
+
+```ts
+const internalMessages: BaseMessage[] = [
+  new SystemMessage("你是一个简洁的中文助手。"),
+  new HumanMessage("请查询杭州今天的天气，并告诉我适不适合散步。"),
+  new AIMessage({
+    content: "",
+    tool_calls: [
+      {
+        name: "get_weather",
+        args: { city: "杭州" },
+        id: "call_weather_001",
+        type: "tool_call"
+      }
+    ]
+  }),
+  new ToolMessage({
+    content: "杭州今天晴天，气温 25C，微风。",
+    name: "get_weather",
+    tool_call_id: "call_weather_001",
+    status: "success"
+  })
+];
+```
+
+这里最关键的是：
+
+```text
+普通聊天消息:
+  看 content。
+
+模型想调用工具:
+  看 AIMessage.tool_calls。
+
+工具返回结果:
+  看 ToolMessage.tool_call_id 和 content。
+```
+
+### 4. BaseMessage 通用字段
+
+大部分 message 都有这些字段：
+
+```text
+type:
+  message 类型，比如 system、human、ai、tool。
+
+content:
+  message 的正文内容。
+
+text:
+  从 content 中提取出来的纯文本。
+
+name:
+  可选名字，工具消息里经常是工具名。
+
+id:
+  可选消息 ID。
+
+additional_kwargs:
+  供应商或底层协议相关的额外字段。
+
+response_metadata:
+  模型响应元信息，比如 finish_reason、模型名、token 信息等。
+```
+
+所以一个普通 `HumanMessage` 打印出来大概像这样：
+
+```json
+{
+  "className": "HumanMessage",
+  "type": "human",
+  "content": "请查询杭州今天的天气，并告诉我适不适合散步。",
+  "text": "请查询杭州今天的天气，并告诉我适不适合散步。",
+  "name": null,
+  "id": null,
+  "additional_kwargs": {},
+  "response_metadata": {}
+}
+```
+
+### 5. AIMessage 里最重要的是 tool_calls
+
+当模型决定调用工具时，它不一定会直接输出自然语言。
+
+它可能输出一个 `AIMessage`：
+
+```json
+{
+  "className": "AIMessage",
+  "type": "ai",
+  "content": "",
+  "tool_calls": [
+    {
+      "name": "get_weather",
+      "args": {
+        "city": "杭州"
+      },
+      "id": "call_weather_001",
+      "type": "tool_call"
+    }
+  ],
+  "response_metadata": {
+    "finish_reason": "tool_calls"
+  }
+}
+```
+
+这条 message 的意思不是：
+
+```text
+模型已经回答完了。
+```
+
+而是：
+
+```text
+模型说：我需要调用 get_weather 工具，参数是 { city: "杭州" }。
+```
+
+所以看 Agent 的时候，不要只盯着 `content`。
+
+如果 `content` 是空字符串，也不代表模型什么都没做。
+
+它可能把动作放在了：
+
+```text
+AIMessage.tool_calls
+```
+
+里面。
+
+### 6. ToolMessage 负责把工具结果放回上下文
+
+工具执行完成后，会生成一条 `ToolMessage`：
+
+```json
+{
+  "className": "ToolMessage",
+  "type": "tool",
+  "content": "杭州今天晴天，气温 25C，微风。",
+  "name": "get_weather",
+  "tool_call_id": "call_weather_001",
+  "status": "success"
+}
+```
+
+这里最关键的是：
+
+```text
+tool_call_id
+```
+
+它要和前面 `AIMessage.tool_calls[0].id` 对上。
+
+也就是：
+
+```text
+AIMessage.tool_calls[0].id
+  -> call_weather_001
+
+ToolMessage.tool_call_id
+  -> call_weather_001
+```
+
+这就是 LangChain 知道“这个工具结果对应哪一次工具调用”的方式。
+
+### 7. 一次工具调用的 message 顺序
+
+一次典型工具调用，对话状态里通常会出现这样的顺序：
+
+```text
+HumanMessage:
+  用户提出问题。
+
+AIMessage:
+  模型决定调用工具，里面有 tool_calls。
+
+ToolMessage:
+  工具执行结果，里面有 tool_call_id 和 content。
+
+AIMessage:
+  模型根据工具结果生成最终回答。
+```
+
+也就是：
+
+```text
+用户问题
+  -> 模型发起工具调用
+  -> 工具返回结果
+  -> 模型生成最终回答
+```
+
+这也解释了为什么前面学习 `values` 和 `updates` 时，会看到 messages 越来越多。
+
+Agent 不是只保存最终回答。
+
+它会把中间工具调用过程也放进 message 列表。
+
+### 8. 应该用哪种方式写 message？
+
+我的建议是：
+
+```text
+普通调用:
+  用 { role, content } 普通对象。
+
+需要手动构造历史、工具结果、测试用例:
+  用 SystemMessage、HumanMessage、AIMessage、ToolMessage。
+
+需要判断 message 类型:
+  优先用 message.type 或 AIMessage.isInstance(message) 这种类型保护。
+
+需要调试或存储:
+  用 message.toDict()，或者转成自己的 DTO。
+```
+
+不要在业务里过度依赖：
+
+```text
+message.constructor.name
+```
+
+它适合调试，不适合作为业务判断条件。
+
+更稳的是：
+
+```ts
+if (AIMessage.isInstance(message)) {
+  console.log(message.tool_calls);
+}
+```
+
+或者：
+
+```ts
+if (message.type === "tool") {
+  console.log(message.content);
+}
+```
+
+### 9. 一个容易踩的坑：content 不一定永远是字符串
+
+前面的例子里，`content` 都是字符串。
+
+但在真实多模态场景里，`content` 也可能是内容块数组。
+
+比如文本、图片、工具结果块混在一起。
+
+所以简单学习阶段可以先写：
+
+```ts
+if (typeof message.content === "string") {
+  console.log(message.content);
+}
+```
+
+但生产里最好不要默认：
+
+```text
+content 一定是 string。
+```
+
+这也是为什么本节示例里同时打印了：
+
+```text
+content
+text
+```
+
+`text` 更适合快速看纯文本内容。
+
+`content` 更接近原始消息结构。
+
+### 10. 本节小结
+
+可以这样记：
+
+```text
+对外输入:
+  role + content。
+
+内部运行:
+  BaseMessage 子类。
+
+模型消息:
+  AIMessage。
+
+工具请求:
+  AIMessage.tool_calls。
+
+工具结果:
+  ToolMessage。
+
+工具调用关联:
+  tool_calls[].id 对应 tool_call_id。
+```
+
+这节理解以后，再看 LangChain 的 Agent stream、middleware request、response messages，就不会觉得那堆对象突然冒出来了。
+
+## 15 llm invoke 和 agent invoke 有啥区别？
+
+先说结论：
+
+```text
+llm.invoke:
+  调用模型一次。
+
+agent.invoke:
+  执行一次 Agent 工作流。
+```
+
+这两个东西看起来都叫 `invoke`，但抽象层级完全不一样。
+
+可以这样类比：
+
+```text
+llm.invoke 是“问模型一句话”。
+agent.invoke 是“让一个 agent 去完成一个任务”。
+```
+
+注意：在 JS/TS 代码里方法名是小写：
+
+```ts
+invoke(...)
+```
+
+课程里说 `Invoke` 只是口头说法。
+
+### 1. 本节示例
+
+对应文件：
+
+```text
+langchain-system-lab/src/examples/12-llm-vs-agent-invoke.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:invoke:compare
+```
+
+这个例子会对比三种调用：
+
+```text
+1. 直接 model.invoke(...)
+2. model.bindTools(...).invoke(...)
+3. agent.invoke(...)
+```
+
+为什么要看第二种？
+
+因为它正好说明一个关键点：
+
+```text
+模型可以“提出工具调用”，但不会自动执行工具。
+Agent 才负责把工具调用真的跑起来。
+```
+
+### 2. llm.invoke 是什么？
+
+`llm.invoke` 更准确地说，是：
+
+```text
+Chat Model invoke
+```
+
+也就是直接调用聊天模型。
+
+示例：
+
+```ts
+const llmResponse = await model.invoke([
+  {
+    role: "system",
+    content: "你是一个简洁的中文助手。"
+  },
+  {
+    role: "user",
+    content: "请用一句话解释 llm.invoke 是什么。"
+  }
+]);
+```
+
+它的返回值通常是一条：
+
+```text
+AIMessage
+```
+
+也就是模型本轮生成的消息。
+
+可以简化理解成：
+
+```text
+输入 messages
+  -> 模型推理一次
+  -> 输出 AIMessage
+```
+
+所以它适合：
+
+```text
+普通问答
+文本改写
+摘要
+分类
+翻译
+简单结构化抽取
+不需要工具循环的任务
+```
+
+### 3. llm.invoke 不会自动执行工具
+
+这点很容易误解。
+
+如果我们给模型绑定工具：
+
+```ts
+const toolEnabledModel = model.bindTools([getWeather]);
+
+const response = await toolEnabledModel.invoke([
+  {
+    role: "system",
+    content: "你是一个天气助手。需要天气时，优先调用 get_weather 工具。"
+  },
+  {
+    role: "user",
+    content: "请查询杭州今天的天气。"
+  }
+]);
+```
+
+模型可能返回：
+
+```text
+AIMessage(tool_calls: [...])
+```
+
+这代表模型说：
+
+```text
+我想调用 get_weather 工具。
+```
+
+但注意，它只是“提出工具调用”。
+
+裸 `llm.invoke` 不会帮你：
+
+```text
+执行 get_weather
+把工具结果包装成 ToolMessage
+再把 ToolMessage 发回模型
+让模型生成最终回答
+```
+
+这些都需要你自己写。
+
+所以 `bindTools + model.invoke` 更像：
+
+```text
+让模型具备提出工具调用的能力。
+```
+
+而不是：
+
+```text
+让模型自动完成工具调用流程。
+```
+
+### 4. agent.invoke 是什么？
+
+`agent.invoke` 调用的不是单个模型。
+
+它调用的是一个 Agent。
+
+示例：
+
+```ts
+const agent = createAgent({
+  model,
+  tools: [getWeather],
+  systemPrompt: "你是一个天气助手。需要天气时必须调用 get_weather 工具，然后用中文给出最终回答。"
+});
+
+const agentResponse = await agent.invoke({
+  messages: [
+    {
+      role: "user",
+      content: "请查询杭州今天的天气，并告诉我适不适合散步。"
+    }
+  ]
+});
+```
+
+它内部可能会经历：
+
+```text
+调用模型
+  -> 模型提出 tool_calls
+  -> Agent 执行工具
+  -> 生成 ToolMessage
+  -> 再次调用模型
+  -> 得到最终回答
+```
+
+所以 `agent.invoke` 更像：
+
+```text
+运行一个带模型、工具、消息状态、middleware 的小工作流。
+```
+
+### 5. 返回值有什么区别？
+
+`llm.invoke` 的返回值通常是一条 message：
+
+```ts
+AIMessage
+```
+
+比如：
+
+```text
+AIMessage {
+  type: "ai",
+  content: "llm.invoke 是对模型进行一次直接调用。"
+}
+```
+
+`agent.invoke` 的返回值通常是一个 state 对象：
+
+```ts
+{
+  messages: [...]
+}
+```
+
+里面可能包含多条 message：
+
+```text
+HumanMessage:
+  用户输入。
+
+AIMessage:
+  模型发起工具调用，里面有 tool_calls。
+
+ToolMessage:
+  工具执行结果。
+
+AIMessage:
+  模型最终回答。
+```
+
+也就是：
+
+```text
+llm.invoke 返回“一次模型输出”。
+agent.invoke 返回“任务执行后的完整状态”。
+```
+
+### 6. 两者输入格式也不同
+
+`llm.invoke` 通常直接传 messages 数组：
+
+```ts
+await model.invoke([
+  { role: "user", content: "你好" }
+]);
+```
+
+`agent.invoke` 通常传一个 state：
+
+```ts
+await agent.invoke({
+  messages: [
+    { role: "user", content: "你好" }
+  ]
+});
+```
+
+为什么 Agent 外面多了一层对象？
+
+因为 Agent 的状态不一定只有 messages。
+
+以后可能还有：
+
+```text
+structuredResponse
+自定义 state
+中断状态
+人工确认状态
+middleware 写入的字段
+```
+
+所以 Agent 的输入输出都更像：
+
+```text
+state in
+state out
+```
+
+而模型调用更像：
+
+```text
+messages in
+message out
+```
+
+### 7. 什么时候用 llm.invoke？
+
+如果你的任务是“一次模型调用就能完成”，用 `llm.invoke` 更直接。
+
+比如：
+
+```text
+总结一段文本
+翻译一句话
+判断用户意图
+给内容打标签
+把自然语言改写成 SQL 草稿
+从文本里提取字段
+```
+
+它的优点是：
+
+```text
+简单
+可控
+调用链短
+调试容易
+成本更可预测
+```
+
+### 8. 什么时候用 agent.invoke？
+
+如果任务需要模型自己决定下一步，就更适合 `agent.invoke`。
+
+比如：
+
+```text
+需要调用工具
+可能多轮工具调用
+需要根据工具结果继续推理
+需要 stream 观察中间过程
+需要 middleware 动态切模型
+需要统一管理复杂消息状态
+需要结构化输出和工具调用一起编排
+```
+
+它的优点是：
+
+```text
+能编排工具
+能保留中间过程
+能形成执行循环
+能接入 middleware
+更适合复杂 Agent 应用
+```
+
+### 9. 最容易混淆的一句话
+
+很多人会说：
+
+```text
+LLM 不是也能 tool calling 吗？
+那 Agent 还有什么用？
+```
+
+答案是：
+
+```text
+LLM tool calling 只是让模型输出“我要调用哪个工具和参数”。
+Agent 负责把“工具调用请求”变成“完整执行流程”。
+```
+
+换句话说：
+
+```text
+LLM 负责想。
+Tool 负责做。
+Agent 负责组织“想 -> 做 -> 再想 -> 最终回答”。
+```
+
+这就是两者最大的区别。
+
+### 10. 本节小结
+
+可以直接记这张对照表：
+
+```text
+llm.invoke:
+  抽象层级：模型
+  输入：messages 数组
+  输出：AIMessage
+  工具：可产生 tool_calls，但不自动执行
+  适合：单次推理任务
+
+agent.invoke:
+  抽象层级：Agent 工作流
+  输入：state，例如 { messages: [...] }
+  输出：final state，例如 { messages: [...] }
+  工具：自动执行工具调用流程
+  适合：多步骤、工具型、可编排任务
+```
+
+一句话总结：
+
+```text
+llm.invoke 是一次模型调用。
+agent.invoke 是一次 Agent 任务执行。
+```
+
+## 16 tools状态传递的三种方式
+
+这一节讲一个非常实战的问题：
+
+```text
+工具执行时，需要的数据到底从哪里来？
+```
+
+比如一个工具要生成个性化学习建议，它可能需要：
+
+```text
+用户想学什么主题
+当前请求 ID
+租户 ID
+用户身份
+用户历史学习主题
+当前 messages
+```
+
+这些东西不能全部都让模型自己填。
+
+在 LangChain 的 tool 里，常见有三种状态传递方式：
+
+```text
+1. tool schema 参数
+2. runtime.context
+3. runtime.state
+```
+
+先给一句总纲：
+
+```text
+模型应该决定“任务参数”。
+系统应该注入“运行时上下文”。
+Agent 应该维护“执行状态”。
+```
+
+### 1. 本节示例
+
+对应文件：
+
+```text
+langchain-system-lab/src/examples/13-tool-state-passing.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:tools:state
+```
+
+这个示例不需要 API Key。
+
+它使用 `fakeModel` 模拟模型发起工具调用，所以不会消耗 token。
+
+### 2. 方式一：通过 tool schema 传参
+
+这是最常见的一种。
+
+定义工具时写 schema：
+
+```ts
+const recommendLearningPlan = tool(
+  async ({ topic }) => {
+    return `当前学习主题是：${topic}`;
+  },
+  {
+    name: "recommend_learning_plan",
+    description: "根据学习主题生成学习建议。",
+    schema: z.object({
+      topic: z.string().describe("用户当前想学习的主题")
+    })
+  }
+);
+```
+
+这里的 `topic` 是模型可见的。
+
+模型会根据用户问题生成工具调用参数：
+
+```json
+{
+  "name": "recommend_learning_plan",
+  "args": {
+    "topic": "LangChain tools 状态传递"
+  }
+}
+```
+
+这种方式适合传：
+
+```text
+搜索关键词
+城市名
+商品名
+用户自然语言里明确提到的条件
+模型需要理解后决定的业务参数
+```
+
+简单说：
+
+```text
+凡是“应该由模型理解用户意图后决定”的参数，放进 tool schema。
+```
+
+### 3. 不要把敏感状态放进 tool schema
+
+不要这样设计：
+
+```ts
+schema: z.object({
+  topic: z.string(),
+  userId: z.string(),
+  authToken: z.string()
+})
+```
+
+因为 schema 里的字段会暴露给模型。
+
+而且这些值会变成模型需要生成的参数。
+
+这会带来两个问题：
+
+```text
+模型可能填错。
+敏感信息不该交给模型决定。
+```
+
+比如：
+
+```text
+userId
+tenantId
+authToken
+requestId
+权限信息
+数据库连接信息
+内部开关
+```
+
+这些都不应该让模型自己生成。
+
+它们应该由系统注入。
+
+### 4. 方式二：通过 runtime.context 传运行时上下文
+
+`runtime.context` 适合传：
+
+```text
+本次请求相关
+不需要持久化
+不应该由模型生成
+工具执行时又必须知道
+```
+
+比如：
+
+```text
+requestId
+tenantId
+authToken
+region
+locale
+权限信息
+当前登录用户
+```
+
+先定义 `contextSchema`：
+
+```ts
+const contextSchema = z.object({
+  requestId: z.string(),
+  tenantId: z.string(),
+  authToken: z.string()
+});
+```
+
+创建 Agent 时传进去：
+
+```ts
+const agent = createAgent({
+  model,
+  tools: [recommendLearningPlan],
+  contextSchema
+});
+```
+
+调用 Agent 时，通过第二个参数传 context：
+
+```ts
+const response = await agent.invoke(
+  {
+    messages: [
+      {
+        role: "user",
+        content: "我想继续学习 LangChain tools 的状态传递。"
+      }
+    ]
+  },
+  {
+    context: {
+      requestId: "req_20260716_001",
+      tenantId: "course-lab",
+      authToken: "course-token-demo"
+    }
+  }
+);
+```
+
+然后在工具里读取：
+
+```ts
+const recommendLearningPlan = tool(
+  async ({ topic }, runtime: ToolRuntime<ToolState, ToolContext>) => {
+    return JSON.stringify({
+      topic,
+      requestId: runtime.context.requestId,
+      tenantId: runtime.context.tenantId,
+      canAccessMemberContent: runtime.context.authToken.startsWith("course-token-")
+    });
+  },
+  {
+    name: "recommend_learning_plan",
+    schema: z.object({
+      topic: z.string()
+    })
+  }
+);
+```
+
+这里的重点是：
+
+```text
+topic 是模型传的。
+requestId / tenantId / authToken 是系统传的。
+```
+
+模型不需要知道 authToken 是什么。
+
+工具只需要知道：
+
+```text
+这个请求有没有权限。
+```
+
+### 5. context 的特点
+
+`runtime.context` 的特点是：
+
+```text
+只属于本次 invoke。
+不作为 agent state 返回。
+不默认持久化。
+适合请求级别的信息。
+```
+
+所以它很适合放：
+
+```text
+登录态
+租户信息
+请求追踪 ID
+灰度开关
+权限判断函数
+```
+
+可以这样记：
+
+```text
+context 是“这一次运行的环境”。
+```
+
+### 6. 方式三：通过 runtime.state 传 Agent 状态
+
+`runtime.state` 适合传：
+
+```text
+Agent 当前执行状态
+对话消息
+用户画像
+任务进度
+中间结果
+可能需要被 Agent 返回或持久化的数据
+```
+
+先定义 `stateSchema`：
+
+```ts
+const stateSchema = z.object({
+  userProfile: z.object({
+    userId: z.string(),
+    name: z.string(),
+    level: z.enum(["beginner", "intermediate", "advanced"])
+  }),
+  recentTopics: z.array(z.string()).default([])
+});
+```
+
+创建 Agent：
+
+```ts
+const agent = createAgent({
+  model,
+  tools: [recommendLearningPlan],
+  stateSchema,
+  contextSchema
+});
+```
+
+调用时，把状态放在第一个参数里：
+
+```ts
+const response = await agent.invoke(
+  {
+    messages: [
+      {
+        role: "user",
+        content: "我想继续学习 LangChain tools 的状态传递。"
+      }
+    ],
+    userProfile: {
+      userId: "user_1001",
+      name: "小李",
+      level: "intermediate"
+    },
+    recentTopics: ["stream 流式输出", "message 内部结构", "agent invoke"]
+  },
+  {
+    context: {
+      requestId: "req_20260716_001",
+      tenantId: "course-lab",
+      authToken: "course-token-demo"
+    }
+  }
+);
+```
+
+工具里读取：
+
+```ts
+const recommendLearningPlan = tool(
+  async ({ topic }, runtime: ToolRuntime<ToolState, ToolContext>) => {
+    return JSON.stringify({
+      topic,
+      userId: runtime.state.userProfile.userId,
+      name: runtime.state.userProfile.name,
+      level: runtime.state.userProfile.level,
+      recentTopics: runtime.state.recentTopics,
+      messageCount: runtime.state.messages.length
+    });
+  },
+  {
+    name: "recommend_learning_plan",
+    schema: z.object({
+      topic: z.string()
+    })
+  }
+);
+```
+
+注意：
+
+```text
+messages 本身也是 Agent state 的一部分。
+```
+
+所以工具可以通过：
+
+```ts
+runtime.state.messages
+```
+
+看到当前 Agent 执行到这一步时的消息列表。
+
+### 7. state 的特点
+
+`runtime.state` 的特点是：
+
+```text
+属于 Agent 状态。
+可以作为 invoke 输入的一部分。
+可以出现在最终 response 里。
+配合 checkpointer 时，可以跨轮持久化。
+适合任务状态和用户状态。
+```
+
+可以这样记：
+
+```text
+state 是“Agent 正在维护的工作台”。
+```
+
+而 `context` 是：
+
+```text
+这次运行的环境。
+```
+
+这两个不要混。
+
+### 8. 示例输出怎么看？
+
+本节示例里，模型发起的工具调用只有：
+
+```json
+{
+  "name": "recommend_learning_plan",
+  "args": {
+    "topic": "LangChain tools 状态传递"
+  },
+  "id": "tool_call_state_001",
+  "type": "tool_call"
+}
+```
+
+也就是说，模型只负责传：
+
+```text
+topic
+```
+
+工具真正执行时，还能拿到：
+
+```json
+{
+  "fromRuntimeContext": {
+    "requestId": "req_20260716_001",
+    "tenantId": "course-lab",
+    "canAccessMemberContent": true
+  },
+  "fromRuntimeState": {
+    "userId": "user_1001",
+    "name": "小李",
+    "level": "intermediate",
+    "recentTopics": [
+      "stream 流式输出",
+      "message 内部结构",
+      "agent invoke"
+    ],
+    "messageCount": 2
+  },
+  "toolCallId": "tool_call_state_001"
+}
+```
+
+这个结构说明：
+
+```text
+tool args:
+  模型生成。
+
+runtime.context:
+  invoke 时系统传入。
+
+runtime.state:
+  Agent 当前状态。
+```
+
+### 9. 三种方式怎么选？
+
+可以直接用这张表：
+
+```text
+tool schema 参数:
+  谁提供：模型
+  模型可见：是
+  是否持久化：否
+  适合：用户意图里的业务参数
+
+runtime.context:
+  谁提供：应用系统
+  模型可见：否
+  是否持久化：否
+  适合：请求级上下文、权限、租户、requestId
+
+runtime.state:
+  谁提供：Agent state
+  模型可见：取决于是否放进 messages/prompt
+  是否持久化：可配合 checkpointer 持久化
+  适合：用户画像、任务进度、历史主题、中间结果
+```
+
+一句话判断：
+
+```text
+让模型决定的，放 tool schema。
+系统注入的，放 context。
+Agent 维护的，放 state。
+```
+
+### 10. 生产建议
+
+生产里建议遵守这几条：
+
+```text
+不要让模型生成 userId、tenantId、authToken。
+不要把敏感字段放进 tool schema。
+工具 schema 只放“模型应该决定的参数”。
+请求级元信息放 runtime.context。
+会影响后续执行的业务状态放 runtime.state。
+```
+
+尤其是垂类 Agent 应用里，常见写法是：
+
+```text
+用户问题:
+  messages
+
+模型决定的业务参数:
+  tool args
+
+登录态、租户、权限:
+  context
+
+用户画像、任务进度、业务会话状态:
+  state
+```
+
+这样边界会比较清楚。
+
+### 11. 还有 store 吗？
+
+有。
+
+`ToolRuntime` 里还可以看到：
+
+```text
+runtime.store
+runtime.toolCallId
+runtime.writer
+runtime.config
+```
+
+其中 `runtime.store` 更偏长期存储。
+
+比如：
+
+```text
+跨会话记忆
+用户偏好
+长期任务记录
+```
+
+但这一节先不展开。
+
+当前先掌握三种最常见的传递方式：
+
+```text
+tool args
+context
+state
+```
+
+### 12. 本节小结
+
+这节记住三句话：
+
+```text
+1. tool schema 参数是给模型填的。
+2. runtime.context 是系统在本次 invoke 注入的运行环境。
+3. runtime.state 是 Agent 当前维护的状态。
+```
+
+如果你能分清这三类，工具设计就会稳很多。
