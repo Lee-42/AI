@@ -6843,3 +6843,4776 @@ state
 ```
 
 如果你能分清这三类，工具设计就会稳很多。
+
+## 17 Tools 的组合调用、并行优化与性能监控
+
+上一节解决的是：
+
+```text
+工具执行时，参数和状态从哪里来？
+```
+
+这一节解决的是：
+
+```text
+一次任务要调用多个工具时，应该怎样组织？
+怎样减少等待时间？
+怎样知道时间和 token 到底花在哪里？
+```
+
+### 1. 本节示例
+
+代码位置：
+
+```text
+langchain-system-lab/src/examples/14-tools-parallel-performance.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:tools:performance
+```
+
+这个示例不调用真实 LLM，也不需要 API Key。
+
+它用 `fakeModel` 固定模型决策，用两个带延迟的工具模拟真实网络请求：
+
+```text
+get_weather       约 400ms
+get_attractions   约 600ms
+```
+
+然后分别运行：
+
+```text
+串行版本：两个工具分两轮调用
+并行版本：两个工具在同一轮调用
+```
+
+### 2. 多个 Tools 有三种常见组合方式
+
+#### 方式一：分轮串行
+
+消息链路大致是：
+
+```text
+用户
+  -> LLM
+  -> tool A
+  -> LLM
+  -> tool B
+  -> LLM
+  -> 最终答案
+```
+
+如果 `tool B` 必须使用 `tool A` 的结果，这种串行是必要的。
+
+例如：
+
+```text
+先通过手机号查询 userId
+再通过 userId 查询订单
+```
+
+第二步没有第一步的结果就无法执行，不能强行并行。
+
+#### 方式二：同一轮并行
+
+如果两个工具互不依赖，模型可以在一个 `AIMessage` 中同时返回多个 `tool_calls`：
+
+```ts
+new AIMessage({
+  content: "",
+  tool_calls: [
+    {
+      name: "get_weather",
+      args: { city: "杭州" },
+      id: "weather_001",
+      type: "tool_call"
+    },
+    {
+      name: "get_attractions",
+      args: { city: "杭州" },
+      id: "attractions_001",
+      type: "tool_call"
+    }
+  ]
+});
+```
+
+`createAgent` 收到这样的消息后，会并发执行这两个工具。
+
+链路变成：
+
+```text
+                 -> get_weather -----
+用户 -> LLM ----|                     |-> LLM -> 最终答案
+                 -> get_attractions --
+```
+
+假设两个工具分别耗时：
+
+```text
+400ms
+600ms
+```
+
+那么：
+
+```text
+串行工具耗时约为：400 + 600 = 1000ms
+并行工具耗时约为：max(400, 600) = 600ms
+```
+
+这里最关键的一句话是：
+
+```text
+多个 tool_calls 出现在同一个 AIMessage 中，才属于同一轮并行调用。
+```
+
+如果模型先返回一个工具，下一轮再返回另一个工具，它们仍然是串行的。
+
+#### 方式三：组合工具
+
+有时几个底层服务总是一起调用，可以封装成一个业务工具：
+
+```ts
+const getTravelBrief = tool(async ({ city }) => {
+  const [weather, attractions] = await Promise.all([
+    weatherService.query(city),
+    attractionService.query(city)
+  ]);
+
+  return { weather, attractions };
+});
+```
+
+这叫组合工具，也可以理解为业务级工具。
+
+它的优点是：
+
+```text
+由代码保证并行，不依赖模型是否正确规划。
+可以减少模型与 Agent 的往返轮次。
+超时、重试、降级和缓存更容易统一控制。
+```
+
+但不要把所有能力都塞进一个巨型工具。
+
+比较合适的判断方式是：
+
+```text
+调用组合比较固定：可以封装成业务工具。
+调用组合由用户意图决定：保留独立工具，让 Agent 选择。
+后一步依赖前一步：使用串行工作流或显式状态传递。
+```
+
+### 3. LangChain 为什么能自动并行？
+
+Agent 的工具执行节点会收集当前 `AIMessage` 中尚未执行的 `tool_calls`，并发执行它们，再把结果转换成对应的 `ToolMessage`。
+
+概念上可以理解为：
+
+```ts
+const results = await Promise.all(
+  aiMessage.tool_calls.map((toolCall) => runTool(toolCall))
+);
+```
+
+因此，应用层通常不需要再对同一轮的 `tool_calls` 手写一次 `Promise.all`。
+
+真正决定是否并行的是调用拓扑：
+
+```text
+一个 AIMessage 有多个 tool_calls：可以并行。
+多个 AIMessage 各有一个 tool_call：分轮串行。
+```
+
+### 4. 哪些工具适合并行？
+
+适合并行：
+
+```text
+查询天气 + 查询景点
+查询商品详情 + 查询库存
+搜索多个独立数据源
+读取多个互不依赖的文档
+```
+
+不适合直接并行：
+
+```text
+创建订单 -> 支付订单
+上传文件 -> 解析该文件
+查询用户 -> 使用查询结果读取订单
+两个工具同时修改同一份状态
+```
+
+并行前至少确认三件事：
+
+```text
+1. 数据上没有前后依赖。
+2. 工具没有冲突的副作用。
+3. 下游服务允许并发，不会触发限流。
+```
+
+### 5. 为什么需要性能监控中间件？
+
+只记录 Agent 总耗时是不够的。
+
+例如一次请求用了 5 秒，我们还不知道是：
+
+```text
+模型慢
+工具慢
+工具排队
+工具失败后重试
+模型调用轮次太多
+输入上下文太长
+```
+
+本节使用两个中间件钩子：
+
+```text
+wrapModelCall：监控每一次模型调用
+wrapToolCall：监控每一次工具调用
+```
+
+核心结构如下：
+
+```ts
+const performanceMonitor = createMiddleware({
+  name: "PerformanceMonitor",
+
+  wrapModelCall: async (request, handler) => {
+    const startedAt = performance.now();
+    const response = await handler(request);
+
+    record({
+      phase: "model",
+      durationMs: performance.now() - startedAt,
+      usage: response.usage_metadata
+    });
+
+    return response;
+  },
+
+  wrapToolCall: async (request, handler) => {
+    const startedAt = performance.now();
+    const result = await handler(request);
+
+    record({
+      phase: "tool",
+      name: request.toolCall.name,
+      callId: request.toolCall.id,
+      durationMs: performance.now() - startedAt
+    });
+
+    return result;
+  }
+});
+```
+
+`handler(request)` 是真正执行模型或工具的位置。
+
+因此必须围绕它计时：
+
+```text
+开始时间
+  -> await handler(request)
+结束时间
+```
+
+### 6. 监控 token 用量
+
+模型响应中的标准化 token 信息通常位于：
+
+```ts
+response.usage_metadata
+```
+
+典型结构：
+
+```json
+{
+  "input_tokens": 250,
+  "output_tokens": 35,
+  "total_tokens": 285
+}
+```
+
+一次 `agent.invoke` 可能调用模型很多次，所以不能只看最后一条 `AIMessage`。
+
+应该对每次模型调用求和：
+
+```text
+Agent 总 token
+  = 第一次模型调用 token
+  + 第二次模型调用 token
+  + ...
+```
+
+这也是并行工具可能进一步省钱的原因：
+
+```text
+串行版本通常需要更多模型往返轮次。
+并行版本可能用一次模型决策发出多个工具调用。
+```
+
+注意：不同模型提供商对 usage 字段的支持可能略有差异，流式调用还需要从最终 chunk 或聚合后的消息中读取，生产代码要允许它为空。
+
+### 7. 示例结果怎么看？
+
+运行后会看到两份时间表。
+
+串行版本大致是：
+
+```text
+model -> get_weather 400ms
+model -> get_attractions 600ms
+model -> final answer
+
+Agent 总耗时约 1000ms
+模型调用 3 次
+```
+
+并行版本大致是：
+
+```text
+model -> get_weather 400ms
+      -> get_attractions 600ms
+model -> final answer
+
+Agent 总耗时约 600ms
+模型调用 2 次
+```
+
+在并行时间表里，两个工具的 `startedAfterMs` 会非常接近。
+
+这比只看总耗时更能证明它们确实发生了重叠执行。
+
+### 8. 生产环境应该监控哪些指标？
+
+最少建议记录：
+
+```text
+请求级：
+  requestId
+  agent 总耗时
+  最终状态
+
+模型级：
+  provider
+  model
+  调用次数
+  首 token 延迟
+  总耗时
+  input/output/total tokens
+  估算成本
+
+工具级：
+  toolName
+  toolCallId
+  排队时间
+  执行耗时
+  success/error/timeout
+  retry 次数
+  cache hit/miss
+```
+
+聚合监控时重点看：
+
+```text
+p50：普通请求的体验
+p95：大多数慢请求的体验
+p99：尾部慢请求
+错误率：工具是否稳定
+平均工具数和模型轮次：Agent 是否绕路
+```
+
+日志中不要直接记录：
+
+```text
+authToken
+完整个人信息
+工具返回的敏感业务数据
+未经脱敏的完整 prompt
+```
+
+### 9. 并行不是越多越好
+
+`Promise.all` 会一次性启动所有任务。
+
+如果模型一次生成几十个工具调用，可能造成：
+
+```text
+触发第三方 API 限流
+耗尽数据库连接池
+瞬间占满 CPU 或内存
+一个失败导致整组任务处理复杂
+```
+
+生产环境通常还需要：
+
+```text
+并发上限
+单工具超时
+有限次数重试
+熔断与降级
+AbortSignal 取消
+幂等键
+```
+
+所以正确目标不是“最大并行”，而是：
+
+```text
+在依赖关系、资源容量和业务正确性允许的范围内并行。
+```
+
+### 10. 本节小结
+
+记住下面四句话：
+
+```text
+1. 有依赖的工具串行，无依赖的工具才并行。
+2. 同一个 AIMessage 中的多个 tool_calls 会被 Agent 并发执行。
+3. 固定组合可以封装成业务工具，但不要制造巨型工具。
+4. 用 wrapModelCall 和 wrapToolCall 分层记录耗时、状态与 token。
+```
+
+性能优化的第一步不是立刻改成并行，而是先从监控数据里找到真正的等待时间。
+
+## 18 max token 的核心作用
+
+`max token` 更准确的写法通常是：
+
+```text
+max tokens
+```
+
+它最核心的作用只有一句话：
+
+```text
+限制一次模型调用最多可以生成多少输出 token。
+```
+
+在当前 TypeScript 项目的 LangChain 配置里，对应参数是：
+
+```ts
+const model = new ChatOpenAI({
+  model: "deepseek-v4-flash",
+  maxTokens: 600
+});
+```
+
+### 1. 本节示例
+
+代码位置：
+
+```text
+langchain-system-lab/src/examples/15-max-tokens.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:max-tokens
+```
+
+示例会使用同一个 prompt 调用模型两次：
+
+```text
+第一次：maxTokens = 80
+第二次：maxTokens = 600
+```
+
+然后对比：
+
+```text
+可见输出内容
+finish_reason
+input tokens
+output tokens
+reasoning tokens
+```
+
+这个示例会调用真实模型，需要配置当前 provider 对应的 API Key。
+
+### 2. token 到底是什么？
+
+模型不是直接按照“字数”读写文本，而是先把文本拆成 token。
+
+例如：
+
+```text
+输入文本
+  -> tokenizer
+  -> token id 序列
+  -> 模型处理
+```
+
+token 可能是：
+
+```text
+一个汉字
+汉字的一部分
+一个英文单词
+英文单词的一部分
+标点或空格
+```
+
+所以不能使用固定公式把字符数换算成 token 数：
+
+```text
+字符数 != token 数
+单词数 != token 数
+```
+
+实际用量应该读取模型响应中的：
+
+```ts
+response.usage_metadata
+```
+
+### 3. maxTokens 限制的是输出，不是输入
+
+假设：
+
+```ts
+const model = new ChatOpenAI({
+  maxTokens: 200
+});
+```
+
+它表达的是：
+
+```text
+这一次模型最多生成 200 个 completion/output tokens。
+```
+
+它不表示：
+
+```text
+输入最多只能有 200 tokens。
+输入和输出加起来最多 200 tokens。
+模型一定要生成满 200 tokens。
+```
+
+因此可以记成：
+
+```text
+实际输出 tokens <= maxTokens
+```
+
+`maxTokens` 是天花板，不是目标值。
+
+如果模型在 70 tokens 时已经完整回答，它可以自然停止，不会为了凑到 200 继续输出。
+
+### 4. maxTokens 和上下文窗口不是一回事
+
+每个模型还有一个更大的限制，叫上下文窗口：
+
+```text
+context window
+```
+
+可以先用这个简化公式理解：
+
+```text
+输入 tokens + 输出 tokens <= 模型上下文窗口
+```
+
+例如，假设某模型的上下文窗口是 `8,000` tokens：
+
+```text
+输入已经使用 7,500 tokens
+maxTokens 配置为 1,000
+```
+
+并不代表它真的还有 1,000 tokens 可以输出，因为剩余上下文空间只有约 500 tokens。
+
+实际可用输出预算可以粗略理解为：
+
+```text
+effective output limit
+  = min(maxTokens, contextWindow - inputTokens - safetyMargin)
+```
+
+不同服务商在上下文不足时可能拒绝请求、截断输入或提前结束，所以生产代码不能假设它们的处理方式完全相同。
+
+### 5. 为什么输出会突然断掉？
+
+模型响应中通常可以看到：
+
+```ts
+response.response_metadata.finish_reason
+```
+
+常见值包括：
+
+```text
+stop:
+  模型自然结束，或者命中了 stop sequence。
+
+length:
+  达到输出 token 上限，或者可用上下文空间耗尽。
+
+tool_calls:
+  模型停止文本生成，转而请求调用工具。
+
+content_filter:
+  输出被内容安全策略停止。
+```
+
+当看到：
+
+```text
+finish_reason = length
+```
+
+同时回答在半句话、半段 JSON 或半个代码块处结束，就应该优先检查：
+
+```text
+maxTokens 是否太小
+输入上下文是否太长
+推理 token 是否占用了输出预算
+```
+
+### 6. 推理模型还要考虑 reasoning tokens
+
+普通聊天模型的输出预算比较直观：
+
+```text
+completion tokens 大部分就是看到的回答。
+```
+
+推理模型可能还会在输出预算中使用 reasoning tokens：
+
+```text
+completion/output tokens
+  = reasoning tokens
+  + visible answer tokens
+```
+
+因此可能出现：
+
+```text
+maxTokens 看起来不小
+但模型进行了较长推理
+最终可见回答仍然很短
+```
+
+可以通过下面的标准化字段观察：
+
+```ts
+response.usage_metadata?.output_token_details?.reasoning
+```
+
+并非每个 provider 都会返回这个细分字段，所以代码要允许它为空。
+
+### 7. maxTokens 的三个直接作用
+
+#### 控制输出长度上限
+
+聊天机器人通常不希望一次生成一篇长论文：
+
+```text
+简短问答：较小预算
+详细报告：较大预算
+代码生成：为完整代码预留足够预算
+```
+
+#### 控制最坏情况下的成本
+
+模型通常按照实际使用的 token 计费，而不是只要配置较大上限就一定全部收费。
+
+但更大的上限允许模型生成更多内容，所以它扩大了单次请求的潜在成本。
+
+可以把它理解为：
+
+```text
+maxTokens 是输出成本的护栏，不是精确账单。
+```
+
+#### 控制最坏情况下的延迟
+
+生成 token 需要时间。
+
+允许输出越长，请求可能持续越久。尤其是非流式调用，用户要等完整结果生成后才能看到内容。
+
+所以 `maxTokens` 也是延迟保护的一部分，但它不能替代：
+
+```text
+timeout
+AbortSignal
+流式输出
+请求取消
+```
+
+### 8. 在 Agent 中，它限制的是每一次模型调用
+
+这是本节最重要的 Agent 结论。
+
+假设：
+
+```ts
+const model = new ChatOpenAI({
+  maxTokens: 500
+});
+
+const agent = createAgent({ model, tools });
+```
+
+一次 `agent.invoke` 可能产生：
+
+```text
+第 1 次 LLM：决定调用工具
+第 2 次 LLM：继续规划
+第 3 次 LLM：生成最终答案
+```
+
+这里的 `500` 是每次模型调用的输出上限，不是整个 Agent 运行累计只能使用 500 tokens。
+
+粗略的最坏情况可能是：
+
+```text
+3 次模型调用 * 每次最多 500 output tokens
+```
+
+因此要控制整个 Agent 的成本，还需要同时限制：
+
+```text
+模型调用次数
+工具调用次数
+Agent 总超时
+累计 token
+最大迭代轮数
+```
+
+上一节的 `wrapModelCall` 性能中间件正好可以统计每轮 token，再聚合成整个 Agent 的实际用量。
+
+### 9. maxTokens 太小会伤害 Tool Calling
+
+工具调用参数也是模型输出的一部分。
+
+例如模型需要生成：
+
+```json
+{
+  "name": "search_orders",
+  "args": {
+    "userId": "user_1001",
+    "startDate": "2026-07-01",
+    "endDate": "2026-07-17"
+  }
+}
+```
+
+如果输出预算在 JSON 中途耗尽，可能得到：
+
+```text
+不完整的 tool call
+invalid_tool_calls
+参数解析失败
+Agent 无法进入工具节点
+```
+
+因此 Agent 的规划阶段不能为了省 token 把预算压得过低。
+
+工具数量越多、schema 越复杂，模型生成工具名和参数所需的输出空间通常也越大。
+
+### 10. maxTokens 太小也会伤害结构化输出
+
+对于 JSON、代码和结构化报告，截断比普通文字更危险。
+
+普通文字被截断：
+
+```text
+可能只是少了一段结尾。
+```
+
+JSON 被截断：
+
+```text
+整个结果都可能无法解析。
+```
+
+代码被截断：
+
+```text
+可能缺少括号、函数体或关键分支。
+```
+
+所以使用 `toolStrategy`、`providerStrategy` 或 JSON Output 时，要根据 schema 的最坏输出规模设置预算，并处理 `finish_reason=length`。
+
+### 11. Prompt 中要求“简短”和 maxTokens 有什么区别？
+
+这两种控制不是一回事。
+
+Prompt：
+
+```text
+请用 3 句话回答。
+```
+
+这是给模型的语义指令，模型通常会遵守，但不是绝对的硬限制。
+
+`maxTokens`：
+
+```ts
+maxTokens: 200
+```
+
+这是 API 层的生成上限。
+
+生产中通常两者一起使用：
+
+```text
+Prompt 控制期望的回答形态。
+maxTokens 防止输出失控。
+```
+
+### 12. 应该设置多少？
+
+没有适用于所有任务的固定答案。
+
+建议按照任务类型分别配置：
+
+```text
+意图分类：
+  输出很短，预算可以较小。
+
+普通问答：
+  根据产品期望的回答长度设置。
+
+结构化 JSON：
+  根据 schema 和数组最大长度估算。
+
+代码或报告：
+  需要更大的预算，并检测是否截断。
+
+Agent 规划：
+  必须为 tool_calls 和参数保留空间。
+```
+
+调参时不要只看平均值，要观察真实请求中的：
+
+```text
+output_tokens 分布
+finish_reason=length 的比例
+回答完整率
+延迟 p95/p99
+单请求成本
+```
+
+比较稳妥的流程是：
+
+```text
+1. 先给足够预算，收集真实 usage。
+2. 查看不同任务的 output_tokens 分布。
+3. 为长尾留出安全余量。
+4. 对分类、聊天、报告、Agent 分别设定预算。
+5. 持续监控 length 截断率和任务成功率。
+```
+
+### 13. 参数名称为什么不完全一样？
+
+不同抽象层和 provider 的命名可能不同：
+
+```text
+LangChain JavaScript:
+  maxTokens
+
+DeepSeek Chat Completions API:
+  max_tokens
+
+部分 OpenAI 模型或接口:
+  max_completion_tokens
+  max_output_tokens
+```
+
+在本项目使用的 `@langchain/openai` 中，应用代码统一配置 `maxTokens`，适配器再转换成底层接口需要的参数。
+
+所以写业务代码时先遵循当前 LangChain 集成的字段，同时核对目标 provider 和模型的官方文档。
+
+### 14. 本节小结
+
+记住下面六句话：
+
+```text
+1. maxTokens 限制一次模型调用的最大输出 token 数。
+2. 它不限制输入，也不等于模型的上下文窗口。
+3. 它是上限，不代表模型一定会生成满。
+4. finish_reason=length 是预算不足的重要信号。
+5. 在 Agent 中，maxTokens 对每一轮 LLM 调用分别生效。
+6. 预算太小会截断文字、JSON、代码和 tool_calls。
+```
+
+一句话总结：
+
+```text
+maxTokens 是输出预算护栏；上下文窗口是输入与输出共同使用的总空间。
+```
+
+参考资料：
+
+- [LangChain JavaScript Models](https://docs.langchain.com/oss/javascript/langchain/models)
+- [LangChain JavaScript Agents](https://docs.langchain.com/oss/javascript/langchain/agents)
+- [DeepSeek Chat Completion API](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion/)
+
+## 19 LangGraph 短期记忆：StateSnapshot metadata 解析
+
+这一节第一次正式接触 LangGraph，但我们只学习和短期记忆直接相关的部分。
+
+先记住整个关系：
+
+```text
+LangChain createAgent
+  -> 底层运行在 LangGraph 上
+  -> LangGraph 用 state 保存当前工作状态
+  -> checkpointer 按 thread_id 保存 state 快照
+  -> 每份快照都带有 metadata
+```
+
+### 1. 本节示例
+
+代码位置：
+
+```text
+langchain-system-lab/src/examples/16-short-term-memory-metadata.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:memory:metadata
+```
+
+这个示例使用确定性的本地节点，不调用真实 LLM，也不需要 API Key。
+
+我们会完成两轮对话：
+
+```text
+第一轮：你好，我叫小李。
+第二轮：我叫什么名字？
+```
+
+两次调用使用相同的：
+
+```ts
+const threadConfig = {
+  configurable: {
+    thread_id: "course-thread-001"
+  }
+};
+```
+
+第二轮能够回答“小李”，说明第一轮 state 被保存并在第二轮开始前恢复了。
+
+### 2. 什么是短期记忆？
+
+短期记忆不是模型参数发生了变化，也不是模型真的永久记住了用户。
+
+它实际上是应用保存了一份会话状态：
+
+```text
+thread_id = course-thread-001
+
+state = {
+  messages: [...],
+  userName: "小李",
+  turnCount: 2
+}
+```
+
+下一次使用相同 `thread_id` 调用时，LangGraph 会先恢复这份 state，再执行节点。
+
+所以更准确地说：
+
+```text
+短期记忆 = thread 范围内可恢复的 Agent state。
+```
+
+它通常包含：
+
+```text
+messages
+当前任务进度
+本轮收集到的业务字段
+工具中间结果
+用户在当前会话中的临时偏好
+```
+
+### 3. State、Thread、Checkpoint 的关系
+
+这三个词容易混在一起。
+
+#### State
+
+Agent 当前拥有的数据：
+
+```ts
+const ShortTermMemoryState = new StateSchema({
+  messages: MessagesValue,
+  userName: z.string().default(""),
+  turnCount: z.number().default(0)
+});
+```
+
+其中 `MessagesValue` 会按照消息 reducer 的规则追加和更新消息，而不是每次直接覆盖整个数组。
+
+#### Thread
+
+一段独立会话的身份：
+
+```text
+thread_id = course-thread-001
+```
+
+可以把它理解成聊天产品中的：
+
+```text
+conversationId
+sessionId
+chatId
+```
+
+不同 `thread_id` 的短期记忆互相隔离。
+
+#### Checkpoint
+
+某个执行步骤结束时保存的 state 快照。
+
+一个 thread 不是只有一份 checkpoint，而是会随着执行不断产生历史版本：
+
+```text
+checkpoint 1
+  -> checkpoint 2
+  -> checkpoint 3
+  -> checkpoint 4
+```
+
+最新 checkpoint 表示当前状态，旧 checkpoint 构成状态历史。
+
+### 4. MemorySaver 做了什么？
+
+示例中创建了：
+
+```ts
+const checkpointer = new MemorySaver();
+```
+
+然后在编译图时传入：
+
+```ts
+const graph = new StateGraph(ShortTermMemoryState)
+  .addNode("memory_agent", memoryAgentNode)
+  .addEdge(START, "memory_agent")
+  .addEdge("memory_agent", END)
+  .compile({ checkpointer });
+```
+
+没有 checkpointer 时：
+
+```text
+一次 invoke 结束后，下一次 invoke 不会自动恢复上一轮 state。
+```
+
+配置 checkpointer 和 `thread_id` 后：
+
+```text
+invoke 开始：读取该 thread 的最新 checkpoint
+节点执行：读取并更新 state
+执行步骤结束：保存新的 checkpoint
+```
+
+`MemorySaver` 把数据保存在当前 Node.js 进程的内存中，因此适合：
+
+```text
+本地学习
+单元测试
+功能原型
+```
+
+它不适合生产持久化，因为应用重启后数据就没了。
+
+### 5. getState() 返回的不是普通 state
+
+执行完后调用：
+
+```ts
+const snapshot = await graph.getState(threadConfig);
+```
+
+返回的是 `StateSnapshot`：
+
+```ts
+{
+  values,
+  next,
+  config,
+  metadata,
+  createdAt,
+  parentConfig,
+  tasks
+}
+```
+
+这一节只重点看：
+
+```ts
+snapshot.metadata
+```
+
+但必须先区分：
+
+```text
+snapshot.values:
+  记忆里保存了什么。
+
+snapshot.metadata:
+  这份 checkpoint 是怎样产生的。
+```
+
+### 6. metadata 的实际结构
+
+当前项目安装的 `@langchain/langgraph 1.4.7` 中，一次图节点执行完成后的 metadata 类似：
+
+```json
+{
+  "source": "loop",
+  "step": 3,
+  "parents": {},
+  "thread_id": "course-thread-001"
+}
+```
+
+核心字段是：
+
+```text
+source
+step
+parents
+thread_id
+```
+
+一些 LangGraph 版本、LangGraph Platform 返回值和官方文档示例中，还可能看到：
+
+```json
+{
+  "writes": {
+    "memory_agent": {
+      "userName": "小李"
+    }
+  }
+}
+```
+
+但当前本地版本没有在 `StateSnapshot.metadata` 中暴露 `writes`。
+
+因此示例会主动打印：
+
+```text
+metadataKeys
+writesFromNodes
+```
+
+你会看到真实存在的字段，以及：
+
+```text
+writesFromNodes: 当前版本未提供
+```
+
+这不是程序没有执行节点，而是当前版本的 checkpoint metadata 结构发生了变化。
+
+### 7. source：checkpoint 从哪里来？
+
+`source` 表示 checkpoint 的产生方式。
+
+常见值：
+
+```text
+input:
+  由 invoke/stream 的新输入产生。
+
+loop:
+  由图内部节点执行产生。
+
+update:
+  由 updateState() 手动修改状态产生。
+
+fork:
+  从某个历史 checkpoint 分叉产生。
+```
+
+本节示例中主要能看到：
+
+```text
+input
+loop
+```
+
+例如第二轮输入“我叫什么名字？”进入图时，会形成输入相关 checkpoint；`memory_agent` 节点写入回答后，又会形成 `loop` checkpoint。
+
+所以：
+
+```text
+source 不是消息的 role，也不是调用方名称。
+它描述 checkpoint 在图运行中的来源。
+```
+
+### 8. step：不是对话轮数
+
+这是最容易误解的字段。
+
+`step` 表示 LangGraph 的 super-step 序号。
+
+super-step 可以先简单理解为：
+
+```text
+图完成一轮可执行节点调度和状态写入的步骤编号。
+```
+
+因此：
+
+```text
+step != 对话轮数
+step != messages.length
+step != tool 调用次数
+step != token 数量
+```
+
+一次用户对话可能经过：
+
+```text
+输入
+模型节点
+工具节点
+模型节点
+```
+
+于是一次对话就可能让 `step` 增加多次。
+
+本节只有一个 `memory_agent` 节点，结构非常简单。真实 Agent 有模型和工具循环时，step 增长会更快。
+
+### 9. writes：为什么教材中可能有，本地却没有？
+
+部分版本的 `metadata.writes` 会按节点名记录本步骤产生的 state 更新。
+
+例如：
+
+```json
+{
+  "writes": {
+    "memory_agent": {
+      "userName": "小李",
+      "turnCount": 2
+    }
+  }
+}
+```
+
+它可以读成：
+
+```text
+memory_agent 节点在这个 checkpoint 对 state 写入了这些内容。
+```
+
+在真实 Agent 中可能出现：
+
+```text
+agent 节点写入 AIMessage 和 tool_calls
+tools 节点写入 ToolMessage
+middleware 写入自定义 state
+```
+
+这个字段很适合排查：
+
+```text
+状态为什么变成了这个值？
+到底是哪个节点写入的？
+工具结果有没有进入 messages？
+某一步是否根本没有产生更新？
+```
+
+但在当前项目的 `1.4.7` 版本里，`CheckpointMetadata` 的稳定核心主要是：
+
+```text
+source
+step
+parents
+```
+
+实际运行也没有返回 `writes`。
+
+所以生产代码不要依赖：
+
+```ts
+snapshot.metadata.writes
+```
+
+需要观察每个节点的增量更新时，可以使用前面学过的：
+
+```ts
+graph.stream(input, {
+  ...threadConfig,
+  streamMode: "updates"
+});
+```
+
+也可以使用 LangSmith trace 查看每个节点的输入和输出。
+
+如果当前运行环境确实返回了 `writes`，仍然可以按下面的方式理解：
+
+```text
+writes 是这个步骤的增量写入。
+values 是应用所有历史写入之后的当前完整状态。
+```
+
+### 10. parents：checkpoint 的来源关系
+
+`parents` 保存 checkpoint 的父级映射。
+
+在简单的根图中，经常看到：
+
+```json
+{
+  "parents": {}
+}
+```
+
+这不表示没有历史 checkpoint。
+
+前一个 checkpoint 通常还可以通过 `StateSnapshot.parentConfig` 找到。`parents` 更常用于子图、命名空间和分叉执行之间的来源关系。
+
+所以初学阶段看到 `{}` 是正常的。
+
+### 11. thread_id 为什么也可能出现在 metadata？
+
+调用时，`thread_id` 原本放在：
+
+```ts
+threadConfig.configurable.thread_id
+```
+
+读取状态快照时，LangGraph 也可能把它附加进 metadata，方便追踪这份 checkpoint 属于哪个 thread。
+
+它的作用是定位会话，不是用户身份认证。
+
+生产中不要直接假设：
+
+```text
+thread_id == userId
+```
+
+一个用户可以有多个 thread，一个 thread 也应该经过业务权限校验后才能访问。
+
+### 12. getStateHistory() 能看到什么？
+
+获取当前最新状态：
+
+```ts
+await graph.getState(threadConfig);
+```
+
+查看这个 thread 的 checkpoint 历史：
+
+```ts
+for await (const snapshot of graph.getStateHistory(threadConfig)) {
+  console.log(snapshot.metadata);
+}
+```
+
+示例把历史整理成表格：
+
+```text
+step
+source
+writesFromNodes（当前版本可能显示“未提供”）
+messageCount
+checkpointId
+```
+
+历史通常从较新的 checkpoint 向较旧的 checkpoint 返回。
+
+通过这张表可以看出：
+
+```text
+同一个 thread 产生了多份状态快照。
+messages 随着两轮调用逐渐累积。
+input 和图内部执行对应不同 source。
+step 是图执行序号，而不是消息数量。
+```
+
+### 13. 不要混淆四种 metadata
+
+项目中可能同时出现多个同名概念。
+
+```text
+StateSnapshot.metadata:
+  checkpoint 的执行来源、step 和父级关系；部分版本还包含 writes。
+
+AIMessage.response_metadata:
+  模型 provider、finish_reason 等响应信息。
+
+AIMessage.usage_metadata:
+  input/output/total tokens。
+
+RunnableConfig.metadata:
+  应用传给一次运行的标签或追踪信息。
+```
+
+本节标题中的 metadata 指的是：
+
+```ts
+StateSnapshot.metadata
+```
+
+判断方法也很简单：
+
+```text
+它和 source、step、parents 一起出现，就是 checkpoint metadata。
+```
+
+### 14. 生产环境怎么保存？
+
+生产环境不会依赖 `MemorySaver`。
+
+通常会换成数据库支持的 checkpointer，例如：
+
+```text
+PostgreSQL
+MongoDB
+Redis
+其他持久化实现
+```
+
+这样应用重启或请求落到另一台实例时，仍然可以通过 `thread_id` 恢复状态。
+
+生产设计还要考虑：
+
+```text
+thread 访问权限
+checkpoint 数据保留周期
+敏感消息加密和脱敏
+历史消息裁剪或摘要
+并发更新冲突
+删除会话和隐私合规
+```
+
+### 15. 本节小结
+
+这一节记住五句话：
+
+```text
+1. 短期记忆是按 thread 保存和恢复的 Agent state。
+2. checkpointer 会在执行过程中生成 checkpoint。
+3. values 是记忆内容，metadata 是 checkpoint 的产生过程。
+4. source 表示来源，step 表示 super-step；writes 是否提供取决于版本和环境。
+5. MemorySaver 适合学习，生产应使用持久化 checkpointer。
+```
+
+一句话总结：
+
+```text
+StateSnapshot.metadata 不是 Agent 记住了什么，而是 LangGraph 如何走到这份记忆。
+```
+
+参考资料：
+
+- [LangChain JavaScript Short-term memory](https://docs.langchain.com/oss/javascript/langchain/short-term-memory)
+- [LangGraph JavaScript Persistence](https://docs.langchain.com/oss/javascript/langgraph/persistence)
+
+## 20 内置工具解读 01：先分清 Client Tool 与 Server Tool
+
+“内置工具”不是一个足够精确的名字。
+
+实际开发中，至少有三类东西经常被统称为内置工具：
+
+```text
+1. 自己通过 tool() 创建的 Client Tool
+2. LangChain 集成包提供的预制 Client Tool
+3. 模型提供商托管的 Server Tool
+```
+
+这三类工具虽然都能交给模型选择，但执行位置、部署责任、兼容性和返回消息完全不同。
+
+这一节先解决最重要的问题：
+
+```text
+工具到底在哪里执行？
+```
+
+### 1. 本节示例
+
+代码位置：
+
+```text
+langchain-system-lab/src/examples/17-built-in-tools-overview.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:tools:built-in
+```
+
+这个示例不调用真实模型，不需要 API Key，也不会产生费用。
+
+它会：
+
+```text
+实际执行一个本地 Client Tool
+创建三个 OpenAI Server Tool 定义
+检查它们是否具有 invoke()
+对比工具的执行位置
+```
+
+### 2. 第一类：自己定义的 Client Tool
+
+我们前面一直在使用：
+
+```ts
+const getWeather = tool(
+  async ({ city }) => {
+    return {
+      city,
+      weather: "晴",
+      temperatureCelsius: 26
+    };
+  },
+  {
+    name: "get_weather",
+    description: "查询指定城市的天气。",
+    schema: z.object({
+      city: z.string()
+    })
+  }
+);
+```
+
+这是一个 `ClientTool`。
+
+这里的 client 不是浏览器，而是相对于模型提供商来说的调用方应用。
+
+执行位置是：
+
+```text
+我们自己的 Node.js 服务
+```
+
+因此它具有真正的执行函数，可以直接调用：
+
+```ts
+await getWeather.invoke({ city: "杭州" });
+```
+
+应用需要负责：
+
+```text
+业务代码
+数据库连接
+第三方 API Key
+超时和重试
+权限检查
+日志和监控
+部署与扩容
+```
+
+### 3. Client Tool 的完整调用链
+
+模型不会直接进入我们的 Node.js 进程执行函数。
+
+调用过程是：
+
+```text
+用户问题
+  -> 应用把工具 schema 发给模型
+  -> 模型返回 AIMessage.tool_calls
+  -> LangGraph ToolNode 找到对应 ClientTool
+  -> 应用执行 tool.invoke(args)
+  -> 结果转换成 ToolMessage
+  -> ToolMessage 再发给模型
+  -> 模型生成最终答案
+```
+
+可以简写为：
+
+```text
+模型负责决定“调用什么”。
+应用负责真正执行。
+```
+
+这也是为什么 Client Tool 通常会产生：
+
+```text
+AIMessage(tool_calls)
+ToolMessage(result)
+AIMessage(final answer)
+```
+
+### 4. 第二类：预制 Client Tool
+
+LangChain 生态中还有大量集成工具，例如：
+
+```text
+网页搜索
+数据库查询
+浏览器访问
+向量数据库检索
+第三方 SaaS API
+```
+
+它们通常由某个 LangChain 集成包提前实现，我们不需要从零编写函数。
+
+但是“代码不是我们写的”不等于“服务端帮我们执行”。
+
+很多预制工具依然运行在：
+
+```text
+我们自己的应用进程
+```
+
+依然需要我们提供第三方服务的 API Key、网络和运行环境。
+
+因此它们本质上仍然属于：
+
+```text
+Client Tool
+```
+
+判断标准不是谁写了代码，而是：
+
+```text
+谁执行工具逻辑？
+```
+
+### 5. 第三类：模型提供商的 Server Tool
+
+有些模型厂商直接提供托管工具。
+
+以当前 `@langchain/openai` 为例：
+
+```ts
+import { tools as openAITools } from "@langchain/openai";
+
+const webSearch = openAITools.webSearch();
+const codeInterpreter = openAITools.codeInterpreter();
+const fileSearch = openAITools.fileSearch({
+  vectorStoreIds: ["vs_123"]
+});
+```
+
+这三个工具分别表示：
+
+```text
+webSearch:
+  在模型提供商侧搜索网页。
+
+codeInterpreter:
+  在提供商托管的沙箱中运行代码。
+
+fileSearch:
+  检索已经上传到提供商向量存储中的文件。
+```
+
+它们返回的不是本地执行类，而是配置对象。
+
+本节示例中的真实结构类似：
+
+```json
+{
+  "type": "web_search",
+  "filters": {
+    "allowed_domains": ["docs.langchain.com"]
+  },
+  "search_context_size": "low"
+}
+```
+
+或者：
+
+```json
+{
+  "type": "code_interpreter",
+  "container": {
+    "type": "auto",
+    "memory_limit": "1g"
+  }
+}
+```
+
+### 6. 为什么 Server Tool 没有 invoke()？
+
+下面可以直接执行：
+
+```ts
+await getWeather.invoke({ city: "杭州" });
+```
+
+但下面不可以：
+
+```ts
+await webSearch.invoke(...);
+```
+
+因为 `webSearch` 只是告诉模型 API：
+
+```text
+这次请求允许使用 web_search 能力。
+```
+
+真正执行搜索的是模型提供商的服务器。
+
+正确用法是把它作为模型请求的工具参数：
+
+```ts
+const response = await model.invoke(
+  "查找今天的 LangChain 新闻",
+  {
+    tools: [openAITools.webSearch()]
+  }
+);
+```
+
+因此：
+
+```text
+ClientTool:
+  是“可执行对象”。
+
+ServerTool:
+  是“提供商能力配置”。
+```
+
+### 7. Server Tool 的调用链
+
+Server Tool 的流程更短：
+
+```text
+用户问题
+  -> 应用把 Server Tool 配置发给模型提供商
+  -> 提供商内部决定并执行工具
+  -> 提供商把工具调用和结果放进模型响应
+  -> 应用收到最终 AIMessage
+```
+
+可以简写为：
+
+```text
+模型提供商负责决定和执行。
+```
+
+与 Client Tool 不同，Server Tool 通常不需要应用创建本地 `ToolMessage` 再回传一次。
+
+在 LangChain 的标准化消息中，服务端调用和结果可能出现在：
+
+```ts
+response.contentBlocks
+```
+
+常见 block 类型包括：
+
+```text
+server_tool_call
+server_tool_result
+text
+```
+
+具体内容仍然取决于 provider 和工具类型，下一部分再专门解析返回结构。
+
+### 8. 三类工具对比
+
+```text
+自定义 Client Tool:
+  谁定义：我们
+  谁执行：我们的应用
+  是否有 invoke：有
+  可移植性：较高
+
+预制 Client Tool:
+  谁定义：LangChain 集成包
+  谁执行：我们的应用
+  是否有 invoke：通常有
+  可移植性：取决于第三方服务
+
+Server Tool:
+  谁定义：模型提供商
+  谁执行：模型提供商
+  是否有 invoke：没有
+  可移植性：较低，通常绑定 provider
+```
+
+最简单的判断方式：
+
+```text
+能在应用里直接 invoke 的，通常是 Client Tool。
+只有 type 等配置字段的，通常是 Server Tool。
+```
+
+### 9. OpenAI 兼容接口不等于内置工具兼容
+
+这一点和当前项目使用 DeepSeek 有直接关系。
+
+DeepSeek 提供 OpenAI 风格的聊天接口，不代表它会实现 OpenAI 托管的：
+
+```text
+web_search
+code_interpreter
+file_search
+image_generation
+```
+
+所以不能因为下面可以复用 `ChatOpenAI` 客户端：
+
+```ts
+new ChatOpenAI({
+  baseURL: "https://api.deepseek.com"
+});
+```
+
+就认为下面也一定可用：
+
+```ts
+openAITools.webSearch()
+```
+
+需要分别确认：
+
+```text
+目标 provider 是否支持该工具类型
+目标模型是否支持该工具
+使用的是 Chat Completions 还是 Responses API
+请求字段和响应 block 是否兼容
+```
+
+对于 DeepSeek，更通用的方式通常是：
+
+```text
+保留 DeepSeek 作为负责决策的 LLM。
+把搜索、数据库和业务能力封装为 Client Tool。
+由自己的 Agent 执行工具并返回 ToolMessage。
+```
+
+### 10. Server Tool 的优势和代价
+
+优势：
+
+```text
+少维护一套执行服务
+减少部分模型和应用之间的往返
+模型与工具结果的格式集成更紧密
+代码解释器和文件检索可以快速接入
+```
+
+代价：
+
+```text
+产生额外工具费用
+绑定特定 provider 和支持的模型
+工具行为和运行环境可控性较低
+文件或查询数据可能离开自己的基础设施
+监控、缓存和调试方式与 Client Tool 不同
+```
+
+选择时不要只看代码量，还要评估：
+
+```text
+数据合规
+成本
+可移植性
+延迟
+结果质量
+可观测性
+```
+
+### 11. 一个容易踩的坑
+
+`@langchain/openai` 的 `tools` 命名空间中不只有纯 Server Tool。
+
+当前版本还包含：
+
+```text
+localShell
+shell
+applyPatch
+computerUse
+mcp
+toolSearch
+```
+
+这些能力的执行方式并不完全相同。
+
+例如某些工具需要应用提供执行回调，有些由 provider 执行，有些需要应用和 provider 多轮协作。
+
+所以不要只根据：
+
+```ts
+openAITools.xxx()
+```
+
+就判断它一定在服务端执行。
+
+更可靠的判断方式是查看：
+
+```text
+返回类型是 ClientTool 还是 ServerTool
+是否存在 invoke()
+官方文档描述的执行位置
+是否需要 execute 回调
+```
+
+### 12. 本节小结
+
+这一节记住五句话：
+
+```text
+1. “内置工具”至少要区分 Client Tool、预制 Client Tool 和 Server Tool。
+2. tool() 创建的 Client Tool 由自己的应用执行。
+3. webSearch 等 Server Tool 是配置对象，由支持它的模型提供商执行。
+4. OpenAI API 兼容不代表 OpenAI Server Tool 兼容。
+5. 选择工具时先问执行位置，再考虑成本、合规和可移植性。
+```
+
+一句话总结：
+
+```text
+工具是不是“内置”的不重要，真正重要的是执行权和数据去了哪里。
+```
+
+参考资料：
+
+- [LangChain JavaScript Tools](https://docs.langchain.com/oss/javascript/langchain/tools)
+- [LangChain OpenAI Built-in Tools](https://docs.langchain.com/oss/javascript/integrations/tools/openai)
+- [LangChain JavaScript Models: Server-side tool use](https://docs.langchain.com/oss/javascript/langchain/models)
+
+## 21 Agent 调用的生命周期
+
+调用：
+
+```ts
+await agent.invoke(...)
+```
+
+看起来只有一行代码，但它不一定只调用一次模型。
+
+一个典型 Agent 会不断执行：
+
+```text
+模型判断
+  -> 需要工具就执行工具
+  -> 把工具结果交回模型
+  -> 模型再次判断
+  -> 直到生成最终回答
+```
+
+这个从 `invoke` 开始，到最终 state 返回的完整过程，就是一次 Agent run 的生命周期。
+
+### 1. 本节示例
+
+代码位置：
+
+```text
+langchain-system-lab/src/examples/18-agent-lifecycle.ts
+```
+
+运行：
+
+```bash
+cd langchain-system-lab
+pnpm example:agent:lifecycle
+```
+
+示例使用 `fakeModel` 固定模型响应，不需要 API Key。
+
+它模拟下面的决策：
+
+```text
+第一次模型调用：
+  决定调用 get_course_progress
+
+工具执行：
+  返回课程进度
+
+第二次模型调用：
+  根据工具结果生成最终回答
+```
+
+中间件会把所有生命周期事件依次记录下来。
+
+### 2. Agent run 不等于 model call
+
+这是这一节最重要的区别。
+
+```text
+一次 agent.invoke：
+  表示一次完整 Agent run。
+
+一次 model.invoke：
+  只表示一次模型请求。
+```
+
+一次 Agent run 内部可以包含：
+
+```text
+0 次或多次工具执行
+1 次或多次模型调用
+多次 state 更新
+多次 checkpoint 保存
+多轮 middleware hook
+```
+
+因此：
+
+```text
+Agent 总耗时 != 单次模型耗时
+Agent 总 token != 最后一条 AIMessage 的 token
+Agent 错误 != 一定是模型错误
+```
+
+### 3. 最外层生命周期
+
+先只看最外层：
+
+```text
+应用调用 agent.invoke
+  -> 初始化或恢复 Agent state
+  -> beforeAgent
+  -> 执行 Agent 循环
+  -> afterAgent
+  -> 返回最终 state
+```
+
+`beforeAgent` 和 `afterAgent` 面向的是整个 Agent run。
+
+在一次正常完成的 `invoke` 中：
+
+```text
+beforeAgent：一次
+afterAgent：一次
+```
+
+适合放在这里的逻辑包括：
+
+```text
+请求级日志
+初始化本次 run 的状态
+整体计时
+最终结果审计
+整次运行的数据清理
+```
+
+### 4. Agent 内部是一个循环
+
+`createAgent()` 底层使用 LangGraph 构建图式运行时。
+
+核心循环可以简化为：
+
+```text
+                 有 tool_calls
+              ┌─────────────────┐
+              ↓                 │
+输入 -> 模型节点 -> 工具节点 -> 模型节点
+              │
+              │ 没有 tool_calls
+              ↓
+             结束
+```
+
+伪代码可以理解为：
+
+```ts
+while (true) {
+  const aiMessage = await callModel(state);
+  state.messages.push(aiMessage);
+
+  if (!aiMessage.tool_calls?.length) {
+    break;
+  }
+
+  const toolMessages = await runTools(aiMessage.tool_calls);
+  state.messages.push(...toolMessages);
+}
+```
+
+真实实现还包含：
+
+```text
+middleware
+并行工具调用
+state reducer
+checkpoint
+stream
+retry
+interrupt
+结构化输出
+```
+
+但核心仍然是“模型与工具之间循环”。
+
+### 5. 一次完整的事件顺序
+
+本节示例的实际顺序是：
+
+```text
+application: 准备调用 agent.invoke
+
+beforeAgent
+
+beforeModel
+wrapModelCall: before
+模型第一次执行
+wrapModelCall: after
+afterModel
+
+wrapToolCall: before
+tool body
+wrapToolCall: after
+
+beforeModel
+wrapModelCall: before
+模型第二次执行
+wrapModelCall: after
+afterModel
+
+afterAgent
+
+application: agent.invoke 已返回
+```
+
+从这个顺序可以看出：
+
+```text
+Agent 级钩子包住整个循环。
+Model 级钩子每调用一次模型就执行一轮。
+Tool 级钩子每执行一次工具就执行一轮。
+```
+
+### 6. 每个 hook 在什么时候运行？
+
+#### beforeAgent
+
+执行时间：
+
+```text
+一次 Agent run 开始时，进入模型与工具循环之前。
+```
+
+典型用途：
+
+```text
+创建 run 级统计信息
+读取或验证初始 state
+初始化任务状态
+记录请求开始
+```
+
+#### beforeModel
+
+执行时间：
+
+```text
+每一次模型调用之前。
+```
+
+如果 Agent 调用模型三次，它通常也执行三次。
+
+典型用途：
+
+```text
+裁剪历史消息
+摘要长上下文
+补充模型输入需要的 state
+调用前校验
+```
+
+#### wrapModelCall
+
+执行时间：
+
+```text
+包住每一次真正的模型请求。
+```
+
+结构类似：
+
+```ts
+wrapModelCall: async (request, handler) => {
+  // 模型调用前
+  const response = await handler(request);
+  // 模型调用后
+  return response;
+}
+```
+
+典型用途：
+
+```text
+动态选择模型
+重试和 fallback
+单次模型耗时监控
+修改临时 prompt 或 tools
+```
+
+#### afterModel
+
+执行时间：
+
+```text
+模型已经生成 AIMessage，但工具还没有开始执行。
+```
+
+这一点很关键。
+
+此时可以检查：
+
+```text
+最终文字
+tool_calls
+结构化输出
+安全策略
+是否需要人工审批
+```
+
+如果第一轮模型返回工具调用，顺序是：
+
+```text
+afterModel
+  -> 路由判断
+  -> wrapToolCall
+  -> 工具执行
+```
+
+#### wrapToolCall
+
+执行时间：
+
+```text
+包住每一次 Client Tool 执行。
+```
+
+结构类似：
+
+```ts
+wrapToolCall: async (request, handler) => {
+  // 工具调用前
+  const result = await handler(request);
+  // 工具调用后
+  return result;
+}
+```
+
+典型用途：
+
+```text
+权限校验
+参数修正
+工具超时
+错误重试
+缓存
+性能监控
+结果脱敏
+```
+
+#### afterAgent
+
+执行时间：
+
+```text
+Agent 已经结束模型与工具循环，即将返回最终 state。
+```
+
+典型用途：
+
+```text
+最终输出验证
+整体指标汇总
+审计记录
+清理 run 级资源
+```
+
+### 7. Hook 调用次数怎么判断？
+
+本节示例包含：
+
+```text
+1 次 agent.invoke
+2 次模型调用
+1 次工具调用
+```
+
+所以正常情况下可以预期：
+
+```text
+beforeAgent              1 次
+afterAgent               1 次
+
+beforeModel              2 次
+wrapModelCall: before    2 次
+wrapModelCall: after     2 次
+afterModel               2 次
+
+wrapToolCall: before     1 次
+tool body                1 次
+wrapToolCall: after      1 次
+```
+
+通用规律：
+
+```text
+Agent hook 次数跟 run 数量有关。
+Model hook 次数跟模型调用数量有关。
+Tool hook 次数跟工具调用数量有关。
+```
+
+### 8. messages 如何随生命周期增长？
+
+初始 state：
+
+```text
+HumanMessage
+```
+
+第一次模型调用后：
+
+```text
+HumanMessage
+AIMessage(tool_calls)
+```
+
+工具执行后：
+
+```text
+HumanMessage
+AIMessage(tool_calls)
+ToolMessage(result)
+```
+
+第二次模型调用后：
+
+```text
+HumanMessage
+AIMessage(tool_calls)
+ToolMessage(result)
+AIMessage(final answer)
+```
+
+所以示例最终得到：
+
+```text
+messages.length = 4
+```
+
+每个 hook 看到的是执行到那个时间点时的 state，而不是永远相同的数据。
+
+### 9. Agent 在什么时候结束？
+
+最常见的正常结束条件是：
+
+```text
+模型返回 AIMessage，并且没有需要继续执行的 tool_calls。
+```
+
+其他停止方式还包括：
+
+```text
+达到模型或工具调用限制
+达到图递归/迭代限制
+中间件主动跳转到 end
+结构化输出已经完成
+人工审批产生 interrupt，暂时暂停
+请求被取消或超时
+出现未处理错误
+```
+
+注意：
+
+```text
+interrupt 是暂停并等待恢复，不一定等于生命周期彻底失败。
+```
+
+配合 checkpointer 时，Agent 可以从保存的状态继续运行。
+
+### 10. 发生异常时，after 钩子一定执行吗？
+
+不能简单假设一定执行。
+
+例如：
+
+```ts
+const response = await handler(request);
+```
+
+如果 `handler` 抛出异常，并且没有在当前中间件或外层捕获：
+
+```text
+wrapModelCall 的 handler 后代码不会自然执行。
+wrapToolCall 的 handler 后代码不会自然执行。
+Agent 可能无法正常走到 afterAgent。
+```
+
+因此计时和资源清理通常要使用：
+
+```ts
+const startedAt = performance.now();
+
+try {
+  return await handler(request);
+} finally {
+  recordDuration(performance.now() - startedAt);
+}
+```
+
+业务错误处理则根据需要使用：
+
+```text
+catch
+retry middleware
+fallback middleware
+tool error ToolMessage
+```
+
+下一节会继续拆解 wrap hook 的异常和包裹行为。
+
+### 11. Checkpointer 在生命周期中的位置
+
+配置 checkpointer 后，短期记忆会参与生命周期：
+
+```text
+invoke 开始：
+  根据 thread_id 恢复最新 state
+
+图执行过程中：
+  在步骤边界保存 checkpoint
+
+invoke 结束：
+  最新 state 留在当前 thread
+```
+
+所以 Agent 生命周期不仅是函数调用顺序，也包括：
+
+```text
+state 读取
+state 更新
+state 持久化
+```
+
+这正好衔接上一节的 `StateSnapshot.metadata`。
+
+### 12. 如何在生产中观察生命周期？
+
+有三种常见方式：
+
+```text
+Middleware：
+  执行业务级日志、监控、权限和重试。
+
+Stream：
+  实时向调用方发送模型、工具和 state 更新。
+
+LangSmith Trace：
+  查看完整 run、子 run、模型调用和工具调用树。
+```
+
+建议至少给一次 Agent run 统一关联：
+
+```text
+requestId
+threadId
+runId
+modelCallId
+toolCallId
+```
+
+否则模型和工具多轮循环后，日志很难拼回一条完整链路。
+
+### 13. 本节小结
+
+记住下面五句话：
+
+```text
+1. 一次 agent.invoke 是完整 run，不等于一次模型调用。
+2. Agent 会在模型节点与工具节点之间循环。
+3. beforeAgent/afterAgent 面向整次 run，通常各执行一次。
+4. Model 和 Tool hook 会随着实际调用次数重复执行。
+5. 模型不再返回 tool_calls 时，Agent 通常结束并返回最终 state。
+```
+
+一句话总结：
+
+```text
+Agent 生命周期是一层 run，里面包着多轮 model 和 tool 生命周期。
+```
+
+参考资料：
+
+- [LangChain JavaScript Agents](https://docs.langchain.com/oss/javascript/langchain/agents)
+- [LangChain JavaScript Custom Middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom)
+- [LangChain JavaScript Context Engineering](https://docs.langchain.com/oss/javascript/langchain/context-engineering)
+
+## 22 定义一个最小化的 MCP 服务
+
+这一节先不急着背 MCP 的完整定义。
+
+我们先做一个能够真正运行的最小系统：
+
+```text
+MCP Client
+  -> 发现 add 工具
+  -> 调用 add({ a: 7, b: 5 })
+  -> MCP Server 执行加法
+  -> 返回文本 12
+```
+
+跑通之后，再回头解释 Host、Client、Server、Transport 和 Protocol 会容易很多。
+
+### 1. 本节代码
+
+MCP Server：
+
+```text
+langchain-system-lab/src/mcp/01-minimal-server.ts
+```
+
+验证 Client：
+
+```text
+langchain-system-lab/src/mcp/02-verify-minimal-server.ts
+```
+
+运行完整验证：
+
+```bash
+cd langchain-system-lab
+pnpm example:mcp:minimal
+```
+
+这个示例：
+
+```text
+不需要 LLM
+不需要 API Key
+不需要 HTTP 端口
+不产生模型费用
+```
+
+### 2. 安装官方 TypeScript SDK
+
+项目增加了：
+
+```bash
+pnpm add @modelcontextprotocol/sdk@^1.29.0
+```
+
+截至 `2026-07-17`，官方 TypeScript SDK v2 仍处于 beta，v1.x 仍是官方建议的生产版本。因此本节固定使用稳定的：
+
+```text
+@modelcontextprotocol/sdk 1.29.x
+```
+
+当前版本要求：
+
+```text
+Node.js >= 18
+Zod 3.25+ 或 Zod 4
+```
+
+本项目已经使用 Zod 4，不需要再引入另一套 schema 库。
+
+### 3. 最小 Server 完整代码
+
+核心代码只有下面这些：
+
+```ts
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+const server = new McpServer({
+  name: "minimal-calculator-server",
+  version: "1.0.0"
+});
+
+server.registerTool(
+  "add",
+  {
+    description: "计算两个数字之和。",
+    inputSchema: {
+      a: z.number(),
+      b: z.number()
+    }
+  },
+  async ({ a, b }) => ({
+    content: [
+      {
+        type: "text",
+        text: String(a + b)
+      }
+    ]
+  })
+);
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+接下来逐块解释。
+
+### 4. McpServer 是什么？
+
+首先创建服务实例：
+
+```ts
+const server = new McpServer({
+  name: "minimal-calculator-server",
+  version: "1.0.0"
+});
+```
+
+这里声明的是 Server 身份，不是工具本身。
+
+它会在 MCP 初始化握手中告诉 Client：
+
+```text
+我叫什么名字
+我的版本是什么
+我支持哪些 MCP 能力
+```
+
+一个 MCP Server 可以暴露三类主要能力：
+
+```text
+Tools：
+  可以执行的函数或操作。
+
+Resources：
+  可以读取的数据或内容。
+
+Prompts：
+  可以获取的提示词模板。
+```
+
+本节为了最小化，只暴露一个 Tool。
+
+### 5. registerTool() 做了什么？
+
+注册工具：
+
+```ts
+server.registerTool("add", config, handler);
+```
+
+这三个参数分别是：
+
+```text
+"add":
+  协议中的工具名称。
+
+config:
+  工具描述、输入 schema 等元数据。
+
+handler:
+  Client 真正调用工具时执行的业务函数。
+```
+
+可以把它类比成：
+
+```text
+REST 路由：
+  method + path + handler
+
+MCP 工具：
+  name + schema + handler
+```
+
+但 MCP 工具天然带有机器可读 schema，Client 可以先发现工具，再决定怎样展示或交给 LLM 使用。
+
+### 6. inputSchema 有什么作用？
+
+```ts
+inputSchema: {
+  a: z.number().describe("第一个数字"),
+  b: z.number().describe("第二个数字")
+}
+```
+
+它同时承担三件事：
+
+```text
+描述：告诉 Client 和 LLM 参数含义。
+校验：拒绝不符合类型的调用参数。
+类型推导：让 TypeScript 知道 handler 中 a、b 是 number。
+```
+
+Client 调用：
+
+```json
+{
+  "name": "add",
+  "arguments": {
+    "a": 7,
+    "b": 5
+  }
+}
+```
+
+如果传入：
+
+```json
+{
+  "a": "seven",
+  "b": 5
+}
+```
+
+SDK 会在进入业务 handler 前进行参数校验。
+
+### 7. Tool 为什么返回 content 数组？
+
+Handler 返回：
+
+```ts
+{
+  content: [
+    {
+      type: "text",
+      text: "12"
+    }
+  ]
+}
+```
+
+MCP Tool 的结果不是只能返回一个字符串。
+
+`content` 使用数组，是因为一次结果可以包含多个内容块，例如：
+
+```text
+text
+image
+audio
+嵌入的 resource
+resource link
+```
+
+本节只返回最简单的文本块。
+
+如果业务需要稳定的机器可读结果，还可以在后面学习：
+
+```text
+outputSchema
+structuredContent
+```
+
+当前先把协议调用链跑通。
+
+### 8. Transport 是什么？
+
+MCP Server 需要通过某种传输方式与 Client 交换协议消息。
+
+本节使用：
+
+```ts
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+`stdio` 表示：
+
+```text
+Client 启动 Server 子进程。
+Client 通过 Server 的 stdin 发送 MCP 消息。
+Server 通过 stdout 返回 MCP 消息。
+```
+
+它非常适合：
+
+```text
+本地开发工具
+IDE 插件
+桌面 Agent
+同一台机器上的进程集成
+```
+
+下一阶段需要跨机器调用时，再换成 Streamable HTTP。
+
+### 9. 为什么 stdio Server 不能 console.log？
+
+因为 stdout 已经是协议通道。
+
+错误写法：
+
+```ts
+console.log("MCP Server started");
+```
+
+这段普通文本会混入 JSON-RPC 消息流，可能导致 Client 无法解析协议。
+
+需要调试时写 stderr：
+
+```ts
+console.error("MCP Server started");
+```
+
+或者使用写入文件、stderr 的日志系统。
+
+因此本节 Server 本体没有任何 `console.log()`。
+
+### 10. 为什么直接运行 Server 看起来没有反应？
+
+可以单独启动：
+
+```bash
+pnpm mcp:minimal:server
+```
+
+终端看起来会一直等待，而且没有输出。
+
+这是正常现象：
+
+```text
+Server 已连接 stdio transport。
+它正在等待 MCP Client 通过 stdin 发来协议请求。
+```
+
+它不是命令执行完就退出的普通脚本，也不是启动后打印 URL 的 HTTP 服务。
+
+停止时可以按：
+
+```text
+Ctrl+C
+```
+
+学习阶段更推荐直接运行验证 Client，它会自动启动和关闭 Server。
+
+### 11. 验证 Client 做了什么？
+
+验证程序首先创建 MCP Client：
+
+```ts
+const client = new Client({
+  name: "minimal-server-verifier",
+  version: "1.0.0"
+});
+```
+
+然后通过 `StdioClientTransport` 启动 Server 子进程：
+
+```ts
+const transport = new StdioClientTransport({
+  command: process.execPath,
+  args: ["--import", "tsx", serverFile]
+});
+
+await client.connect(transport);
+```
+
+`connect()` 不只是打开管道，还会完成 MCP 初始化握手和能力协商。
+
+然后执行两个核心协议操作。
+
+#### 发现工具
+
+```ts
+const tools = await client.listTools();
+```
+
+对应 MCP 方法：
+
+```text
+tools/list
+```
+
+Client 会得到 `add` 的名称、描述和 JSON Schema。
+
+#### 调用工具
+
+```ts
+const result = await client.callTool({
+  name: "add",
+  arguments: {
+    a: 7,
+    b: 5
+  }
+});
+```
+
+对应 MCP 方法：
+
+```text
+tools/call
+```
+
+最后使用：
+
+```ts
+await client.close();
+```
+
+关闭连接和 Server 子进程。
+
+### 12. 运行结果怎么看？
+
+`tools/list` 会返回类似：
+
+```json
+{
+  "tools": [
+    {
+      "name": "add",
+      "description": "计算两个数字之和。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "a": { "type": "number" },
+          "b": { "type": "number" }
+        },
+        "required": ["a", "b"]
+      }
+    }
+  ]
+}
+```
+
+这说明 Client 不需要提前硬编码工具参数结构，也能发现 Server 的能力。
+
+`tools/call` 会返回：
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "12"
+    }
+  ]
+}
+```
+
+这说明：
+
+```text
+Client 已经通过 MCP 协议调用 Server。
+Server 完成参数校验和业务执行。
+结果按照 MCP content block 返回。
+```
+
+### 13. MCP Server 里面为什么没有 LLM？
+
+因为 MCP Server 的职责不是理解自然语言，也不是决定调用哪个工具。
+
+它只负责：
+
+```text
+声明能力
+接收标准协议调用
+校验参数
+执行工具或读取数据
+返回标准协议结果
+```
+
+通常是 MCP Host 中的 Agent 或 LLM 决定：
+
+```text
+是否调用 add
+什么时候调用
+参数应该是什么
+如何使用返回结果
+```
+
+所以：
+
+```text
+MCP Server 可以完全不依赖任何大模型。
+```
+
+本节验证 Client 也是直接调用工具，没有使用 LLM。
+
+### 14. Host、Client、Server 初步关系
+
+现在可以先建立一个最小认识：
+
+```text
+MCP Host
+  承载聊天应用或 Agent，例如 IDE、桌面应用、LangChain 应用。
+
+MCP Client
+  Host 内负责连接某一个 MCP Server 的协议组件。
+
+MCP Server
+  暴露 Tools、Resources、Prompts 等能力。
+
+Transport
+  Client 和 Server 交换 MCP 消息的通道。
+```
+
+本节程序中没有完整 Host，只写了：
+
+```text
+测试 Client
+  -> stdio
+  -> minimal-calculator-server
+```
+
+后面的 LangChain 章节会让 Agent 成为真正的工具使用者。
+
+### 15. 最小不等于生产可用
+
+这个 Server 故意没有加入：
+
+```text
+身份认证
+权限控制
+超时
+限流
+审计日志
+持久化
+优雅关闭
+业务错误映射
+指标监控
+```
+
+它的唯一目标是证明：
+
+```text
+一个 MCP Server 至少需要什么？
+```
+
+答案是：
+
+```text
+Server 身份
+至少一个能力
+能力处理函数
+一个 Transport
+```
+
+### 16. 本节小结
+
+记住下面六句话：
+
+```text
+1. MCP Server 不一定包含 LLM，它负责标准化暴露能力。
+2. registerTool() 注册工具名称、schema 和执行函数。
+3. tools/list 用于发现工具，tools/call 用于调用工具。
+4. stdio 通过子进程 stdin/stdout 传输 MCP 消息。
+5. stdio Server 不能把普通日志写入 stdout。
+6. 本节的 add 工具证明 MCP 可以在零模型参与下独立运行。
+```
+
+一句话总结：
+
+```text
+最小 MCP Server，就是“一个可发现、可校验、可调用的标准化工具进程”。
+```
+
+参考资料：
+
+- [MCP 官方教程：Build an MCP server](https://modelcontextprotocol.io/docs/develop/build-server)
+- [MCP 官方 TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+
+## 23 到底什么是 MCP？
+
+MCP 的全称是：
+
+```text
+Model Context Protocol
+模型上下文协议
+```
+
+先给出一句最重要的定义：
+
+```text
+MCP 是 AI 应用与外部能力提供方之间的一套标准通信协议。
+```
+
+它让 AI 应用可以用相对统一的方式：
+
+```text
+发现能力
+理解参数
+调用能力
+读取上下文
+接收结果
+协商协议版本与双方能力
+```
+
+这里的“外部能力”可能来自：
+
+```text
+本地文件
+数据库
+公司内部 API
+GitHub
+浏览器
+搜索服务
+支付或订单系统
+```
+
+MCP 本身不是模型，也不会替 Agent 做决策。它解决的是：
+
+```text
+Agent 决定需要某项能力之后，怎样用标准方式找到并调用它？
+```
+
+### 1. 从上一节的 add 服务反推 MCP
+
+上一节运行了：
+
+```bash
+pnpm example:mcp:minimal
+```
+
+完整过程是：
+
+```text
+Client 连接 Server
+  -> listTools()
+  -> 发现 add 的名称、说明和参数 schema
+  -> callTool({ name: "add", arguments: { a: 7, b: 5 } })
+  -> Server 返回 content: [{ type: "text", text: "12" }]
+```
+
+这个过程没有 LLM，也没有 Agent。
+
+它证明 MCP 最基础的能力不是“让模型变聪明”，而是建立一份双方都能理解的协议：
+
+```text
+怎样连接
+怎样声明身份和能力
+怎样发现工具
+怎样描述参数
+怎样发起调用
+怎样返回结果
+```
+
+如果没有 MCP，调用方也能直接调用一个函数或 REST API，但必须针对每个服务分别适配：
+
+```text
+服务地址是什么？
+认证信息放在哪里？
+工具名称是什么？
+参数格式是什么？
+返回结构是什么？
+错误如何表达？
+```
+
+MCP 把其中通用的通信部分标准化了。
+
+### 2. 为什么需要 MCP？
+
+假设有三种 AI 应用：
+
+```text
+IDE
+桌面聊天应用
+LangChain Agent
+```
+
+又有四种外部能力：
+
+```text
+文件系统
+数据库
+GitHub
+企业知识库
+```
+
+没有统一协议时，每个应用都可能为每项能力写一套专用集成：
+
+```text
+IDE -> 文件系统适配器
+IDE -> 数据库适配器
+IDE -> GitHub 适配器
+...
+LangChain Agent -> 企业知识库适配器
+```
+
+接入关系很容易变成：
+
+```text
+N 个应用 x M 个能力提供方
+```
+
+使用 MCP 后，双方围绕同一份协议实现：
+
+```text
+AI 应用实现 MCP Host / Client
+能力提供方实现 MCP Server
+```
+
+这不会消除业务接入、认证和权限设计，但会显著减少协议层的重复适配。
+
+MCP 经常被类比为 AI 应用的 USB-C。这个类比有帮助，但不要理解过头：
+
+```text
+统一接口，只代表双方可以按相同规则通信；
+不代表所有设备能力相同，也不代表连接后自动获得权限。
+```
+
+### 3. Host、Client、Server 到底是什么？
+
+MCP 的基本架构是：
+
+```text
+用户
+  |
+  v
+MCP Host：IDE、聊天应用、LangChain 应用
+  |-- LLM / Agent
+  |-- MCP Client A <----> MCP Server A <----> 文件系统
+  |-- MCP Client B <----> MCP Server B <----> 数据库或 REST API
+  `-- MCP Client C <----> MCP Server C <----> GitHub
+```
+
+三个角色分别负责：
+
+```text
+Host：
+  面向用户的 AI 应用。
+  管理模型、对话、权限、多个 Client 以及结果怎样进入上下文。
+
+Client：
+  Host 内部的协议组件。
+  与某一个 Server 建立连接并收发 MCP 消息。
+
+Server：
+  能力提供方。
+  通过 MCP 暴露 Tools、Resources、Prompts 等能力。
+```
+
+一个 Host 可以连接多个 Server。按照 MCP 架构，每个 Client 通常维护一条到特定 Server 的专用连接。
+
+上一节的验证程序只包含：
+
+```text
+测试 Client <----> add Server
+```
+
+它没有用户界面和 LLM，因此还不是一个完整的 MCP Host 应用，但已经足以验证协议。
+
+### 4. LLM 会直接连接 MCP Server 吗？
+
+通常不会。
+
+更准确的调用链是：
+
+```text
+用户
+  -> Host
+  -> LLM
+  -> LLM 表达“我要调用 add”
+  -> Host 把调用路由给 MCP Client
+  -> MCP Client 调用 MCP Server
+  -> Server 返回结果
+  -> Host 把结果放回模型上下文
+  -> LLM 生成最终回答
+```
+
+所以需要区分两件事：
+
+```text
+LLM 负责：
+  根据上下文决定是否使用工具，以及生成工具参数。
+
+MCP 负责：
+  Client 与 Server 如何发现能力、发起调用和交换结果。
+```
+
+Host 也可以不经过 LLM，直接调用 MCP 工具。上一节的验证 Client 就是这样做的。
+
+这说明：
+
+```text
+“必须由 LLM 选择工具”不是 MCP 协议的要求。
+```
+
+### 5. 一次真实的 MCP 工具调用怎样发生？
+
+将 LangChain Agent 接入 MCP 后，一次典型调用可以拆成九步：
+
+```text
+1. Host 创建 MCP Client。
+2. Client 通过 stdio 或 Streamable HTTP 连接 Server。
+3. 双方通过 initialize 协商协议版本和能力。
+4. Client 通过 tools/list 获取工具及其 JSON Schema。
+5. Host 把这些工具转换成模型能够理解的 Tool 定义。
+6. LLM 根据用户问题生成工具调用意图和参数。
+7. Host 通过 Client 发送 tools/call。
+8. Server 执行业务逻辑并返回 content 或 structuredContent。
+9. Host 把工具结果交给 LLM，模型继续推理或生成最终回答。
+```
+
+其中：
+
+```text
+第 3、4、7、8 步主要属于 MCP 协议范围。
+第 5、6、9 步属于 Host、Agent 框架和模型的工作。
+```
+
+这条边界非常重要。MCP 规定“能力如何交换”，不规定 Agent 应该如何思考。
+
+### 6. MCP 有哪两层？
+
+可以把 MCP 拆成数据层和传输层。
+
+#### 数据层
+
+数据层定义消息“说什么”，主要包括：
+
+```text
+JSON-RPC 2.0 消息格式
+初始化与生命周期
+能力协商
+Tools、Resources、Prompts 等原语
+请求、响应与通知
+错误表达
+```
+
+例如：
+
+```text
+initialize
+tools/list
+tools/call
+resources/list
+resources/read
+prompts/list
+prompts/get
+```
+
+#### 传输层
+
+传输层定义消息“怎么送过去”。官方主要支持：
+
+```text
+stdio：
+  Client 启动本地 Server 子进程，通过 stdin/stdout 通信。
+
+Streamable HTTP：
+  Client 通过 HTTP 与远程或独立部署的 Server 通信。
+```
+
+因此：
+
+```text
+MCP 不等于 stdio，也不等于 HTTP。
+stdio 和 Streamable HTTP 只是承载同一套 MCP 语义的不同传输方式。
+```
+
+### 7. 初始化为什么重要？
+
+MCP 不是一连上就盲目调用的无状态约定。
+
+正式工作前，Client 和 Server 会完成初始化：
+
+```text
+Client -> initialize：
+  我支持哪个协议版本、拥有哪些能力、身份是什么。
+
+Server -> initialize result：
+  我选择哪个协议版本、拥有哪些能力、身份是什么。
+
+Client -> initialized notification：
+  初始化完成，可以开始正常通信。
+```
+
+这叫能力协商。
+
+它允许不同 Client 和 Server 明确知道对方支持什么，而不是依靠猜测。
+
+### 8. Server 可以暴露什么？
+
+最常见的三类 Server 原语是：
+
+| 原语 | 用途 | 常见操作 | 例子 |
+| --- | --- | --- | --- |
+| Tools | 执行动作或计算 | `tools/list`、`tools/call` | 查询天气、创建订单、执行 SQL |
+| Resources | 提供可读取的上下文 | `resources/list`、`resources/read` | 文件、文档、数据库 schema |
+| Prompts | 提供可复用的提示模板 | `prompts/list`、`prompts/get` | 代码审查模板、周报模板 |
+
+一个容易记忆的区分是：
+
+```text
+Tool：做一件事。
+Resource：读一份内容。
+Prompt：获得一套交互模板。
+```
+
+这只是理解模型，不代表 MCP 自动替你建立安全边界。Server 仍然必须校验权限和输入。
+
+MCP 还定义了一些由 Client 提供、供 Server 请求使用的能力，例如：
+
+```text
+Sampling：请求 Host 使用模型生成内容。
+Elicitation：请求 Host 向用户补充信息或确认。
+Logging：发送结构化日志消息。
+```
+
+初学阶段先掌握 Tools 即可，后面遇到需求再扩展。
+
+### 9. MCP 和 Function Calling 有什么区别？
+
+它们处在不同边界：
+
+```text
+Function Calling / Tool Calling：
+  主要约定应用怎样向模型描述工具，
+  以及模型怎样表达“我要调用哪个工具、参数是什么”。
+
+MCP：
+  主要约定 Host 中的 Client 怎样发现和调用外部 Server 的能力。
+```
+
+二者经常协作：
+
+```text
+MCP Server
+  -> tools/list 返回工具 schema
+  -> Host 转换成模型的 Function Calling 定义
+  -> 模型返回 tool call
+  -> Host 转换成 MCP tools/call
+```
+
+因此 MCP 没有替代 Function Calling，它为 Function Calling 后面的能力接入提供了标准协议。
+
+### 10. MCP 和 LangChain Tool 有什么区别？
+
+```text
+LangChain Tool：
+  LangChain 运行时中的工具抽象。
+  它可以直接包装当前进程里的 TypeScript 函数。
+
+MCP Tool：
+  由 MCP Server 通过协议暴露的工具。
+  Client 可以在运行时发现并调用它。
+```
+
+二者也不是竞争关系。
+
+在 LangChain 应用中，通常会把 MCP Server 发现到的工具适配成 LangChain Tool，然后交给 Agent 使用：
+
+```text
+MCP Tool -> LangChain Tool -> Agent
+```
+
+下一节“在 LangChain 中调用天气查询 MCP 服务”就会完成这一步。
+
+### 11. MCP 和 REST API 有什么区别？
+
+REST API 通常面向普通软件系统，MCP 主要面向 AI Host 与能力提供方的集成。
+
+```text
+REST API 关注：
+  HTTP 资源、路径、方法、状态码和业务数据。
+
+MCP 关注：
+  能力发现、schema、调用、内容块、生命周期和能力协商。
+```
+
+一个 MCP Server 完全可以在内部继续调用 REST API：
+
+```text
+LangChain Agent
+  -> MCP Client
+  -> 天气 MCP Server
+  -> 第三方天气 REST API
+```
+
+所以 MCP 更像 AI 侧的标准适配层，不是要求企业把现有 REST 服务全部重写。
+
+### 12. MCP 不是什么？
+
+为了避免概念无限扩大，记住 MCP 不是：
+
+```text
+不是 LLM：
+  它不生成答案，也没有推理能力。
+
+不是 Agent 框架：
+  它不提供规划、循环、记忆和工作流编排。
+
+不是工具实现：
+  它不替你实现天气查询、数据库访问或订单逻辑。
+
+不是 REST 的全面替代品：
+  Server 内部仍可使用 REST、RPC、数据库或本地函数。
+
+不是权限魔法：
+  能发现工具不等于有权执行工具。
+
+不是“接上就一定兼容”：
+  协议格式统一，不代表不同 Server 的业务语义相同。
+```
+
+### 13. MCP 标准化了什么，没有标准化什么？
+
+MCP 主要标准化：
+
+```text
+连接后的初始化和生命周期
+协议版本与能力协商
+Tools、Resources、Prompts 等原语
+能力发现和调用方法
+输入 schema 与结果内容结构
+请求、响应、通知和错误的基本形式
+stdio 与 Streamable HTTP 等传输方式
+```
+
+MCP 不负责决定：
+
+```text
+使用哪一个 LLM
+怎样写系统提示词
+Agent 什么时候调用工具
+多个工具怎样规划和编排
+业务结果是否正确
+租户、角色和审批规则怎样设计
+工具结果怎样展示给用户
+```
+
+官方对 MCP 范围的描述也强调：协议关注上下文交换，不规定 AI 应用如何使用 LLM 或管理上下文。
+
+### 14. 安全边界在哪里？
+
+生产环境不能因为工具来自 MCP 就默认信任它。
+
+Host 侧至少需要考虑：
+
+```text
+只连接可信 Server
+向用户展示敏感工具的真实影响
+对写操作、付款、删除等动作增加确认
+限制 Server 能接触的文件、网络和凭据
+把 Server 描述和工具结果当作不可信输入
+记录工具名称、参数、结果、耗时和调用者
+```
+
+Server 侧至少需要考虑：
+
+```text
+身份认证与业务授权
+参数校验
+最小权限
+超时、限流和资源隔离
+敏感信息脱敏
+幂等与审计
+```
+
+最关键的一句话是：
+
+```text
+协议兼容性解决“能不能通信”，权限系统解决“允不允许执行”。
+```
+
+### 15. 用一句完整的话描述 MCP
+
+现在可以给出比开头更完整的定义：
+
+```text
+MCP 是一种基于 Client-Server 架构的开放协议，
+它通过标准化的生命周期、能力协商、原语和消息格式，
+让 AI Host 能够发现并使用本地或远程 Server 暴露的上下文与工具；
+它不负责模型推理、Agent 编排和具体业务实现。
+```
+
+### 16. 本节小结
+
+记住下面八句话：
+
+```text
+1. MCP 是协议，不是模型、Agent 框架或工具库。
+2. Host 是 AI 应用，Client 是协议连接组件，Server 是能力提供方。
+3. LLM 通常不直接连接 MCP Server，Host 负责在二者之间编排。
+4. Tools 用来执行，Resources 用来读取，Prompts 用来复用模板。
+5. MCP 数据层使用 JSON-RPC 2.0，并有初始化和能力协商。
+6. stdio 与 Streamable HTTP 是传输方式，不是 MCP 本身。
+7. MCP 可以和 Function Calling、LangChain Tool、REST API 同时存在。
+8. MCP 标准化通信，但不替代业务权限、安全和 Agent 决策。
+```
+
+一句话总结：
+
+```text
+MCP 不是 Agent 的大脑，而是 Agent 连接外部世界时使用的标准接口。
+```
+
+参考资料：
+
+- [MCP 官方架构说明](https://modelcontextprotocol.io/docs/learn/architecture)
+- [MCP Server Concepts](https://modelcontextprotocol.io/docs/learn/server-concepts)
+- [MCP Lifecycle 规范](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle)
+- [MCP Transports 规范](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
+
+## 24 在 LangChain 中调用天气查询 MCP 服务
+
+上一节建立了这条概念链：
+
+```text
+LLM 决定是否调用工具
+MCP 负责 Host 与 Server 之间的标准通信
+```
+
+这一节把它真正运行起来：
+
+```text
+用户问题
+  -> LangChain Agent
+  -> LLM 生成 get_weather tool call
+  -> LangChain MCP Adapter
+  -> stdio MCP Client
+  -> Weather MCP Server
+  -> ToolMessage
+  -> LLM 生成最终中文回答
+```
+
+为了只关注 LangChain 与 MCP 的集成，天气 Server 使用课程内置固定数据，不依赖天气 API，也不代表实时天气。
+
+### 1. 本节代码
+
+天气 MCP Server：
+
+```text
+langchain-system-lab/src/mcp/03-weather-server.ts
+```
+
+LangChain Agent：
+
+```text
+langchain-system-lab/src/mcp/04-langchain-weather-agent.ts
+```
+
+运行完整 Agent：
+
+```bash
+cd langchain-system-lab
+pnpm example:mcp:weather
+```
+
+完整模式需要 `.env` 中配置的 OpenAI 或 DeepSeek API Key，会产生少量模型调用费用。
+
+只验证 MCP 与 LangChain Tool 适配，不调用 LLM：
+
+```bash
+pnpm example:mcp:weather -- --tool-only
+```
+
+### 2. 安装 LangChain MCP Adapter
+
+项目增加了：
+
+```bash
+pnpm add @langchain/mcp-adapters@^1.1.3
+```
+
+两个包的职责不同：
+
+```text
+@modelcontextprotocol/sdk：
+  实现 MCP Client、Server 和 Transport。
+
+@langchain/mcp-adapters：
+  把 MCP Server 暴露的工具转换为 LangChain 可以使用的 Tool。
+```
+
+本节最关键的桥梁就是：
+
+```text
+MCP Tool
+  -> @langchain/mcp-adapters
+  -> LangChain DynamicStructuredTool
+  -> createAgent({ tools })
+```
+
+### 3. 天气 MCP Server 做了什么？
+
+Server 创建方式和上一节相同：
+
+```ts
+const server = new McpServer({
+  name: "course-weather-server",
+  version: "1.0.0"
+});
+```
+
+然后注册 `get_weather`：
+
+```ts
+server.registerTool(
+  "get_weather",
+  {
+    description: "查询城市天气。当前提供上海、北京和深圳的课程演示数据，不代表实时天气。",
+    inputSchema: {
+      city: z.string().min(1).describe("要查询的城市，例如：上海")
+    }
+  },
+  async ({ city }) => {
+    // 查询课程内置天气数据并返回 MCP content
+  }
+);
+```
+
+它向 Client 声明了三件事：
+
+```text
+工具名：get_weather
+工具用途：查询城市天气
+输入参数：{ city: string }
+```
+
+成功结果使用 MCP content block 返回：
+
+```ts
+return {
+  content: [
+    {
+      type: "text",
+      text: JSON.stringify(weather, null, 2)
+    }
+  ]
+};
+```
+
+未知城市则返回：
+
+```ts
+return {
+  isError: true,
+  content: [
+    {
+      type: "text",
+      text: "暂时没有该城市的演示天气数据……"
+    }
+  ]
+};
+```
+
+`isError: true` 表示工具已经正常接收到调用，但业务执行没有得到成功结果。
+
+### 4. Server 为什么仍然使用 stdio？
+
+启动代码是：
+
+```ts
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+本节的重点是 LangChain 集成，不是 HTTP 部署，因此继续使用最简单的本地子进程模型：
+
+```text
+LangChain 进程
+  -> 启动 Weather Server 子进程
+  -> stdin 发送 MCP 请求
+  <- stdout 接收 MCP 响应
+```
+
+下一节会再把同一个 MCP 服务改造成 HTTP 服务。
+
+### 5. 创建 MultiServerMCPClient
+
+Agent 端首先导入：
+
+```ts
+import { MultiServerMCPClient } from "@langchain/mcp-adapters";
+```
+
+然后配置 Weather Server：
+
+```ts
+const client = new MultiServerMCPClient({
+  weather: {
+    transport: "stdio",
+    command: process.execPath,
+    args: ["--import", "tsx", serverFile]
+  }
+});
+```
+
+配置逐项解释：
+
+```text
+weather：
+  Host 内部给这条 Server 连接起的名字。
+
+transport: "stdio"：
+  使用本地进程的标准输入输出通信。
+
+command: process.execPath：
+  使用当前正在运行的 Node.js 可执行文件。
+
+args: ["--import", "tsx", serverFile]：
+  让 Node.js 通过 tsx 直接运行 TypeScript Server 文件。
+```
+
+`serverFile` 被转换成绝对路径：
+
+```ts
+const serverFile = fileURLToPath(
+  new URL("./03-weather-server.ts", import.meta.url)
+);
+```
+
+stdio Server 由 Client 作为子进程启动时，绝对路径比依赖当前工作目录的相对路径更稳定。
+
+虽然本节只有一个 Server，仍使用 `MultiServerMCPClient`，因为同一个 Client 后续可以继续配置：
+
+```text
+weather
+database
+filesystem
+github
+```
+
+### 6. getTools() 是本节的核心
+
+真正完成 MCP 与 LangChain 转换的是：
+
+```ts
+const tools = await client.getTools();
+```
+
+这一行背后大致发生：
+
+```text
+1. 启动 Weather MCP Server 子进程。
+2. 创建 stdio Transport。
+3. 完成 initialize 初始化和能力协商。
+4. 发送 tools/list。
+5. 收到 get_weather 的名称、描述和 inputSchema。
+6. 把它包装成 LangChain DynamicStructuredTool。
+```
+
+因此可以直接查看：
+
+```ts
+tools.forEach((tool) => {
+  console.log(`- ${tool.name}: ${tool.description}`);
+});
+```
+
+实际输出：
+
+```text
+- get_weather: 查询城市天气。当前提供上海、北京和深圳的课程演示数据，不代表实时天气。
+```
+
+注意 Agent 代码里没有再次手写：
+
+```ts
+tool(handler, {
+  name: "get_weather",
+  schema: ...
+});
+```
+
+工具定义的唯一来源是 MCP Server。
+
+这就是 MCP 的价值之一：Host 可以在运行时发现能力，而不是把每个外部工具的 schema 重复写进 Agent。
+
+### 7. 先绕过 LLM 验证适配结果
+
+`--tool-only` 模式从工具数组中找到 `get_weather`：
+
+```ts
+const weatherTool = tools.find(
+  (tool) => tool.name === "get_weather"
+);
+```
+
+然后像普通 LangChain Tool 一样调用：
+
+```ts
+const result = await weatherTool.invoke({ city: "上海" });
+```
+
+代码看起来是普通 LangChain Tool 调用，但内部实际路径是：
+
+```text
+weatherTool.invoke({ city: "上海" })
+  -> Adapter 转成 MCP tools/call
+  -> Weather MCP Server handler
+  -> MCP content
+  -> Adapter 转回 LangChain Tool 结果
+```
+
+实际输出：
+
+```json
+{
+  "city": "上海",
+  "condition": "多云",
+  "temperatureC": 24,
+  "humidityPercent": 68,
+  "wind": "东南风 2 级",
+  "outdoorAdvice": "适合散步，建议随身带伞。",
+  "dataSource": "课程内置演示数据，非实时天气"
+}
+```
+
+这种分层验证很有用：
+
+```text
+tool-only 失败：
+  优先检查 Server、Transport、MCP schema 或 Adapter。
+
+tool-only 成功但 Agent 失败：
+  优先检查模型的 Tool Calling 能力、Prompt 或模型响应。
+```
+
+### 8. 把 MCP Tools 交给 Agent
+
+`getTools()` 返回的数组可以直接传给 `createAgent()`：
+
+```ts
+const agent = createAgent({
+  model: createChatModel(activeModel),
+  tools,
+  systemPrompt: [
+    "你是一个简洁的中文天气助手。",
+    "查询天气时必须使用 get_weather 工具，不要自行编造天气。",
+    "工具返回的是课程演示数据，最终回答必须明确说明它不是实时天气。"
+  ].join("\n")
+});
+```
+
+从 `createAgent()` 的视角看，它并不关心工具来自哪里：
+
+```text
+本地 tool() 包装的函数
+MCP Adapter 加载的工具
+其他 Toolkit 提供的工具
+```
+
+只要最终符合 LangChain Tool 接口，Agent 就可以统一编排。
+
+### 9. 发起 Agent 调用
+
+调用方式与前面章节完全相同：
+
+```ts
+const response = await agent.invoke({
+  messages: [
+    {
+      role: "user",
+      content: "请查询上海的天气，并告诉我是否适合散步。"
+    }
+  ]
+});
+```
+
+用户没有显式指定工具参数格式，只说了自然语言。
+
+LLM 根据工具描述和 schema 生成：
+
+```json
+{
+  "name": "get_weather",
+  "args": {
+    "city": "上海"
+  }
+}
+```
+
+随后 Agent 自动完成工具执行和模型续答。
+
+### 10. 四条 messages 怎样理解？
+
+实际运行得到四条消息。
+
+#### 第 1 条：HumanMessage
+
+```text
+请查询上海的天气，并告诉我是否适合散步。
+```
+
+这是用户原始问题。
+
+#### 第 2 条：AIMessage + tool_calls
+
+```json
+{
+  "name": "get_weather",
+  "args": {
+    "city": "上海"
+  },
+  "type": "tool_call"
+}
+```
+
+这时模型还没有天气结果，只表达了调用意图。
+
+#### 第 3 条：ToolMessage
+
+```json
+{
+  "city": "上海",
+  "condition": "多云",
+  "temperatureC": 24,
+  "humidityPercent": 68,
+  "wind": "东南风 2 级",
+  "outdoorAdvice": "适合散步，建议随身带伞。",
+  "dataSource": "课程内置演示数据，非实时天气"
+}
+```
+
+这条内容经过了：
+
+```text
+LangChain ToolNode
+  -> MCP Adapter
+  -> MCP tools/call
+  -> Weather Server
+  -> MCP Adapter
+  -> ToolMessage
+```
+
+#### 第 4 条：AIMessage
+
+模型读取 ToolMessage 后，生成面向用户的最终回答，并明确说明数据不是实时天气。
+
+因此整个 Agent 循环仍然是熟悉的：
+
+```text
+model -> tools -> model
+```
+
+只是工具节点内部多了一段 MCP 调用。
+
+### 11. 谁负责工具选择，谁负责工具执行？
+
+这一节可以把职责分得非常清楚：
+
+```text
+Weather MCP Server：
+  定义并执行 get_weather。
+
+MultiServerMCPClient：
+  连接 Server、发现工具、发送调用、接收结果。
+
+@langchain/mcp-adapters：
+  在 MCP Tool 和 LangChain Tool 之间转换。
+
+LangChain Agent：
+  管理 model -> tool -> model 循环。
+
+LLM：
+  根据用户问题决定调用 get_weather，并生成 city 参数。
+```
+
+最值得记住的是：
+
+```text
+MCP Server 不知道用户的完整对话，也不负责选择自己。
+它只收到 get_weather({ city: "上海" }) 并返回结果。
+```
+
+### 12. 为什么一定要 close()？
+
+Client 被放在 `try/finally` 中：
+
+```ts
+try {
+  const tools = await client.getTools();
+  // 创建并调用 Agent
+} finally {
+  await client.close();
+}
+```
+
+本节使用 stdio Transport，Client 启动了一个 Server 子进程。
+
+`close()` 用来关闭连接并清理子进程。即使模型调用或工具执行抛出异常，`finally` 也会执行。
+
+如果遗漏清理，可能出现：
+
+```text
+脚本一直不退出
+残留 Server 子进程
+连接和系统资源泄漏
+测试进程互相影响
+```
+
+### 13. 换成真实天气 API，需要改哪里？
+
+Agent 端原则上不需要改。
+
+只需要替换 Weather Server handler 的内部实现：
+
+```text
+当前：
+  从 weatherByCity Map 读取课程数据。
+
+生产：
+  城市名 -> 经纬度
+  -> 调用天气 REST API
+  -> 校验和归一化结果
+  -> 返回 MCP content / structuredContent
+```
+
+只要继续保持：
+
+```text
+工具名
+输入 schema
+返回语义
+```
+
+Agent 侧的 `client.getTools()` 和 `createAgent({ tools })` 可以保持不变。
+
+这也展示了 MCP Server 作为适配层的意义：外部 API 的认证、限流、数据清洗和错误映射，可以封装在 Server 内部。
+
+### 14. 本节小结
+
+记住下面七句话：
+
+```text
+1. @langchain/mcp-adapters 负责把 MCP Tool 转成 LangChain Tool。
+2. MultiServerMCPClient 负责连接一个或多个 MCP Server。
+3. getTools() 会发现 Server 工具并返回 LangChain 工具数组。
+4. Agent 无须知道工具来自本地函数还是 MCP Server。
+5. LLM 负责选择 get_weather 和生成 city 参数。
+6. MCP Server 只负责执行天气查询并返回协议结果。
+7. stdio Client 使用完后必须 close()，以清理连接和子进程。
+```
+
+一句话总结：
+
+```text
+LangChain 不会直接重写 MCP 工具，而是通过 Adapter 把 MCP Server 的能力装配进现有 Agent 工具循环。
+```
+
+参考资料：
+
+- [LangChain JavaScript MCP 官方文档](https://docs.langchain.com/oss/javascript/langchain/mcp)
+- [MCP 官方 TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [MCP Tools 概念](https://modelcontextprotocol.io/docs/learn/server-concepts#tools)
+
+## 25 把 MCP 改成 HTTP 服务
+
+上一节使用 stdio：
+
+```text
+LangChain Client
+  -> 启动 Weather Server 子进程
+  -> stdin/stdout 传输 MCP 消息
+```
+
+这一节把 Weather MCP Server 改成独立 HTTP 服务：
+
+```text
+LangChain Agent 进程
+  -> HTTP 请求
+  -> http://127.0.0.1:3001/mcp
+  -> Weather MCP Server 进程
+```
+
+最重要的变化只有一层：
+
+```text
+stdio Transport -> Streamable HTTP Transport
+```
+
+工具名、参数 schema、业务 handler、Agent 调用方式和最终 messages 循环都保持不变。
+
+### 1. 为什么不是旧的 SSE Transport？
+
+当前 MCP 官方推荐远程服务使用：
+
+```text
+Streamable HTTP
+```
+
+早期 MCP 教程中经常出现：
+
+```text
+HTTP + SSE
+SSEServerTransport
+transport: "sse"
+```
+
+这种旧 Transport 现在主要用于向后兼容。新服务应优先使用：
+
+```ts
+StreamableHTTPServerTransport
+```
+
+LangChain Client 对应配置为：
+
+```ts
+transport: "http"
+```
+
+不要因为 Streamable HTTP 可以使用 SSE 响应流，就把它和旧版 SSE Transport 当成同一个协议实现。
+
+### 2. 本节代码
+
+共享的天气 MCP Server 工厂：
+
+```text
+langchain-system-lab/src/mcp/weather-server-factory.ts
+```
+
+stdio 入口：
+
+```text
+langchain-system-lab/src/mcp/03-weather-server.ts
+```
+
+LangChain Client / Agent：
+
+```text
+langchain-system-lab/src/mcp/04-langchain-weather-agent.ts
+```
+
+新增 HTTP 入口：
+
+```text
+langchain-system-lab/src/mcp/05-weather-http-server.ts
+```
+
+### 3. 为什么先抽出 Server 工厂？
+
+原来的文件同时包含两类代码：
+
+```text
+业务能力：
+  get_weather 的 schema、天气数据和 handler。
+
+传输入口：
+  创建 StdioServerTransport 并连接。
+```
+
+为了让两个 Transport 使用完全相同的工具定义，现在把业务能力抽成：
+
+```ts
+export function createWeatherMcpServer(): McpServer {
+  const server = new McpServer({
+    name: "course-weather-server",
+    version: "1.0.0"
+  });
+
+  server.registerTool("get_weather", config, handler);
+  return server;
+}
+```
+
+stdio 入口只负责：
+
+```ts
+const server = createWeatherMcpServer();
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+HTTP 入口也调用同一个工厂。
+
+这能清楚表达：
+
+```text
+MCP Server 能力与 Transport 是两个不同维度。
+```
+
+业务逻辑不应该因为从 stdio 换成 HTTP 而复制一份。
+
+### 4. 创建 HTTP 应用
+
+HTTP Server 使用 SDK 提供的 Express 工厂：
+
+```ts
+import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
+
+const app = createMcpExpressApp({ host });
+```
+
+本节默认：
+
+```text
+host: 127.0.0.1
+port: 3001
+MCP endpoint: http://127.0.0.1:3001/mcp
+health endpoint: http://127.0.0.1:3001/health
+```
+
+之所以绑定 `127.0.0.1`，是因为它只供本机课程示例使用，不应该默认暴露到局域网。
+
+`createMcpExpressApp({ host: "127.0.0.1" })` 还会启用 SDK 针对本地服务提供的 Host Header / DNS rebinding 防护。
+
+端口可以覆盖：
+
+```bash
+MCP_WEATHER_PORT=3100 pnpm mcp:weather:http:server
+```
+
+Client URL 也可以覆盖：
+
+```bash
+MCP_WEATHER_URL=http://127.0.0.1:3100/mcp \
+  pnpm example:mcp:weather:http
+```
+
+### 5. 添加普通健康检查
+
+HTTP Server 增加了一个普通 HTTP 路由：
+
+```ts
+app.get("/health", (_request, response) => {
+  response.json({
+    status: "ok",
+    service: "course-weather-mcp"
+  });
+});
+```
+
+可以检查：
+
+```bash
+curl http://127.0.0.1:3001/health
+```
+
+返回：
+
+```json
+{
+  "status": "ok",
+  "service": "course-weather-mcp"
+}
+```
+
+注意：
+
+```text
+/health 是普通运维接口，不是 MCP 协议方法。
+/mcp 才是 MCP Client 连接的协议端点。
+```
+
+### 6. 创建 Streamable HTTP Transport
+
+核心代码是：
+
+```ts
+app.post("/mcp", async (request, response) => {
+  const server = createWeatherMcpServer();
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true
+  });
+
+  await server.connect(transport);
+  await transport.handleRequest(request, response, request.body);
+});
+```
+
+逐项解释。
+
+#### sessionIdGenerator: undefined
+
+表示使用无会话模式：
+
+```text
+不生成 Mcp-Session-Id
+不在内存中维护 Client Session
+不支持会话恢复
+每个请求可以独立处理
+```
+
+本节只有无状态天气查询，使用无会话模式最容易理解。
+
+#### enableJsonResponse: true
+
+表示普通请求直接返回 JSON 响应，而不是为响应建立 SSE 流。
+
+它依然是 Streamable HTTP Transport，只是本节不需要：
+
+```text
+服务端主动通知
+长时间 SSE 流
+断线恢复
+```
+
+#### transport.handleRequest()
+
+它把 Express 的 HTTP 请求交给 MCP Transport：
+
+```text
+读取 JSON-RPC 消息
+识别 initialize、tools/list、tools/call
+交给 McpServer 处理
+把 MCP Result 写入 HTTP response
+```
+
+Express 本身并不知道 `tools/call` 是什么意思，真正处理 MCP 语义的是 Transport 和 McpServer。
+
+### 7. 为什么每个 POST 都创建 Server 和 Transport？
+
+无会话模式下，本节采用官方示例的结构：
+
+```ts
+app.post("/mcp", async (request, response) => {
+  const server = createWeatherMcpServer();
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined
+  });
+
+  // 处理当前请求
+});
+```
+
+请求关闭后清理：
+
+```ts
+response.on("close", () => {
+  void transport.close();
+  void server.close();
+});
+```
+
+这与 stateful 模式不同。
+
+有状态服务通常需要：
+
+```text
+生成 Session ID
+保存 Session ID -> Transport 映射
+后续请求根据 Mcp-Session-Id 找回 Transport
+处理 GET SSE 流
+处理 DELETE 终止会话
+考虑多实例之间的 Session 路由
+```
+
+本节先不引入这些复杂度。
+
+### 8. GET 和 DELETE 为什么返回 405？
+
+本节启用了：
+
+```text
+无会话
+JSON response
+无服务端通知流
+```
+
+因此只需要 `POST /mcp`。
+
+代码对下面两个请求明确返回 `405 Method Not Allowed`：
+
+```text
+GET /mcp
+DELETE /mcp
+```
+
+这不是说 Streamable HTTP 永远不使用 GET 和 DELETE。
+
+在有状态或支持 SSE 通知的实现中，它们可能分别用于：
+
+```text
+GET：建立服务端到 Client 的 SSE 消息流。
+DELETE：终止指定 MCP Session。
+```
+
+当前模式不具备这些能力，所以应该明确拒绝，而不是制造一个看似成功但没有语义的路由。
+
+### 9. 启动 HTTP Server
+
+第一个终端运行：
+
+```bash
+cd langchain-system-lab
+pnpm mcp:weather:http:server
+```
+
+输出：
+
+```text
+Weather MCP Server: http://127.0.0.1:3001/mcp
+Health check: http://127.0.0.1:3001/health
+```
+
+与 stdio 不同，HTTP Server 是独立常驻进程：
+
+```text
+它不会由 LangChain Client 自动启动。
+它可以同时接受多个 Client 的请求。
+Agent 退出后它仍然继续运行。
+```
+
+### 10. LangChain Client 怎样切换到 HTTP？
+
+stdio 配置是：
+
+```ts
+{
+  transport: "stdio",
+  command: process.execPath,
+  args: ["--import", "tsx", serverFile]
+}
+```
+
+HTTP 配置简化为：
+
+```ts
+{
+  transport: "http",
+  url: "http://127.0.0.1:3001/mcp"
+}
+```
+
+本节复用同一个 Agent 文件，通过 `--http` 选择配置：
+
+```ts
+const useHttp = process.argv.includes("--http");
+
+const client = useHttp
+  ? new MultiServerMCPClient({
+      weather: {
+        transport: "http",
+        url: weatherHttpUrl
+      }
+    })
+  : new MultiServerMCPClient({
+      weather: {
+        transport: "stdio",
+        command: process.execPath,
+        args: ["--import", "tsx", serverFile]
+      }
+    });
+```
+
+后面的代码完全不变：
+
+```ts
+const tools = await client.getTools();
+
+const agent = createAgent({
+  model,
+  tools,
+  systemPrompt
+});
+```
+
+这说明 LangChain Adapter 屏蔽了 Transport 差异。
+
+### 11. 先运行无模型验证
+
+保持 HTTP Server 运行，在第二个终端执行：
+
+```bash
+pnpm example:mcp:weather:http -- --tool-only
+```
+
+实际输出：
+
+```text
+## MCP transport: Streamable HTTP (http://127.0.0.1:3001/mcp)
+## LangChain 从 MCP Server 加载到的工具
+- get_weather: 查询城市天气……
+
+## 不经过 LLM，直接调用适配后的 LangChain Tool
+{
+  "city": "上海",
+  "condition": "多云",
+  "temperatureC": 24,
+  ...
+}
+```
+
+这证明 HTTP 链路已经完成：
+
+```text
+initialize
+  -> tools/list
+  -> get_weather.invoke()
+  -> tools/call
+  -> MCP result
+```
+
+### 12. 运行完整 Agent
+
+第二个终端执行：
+
+```bash
+pnpm example:mcp:weather:http
+```
+
+实际 messages 仍然是：
+
+```text
+1. HumanMessage
+2. AIMessage + get_weather tool_call
+3. ToolMessage + 天气结果
+4. AIMessage + 最终回答
+```
+
+Agent 生命周期没有变：
+
+```text
+model -> tools -> model
+```
+
+变化只发生在 Tool 内部：
+
+```text
+上一节：
+  Tool -> stdio -> Server 子进程
+
+这一节：
+  Tool -> Streamable HTTP -> 独立 Server 进程
+```
+
+### 13. HTTP MCP 是 REST API 吗？
+
+不是。
+
+表面上它使用 HTTP，但没有为每个 Tool 创建 REST 路由：
+
+```text
+错误理解：
+  GET /weather?city=上海
+  POST /tools/get-weather
+
+本节真实接口：
+  POST /mcp
+```
+
+具体操作位于 JSON-RPC 消息中：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "get_weather",
+    "arguments": {
+      "city": "上海"
+    }
+  },
+  "id": 1
+}
+```
+
+所以它是：
+
+```text
+HTTP 负责传输
+JSON-RPC 表达请求和响应
+MCP 定义 method、生命周期和能力语义
+```
+
+不能只用普通浏览器地址栏访问 `/mcp` 来完成一次有效 MCP 调用，因为 MCP Client 还需要处理初始化、协议版本、请求 ID 和正确的请求头。
+
+### 14. client.close() 的含义发生了什么变化？
+
+Agent 代码仍然执行：
+
+```ts
+await client.close();
+```
+
+但两种模式的影响不同：
+
+```text
+stdio：
+  关闭 Transport，并清理由 Client 启动的 Server 子进程。
+
+HTTP：
+  关闭 Client 侧连接资源，但不会关闭独立 HTTP Server。
+```
+
+因此 HTTP Server 必须自己管理生命周期。
+
+本节监听：
+
+```text
+SIGINT
+SIGTERM
+```
+
+收到信号后停止接受新连接并关闭 HTTP Server。
+
+### 15. 生产环境还缺什么？
+
+当前 Server 只适合本地教学。
+
+部署到网络环境前至少需要增加：
+
+```text
+HTTPS / TLS
+身份认证和工具级授权
+请求限流
+超时与并发控制
+结构化日志和 tracing
+输入、输出与错误脱敏
+反向代理配置
+Host 校验与正确的 CORS 策略
+健康检查与优雅关闭
+Server 和 Tool 版本管理
+```
+
+如果需要有状态 Session，还要增加：
+
+```text
+Session ID 生成与校验
+Transport 生命周期管理
+Session 过期清理
+多实例 Session 路由或共享存储
+断线恢复和 Event Store
+```
+
+特别注意：
+
+```text
+把 host 从 127.0.0.1 改成 0.0.0.0，
+不只是“让其他机器能访问”，也意味着安全边界发生了变化。
+```
+
+### 16. stdio 和 Streamable HTTP 怎么选？
+
+| 维度 | stdio | Streamable HTTP |
+| --- | --- | --- |
+| Server 位置 | 通常与 Host 同机 | 可以独立或远程部署 |
+| 启动方式 | Client 启动子进程 | Server 独立启动 |
+| 通信通道 | stdin / stdout | HTTP POST，可选 SSE |
+| 多 Client | 通常一条进程连接服务一个 Client | 更适合多个网络 Client |
+| 认证 | 常依赖本机权限和进程环境 | 通常需要网络认证与授权 |
+| 部署复杂度 | 低 | 较高 |
+| 典型场景 | IDE、本地桌面工具、CLI | 企业服务、跨机器 Agent、集中式能力平台 |
+
+选择原则：
+
+```text
+能力只供本机 Host 使用：优先 stdio。
+能力需要独立部署或供多个 Host 使用：考虑 Streamable HTTP。
+```
+
+HTTP 并不天然比 stdio 高级，它只是解决不同的部署边界。
+
+### 17. 本节小结
+
+记住下面八句话：
+
+```text
+1. 当前远程 MCP 服务应优先使用 Streamable HTTP，不要新建旧式 SSE Transport。
+2. Tool 和 Transport 可以解耦，同一套 get_weather 能同时支持 stdio 与 HTTP。
+3. 无会话模式使用 sessionIdGenerator: undefined，适合简单无状态工具。
+4. enableJsonResponse: true 仍然属于 Streamable HTTP，只是不建立 SSE 响应流。
+5. HTTP Client 只需要 transport: "http" 和 MCP endpoint URL。
+6. HTTP MCP 使用 JSON-RPC，不等于把每个 Tool 设计成 REST 路由。
+7. HTTP Server 独立运行，client.close() 不会把它关闭。
+8. 暴露到网络前必须补齐认证、授权、TLS、限流和审计。
+```
+
+一句话总结：
+
+```text
+把 MCP 从 stdio 改成 HTTP，本质上是更换 Transport 和部署边界，而不是重写工具或 Agent。
+```
+
+参考资料：
+
+- [MCP TypeScript SDK v1 Server 文档](https://ts.sdk.modelcontextprotocol.io/server)
+- [MCP Streamable HTTP Transport 规范](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
+- [LangChain JavaScript MCP 官方文档](https://docs.langchain.com/oss/javascript/langchain/mcp)
