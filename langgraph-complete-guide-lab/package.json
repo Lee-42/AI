@@ -18,6 +18,9 @@
     "lesson:07b": "node --import tsx src/examples/07b-orchestrator-planner.ts",
     "lesson:07c": "node --import tsx src/examples/07c-send-dynamic-workers.ts",
     "lesson:07d": "node --import tsx src/examples/07d-worker-state-reducer.ts",
+    "lesson:07e": "node --import tsx src/examples/07e-evaluator-optimizer.ts",
+    "lesson:07f": "node --import tsx src/examples/07f-loop-safety-cost.ts",
+    "lesson:07g": "node --import tsx src/examples/07g-workflow-vs-agent.ts",
     "check": "tsc --noEmit"
   },
   "dependencies": {
@@ -25,6 +28,7 @@
     "@langchain/langgraph": "^1.4.7",
     "@langchain/openai": "^1.0.0",
     "dotenv": "^17.2.0",
+    "langchain": "^1.0.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
