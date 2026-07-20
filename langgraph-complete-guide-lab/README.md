@@ -23,11 +23,17 @@ pnpm lesson:07a
 pnpm lesson:07b
 pnpm lesson:07c
 pnpm lesson:07d
+pnpm lesson:07e
+pnpm lesson:07f
+pnpm lesson:07g
+pnpm lesson:08
+pnpm lesson:09
 pnpm check
 ```
 
-第 01、02、07A、07C、07D 节不调用大模型，不需要 API Key。第 03～06 节和第 07B 节
-默认调用 LLM；运行这些示例前先复制环境变量模板并配置 OpenAI 或 DeepSeek：
+第 01、02、07A、07C、07D、07F、07G、08 和 09 节不调用真实大模型，不需要 API Key。
+第 03～06、07B 和 07E 节默认调用 LLM；运行这些示例前先复制环境变量模板并配置
+OpenAI 或 DeepSeek：
 
 ```bash
 cp .env.example .env
@@ -54,6 +60,11 @@ src/examples/
   07b-orchestrator-planner.ts LLM plan -> deterministic validation/numbering
   07c-send-dynamic-workers.ts approved plan -> dynamic Send worker tasks
   07d-worker-state-reducer.ts isolated workers -> ReducedValue -> sorted report
+  07e-evaluator-optimizer.ts LLM/mock generate -> evaluate -> feedback loop
+  07f-loop-safety-cost.ts bounded loop -> failure and cost controls
+  07g-workflow-vs-agent.ts deterministic workflow vs fake-model agent
+  08-store-item-basics.ts InMemoryStore put/get/update/search/delete
+  09-store-namespaces.ts hierarchical namespace isolation and prefix queries
 ```
 
 第 6 节还可以在命令行中替换默认创作请求，观察不同路由：
@@ -92,4 +103,30 @@ pnpm lesson:07c -- 5
 pnpm lesson:07d
 pnpm lesson:07d -- 2
 pnpm lesson:07d -- 5
+```
+
+第 07E 节默认使用 LLM 生成并评价结果，也可以用 mock 完整观察反馈循环：
+
+```bash
+pnpm lesson:07e
+pnpm lesson:07e -- --mock
+```
+
+第 07F、07G 节分别演示循环安全边界以及 Workflow/Agent 的区别：
+
+```bash
+pnpm lesson:07f
+pnpm lesson:07g
+```
+
+第 08 节脱离 Graph 单独观察 Store Item 的创建、读取、更新、列举和删除：
+
+```bash
+pnpm lesson:08
+```
+
+第 09 节使用多组织、多用户数据学习 namespace 层级、精确读取、前缀查询与目录枚举：
+
+```bash
+pnpm lesson:09
 ```

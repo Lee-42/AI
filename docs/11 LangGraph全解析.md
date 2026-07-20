@@ -1,6 +1,6 @@
 # 11 LangGraph全解析
 
-> 学习进度：6 / 17；第 07 节补充进度：4 / 8
+> 学习进度：8 / 17（已完成 01～06、08～09）；第 07 节补充进度：7 / 8
 
 ## 01 node 和 edge 核心概念
 
@@ -4146,3 +4146,1090 @@ Hybrid
 - [LangGraph — Workflows and agents](https://docs.langchain.com/oss/javascript/langgraph/workflows-agents)
 - [LangChain — Agents](https://docs.langchain.com/oss/javascript/langchain/agents)
 - [LangChain — Tools and ToolNode](https://docs.langchain.com/oss/javascript/langchain/tools)
+
+---
+
+## 08 持久化：认识 Store Item（存档点位信息）
+
+### 本节定位
+
+“存档点位信息”不是 LangGraph 官方常用术语。结合后面三节的顺序：
+
+```text
+08 一条持久化记录长什么样、怎样读写
+09 namespace 怎样组织和隔离记录
+10 Store 怎样建立向量索引并进行语义检索
+11 怎样在 LangGraph Node 中使用 Store
+```
+
+本节把它理解成 **Store 返回的一条 `Item`**，而不是图执行过程中的 checkpoint。
+
+这一节先完全脱离 Graph、State、LLM 和 Embedding，只学习最小数据模型：
+
+```text
+namespace + key
+       ↓
+value + createdAt + updatedAt
+```
+
+### 本节目标
+
+学完本节后，应该能够：
+
+1. 解释 Store 为什么位于 Graph State 之外。
+2. 理解 `namespace + key` 是一条 Item 的完整地址。
+3. 认识 `Item` 的五个核心字段。
+4. 使用 `put()`、`get()`、`search()` 和 `delete()`。
+5. 解释相同地址再次 `put()` 时的更新语义。
+6. 区分 Store 和 Checkpointer。
+7. 说明为什么 `InMemoryStore` 不等于生产级磁盘持久化。
+
+### 1. LangGraph 有两套互补的持久化机制
+
+LangGraph 中经常同时出现 Checkpointer 和 Store，但它们保存的不是同一种数据。
+
+| 维度 | Checkpointer | Store |
+| --- | --- | --- |
+| 保存单元 | 图的 State 快照 | 应用定义的 JSON Item |
+| 常用地址 | `thread_id`、checkpoint 信息 | `namespace[] + key` |
+| 写入方式 | 图运行时按执行边界保存 | 应用显式调用 `put()` / `delete()` |
+| 主要作用域 | 单个 thread 的状态历史 | 可按业务设计跨 thread 共享 |
+| 常见用途 | 恢复、中断、容错、时间旅行 | 用户偏好、事实、长期记忆、共享知识 |
+| 教学用内存实现 | `MemorySaver` | `InMemoryStore` |
+
+一句话区分：
+
+```text
+Checkpointer 保存“这张图运行到了哪里”；
+Store 保存“应用以后还想记住什么”。
+```
+
+本节只学习右侧的 Store。
+
+### 2. 创建一个教学用 Store
+
+当前项目实际安装的是 `@langchain/langgraph 1.4.8`，直接使用：
+
+```ts
+import { InMemoryStore } from "@langchain/langgraph";
+
+const store = new InMemoryStore();
+```
+
+`InMemoryStore` 实现了和其他 Store 后端一致的基础接口，但数据只保存在当前 Node.js
+进程的内存中：
+
+```text
+InMemoryStore
+  = 可以学习 Store API 和数据模型
+  = 可以在同一个实例中跨多次调用读取数据
+  ≠ 进程退出后仍然存在
+  ≠ 自动写入磁盘或数据库
+```
+
+所以这里学习的是“持久化接口和长期记忆模型”，而不是生产环境的耐久性。
+
+### 3. namespace + key 才是完整地址
+
+本节使用：
+
+```ts
+const namespace = ["users", "user-42", "preferences"];
+const key = "assistant-style";
+```
+
+可以暂时类比为：
+
+```text
+namespace = 文件夹路径
+key       = 文件名
+value     = 文件内容
+```
+
+这只是帮助理解，并不代表 Store 真的是文件系统。
+
+完整地址是二者的组合：
+
+```text
+(["users", "user-42", "preferences"], "assistant-style")
+```
+
+因此：
+
+- 同一个 namespace 中，key 用来区分不同记录。
+- 不同 namespace 中可以存在同名 key，它们仍是不同记录。
+- key 不需要在整个 Store 中全局唯一。
+- namespace 的层级、前缀匹配和多用户隔离留到第 09 节。
+
+### 4. 使用 put() 保存一条记录
+
+```ts
+await store.put(namespace, key, {
+  language: "zh-CN",
+  tone: "concise",
+  legacyFormat: true
+});
+```
+
+三个参数分别是：
+
+```text
+namespace
+  = 记录位于哪个业务空间
+
+key
+  = 这个空间中的唯一标识
+
+value
+  = 应用真正想保存的 JSON 对象
+```
+
+`put()` 返回 `Promise<void>`，不会直接把创建后的 Item 返回。想查看完整 Item，需要再调用
+`get()`。
+
+### 5. 使用 get() 精确读取一条 Item
+
+```ts
+const item = await store.get(namespace, key);
+```
+
+地址存在时，返回值包含：
+
+| 字段 | 含义 |
+| --- | --- |
+| `namespace` | Item 所属的层级路径 |
+| `key` | namespace 内的唯一键 |
+| `value` | 应用保存的 JSON 对象 |
+| `createdAt` | 第一次创建该地址的时间 |
+| `updatedAt` | 最近一次更新该地址的时间 |
+
+典型结果：
+
+```ts
+{
+  namespace: ["users", "user-42", "preferences"],
+  key: "assistant-style",
+  value: {
+    language: "zh-CN",
+    tone: "concise",
+    legacyFormat: true
+  },
+  createdAt: new Date("..."),
+  updatedAt: new Date("...")
+}
+```
+
+在 TypeScript 运行时，两个时间字段是 `Date`。为了方便日志展示，可以转成 ISO 字符串：
+
+```ts
+item.createdAt.toISOString();
+item.updatedAt.toISOString();
+```
+
+如果地址不存在，`get()` 返回 `null`，不是抛出“找不到”异常：
+
+```ts
+const missing = await store.get(namespace, "missing-key");
+// null
+```
+
+### 6. 相同地址再次 put() 是更新，不是追加
+
+再次写入完全相同的 `namespace + key`：
+
+```ts
+await store.put(namespace, key, {
+  language: "zh-CN",
+  tone: "step-by-step"
+});
+```
+
+结果仍然只有一条 Item，应该观察到：
+
+```text
+namespace          不变
+key                不变
+createdAt          保持第一次创建时间
+updatedAt          变成最近更新时间
+value              被新对象替换
+```
+
+这里最容易误解的是最后一条：`put()` 不会自动深合并或浅合并旧 value。
+
+第一次 value：
+
+```ts
+{
+  language: "zh-CN",
+  tone: "concise",
+  legacyFormat: true
+}
+```
+
+第二次 value：
+
+```ts
+{
+  language: "zh-CN",
+  tone: "step-by-step"
+}
+```
+
+更新后 `legacyFormat` 会消失，因为新的 value 没有包含它。更新记录时，应构造并提交完整的目标对象。
+
+### 7. 不要把第一次 get() 的对象引用当成历史快照
+
+当前 `InMemoryStore` 实现可能在相同地址更新时修改内部 Item 对象。若一直持有第一次
+`get()` 返回的引用，更新后它也可能显示新值。
+
+因此需要比较更新前后时，应先复制真正关心的数据：
+
+```ts
+const before = {
+  value: structuredClone(item.value),
+  createdAtMs: item.createdAt.getTime(),
+  updatedAtMs: item.updatedAt.getTime()
+};
+```
+
+这个原则也适用于生产代码：
+
+```text
+不要依赖某个 Store 后端是否返回内部引用；
+也不要直接修改 get() 返回的 value 后假设它会自动保存。
+```
+
+正式更新仍然应该显式调用 `put()`。
+
+### 8. search()：本节只做普通列举
+
+加入第二条记录：
+
+```ts
+await store.put(namespace, "timezone", {
+  timeZone: "Asia/Shanghai"
+});
+```
+
+然后查询：
+
+```ts
+const items = await store.search(namespace, { limit: 10 });
+```
+
+本节没有提供 `query`，也没有配置 Embedding，所以这不是向量相似度搜索。它只是列举该
+namespace 前缀下的 Item。
+
+```text
+search(namespace)
+  ≠ 必然进行向量检索
+
+search(namespace, { query: "..." })
+  + 配置 Embedding
+  = 第 10 节才学习的语义检索
+```
+
+`search()` 的第一个参数在 API 中是 namespace **前缀**，不保证只匹配一个精确层级；
+其层级语义留到第 09 节。
+
+不同 Store 后端的默认返回顺序也可能不同。业务需要稳定顺序时，应按自己的稳定字段排序，
+不要依赖内存实现当前的插入顺序。
+
+### 9. delete() 删除一个完整地址
+
+```ts
+await store.delete(namespace, key);
+
+const deleted = await store.get(namespace, key);
+// null
+```
+
+删除时同样需要完整的 `namespace + key`。`delete()` 返回 `void`；想确认是否删除，可以再次
+`get()`，也可以重新 `search()`。
+
+### 10. 本节完整执行流程
+
+```text
+new InMemoryStore()
+  ↓
+put(namespace, "assistant-style", initialValue)
+  ↓
+get() 读取 Item 五个字段
+  ↓
+同地址 put(updatedValue)
+  ↓
+验证 createdAt 保留、updatedAt 前进、value 整体替换
+  ↓
+put(namespace, "timezone", ...)
+  ↓
+search(namespace) 得到两条记录
+  ↓
+delete(namespace, "assistant-style")
+  ↓
+get() 返回 null，只剩 timezone
+```
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/08-store-item-basics.ts`](../langgraph-complete-guide-lab/src/examples/08-store-item-basics.ts)
+
+运行：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:08
+```
+
+这个示例不使用 Graph、LLM 或 Embedding，不需要 API Key，也不会产生模型费用。
+
+### 11. 为什么使用内存实现仍然叫“持久化”？
+
+这里需要区分两个层次：
+
+```text
+持久化数据模型
+  = 数据不放在一次 Node 的局部变量里
+  = 可以通过稳定地址在后续调用中重新读取
+
+物理耐久性
+  = 进程重启、机器故障后数据仍然存在
+  = 取决于具体 Store 后端
+```
+
+`InMemoryStore` 能演示第一层接口语义，但不提供第二层保证。生产系统通常需要数据库支持的
+Store，并结合备份、保留期、加密和访问控制等策略。
+
+### 12. 本节边界
+
+本节包含：
+
+- 独立使用 `InMemoryStore`。
+- Store Item 的完整地址和五个字段。
+- 创建、读取、更新、普通列举和删除。
+- Store 与 Checkpointer 的基本区别。
+
+本节暂不包含：
+
+- namespace 的多租户和层级设计：留给 09。
+- Embedding、向量索引和语义查询：留给 10。
+- `compile({ store })` 和 Node 中的 `runtime.store`：留给 11。
+- State streaming：留给 12。
+- interrupt 和恢复：留给 13～15。
+- checkpoint 回放、分叉和时间旅行：留给 16。
+
+### 常见误区
+
+1. **`InMemoryStore` 会自动落盘**：不会，进程退出后数据丢失。
+2. **Store 就是 Checkpointer**：二者保存内容、地址和写入方式都不同。
+3. **key 必须全局唯一**：key 只需在所属 namespace 内唯一。
+4. **`put()` 会合并旧 value**：同地址写入会替换整份 value。
+5. **`put()` 会返回新 Item**：它返回 `void`，需要再调用 `get()`。
+6. **`get()` 找不到会抛错**：不存在时返回 `null`。
+7. **`search()` 一定是向量搜索**：没有 query 和索引时只是普通查询。
+8. **默认搜索顺序可以作为业务顺序**：不同 Store 后端可能使用不同顺序。
+9. **修改 `get()` 返回对象就等于保存**：应显式调用 `put()`。
+10. **thread_id 会自动成为 Store namespace**：Store 地址需要应用自己设计。
+11. **Store Item 本身就是向量**：Item 是 JSON 数据，向量索引只是可选派生结构。
+12. **Store 的 namespace 等于 checkpoint_ns**：前者是业务数据地址，后者属于图检查点机制。
+
+### 本节小练习
+
+先不要运行，预测下面代码：
+
+```ts
+await store.put(namespace, "prefs", {
+  theme: "light",
+  language: "zh-CN"
+});
+
+await store.put(namespace, "prefs", {
+  theme: "dark"
+});
+```
+
+请回答：
+
+1. 最终是一条 Item 还是两条？
+2. 最终 value 中还有没有 `language`？
+3. `createdAt` 和 `updatedAt` 哪个应该变化？
+4. 如果 key 仍是 `prefs`，但 namespace 改成另一个用户，会有几条 Item？
+
+预期结论：
+
+```text
+同 namespace + 同 key
+  -> 仍然只有一条 Item
+
+第二次 put 替换整份 value
+  -> language 消失
+
+更新同一地址
+  -> createdAt 保留，updatedAt 前进
+
+换 namespace
+  -> 地址不同，成为第二条 Item
+```
+
+### 本节小结
+
+```text
+Store Item
+  = namespace + key + value + 时间元数据
+
+put
+  = 创建或替换同一地址的记录
+
+get
+  = 精确读取一条 Item
+
+search
+  = 查询 namespace 前缀下的记录
+
+delete
+  = 删除完整地址对应的记录
+```
+
+一句话记忆：
+
+```text
+namespace + key 决定存在哪里，value 决定记住什么。
+```
+
+官方参考：
+
+- [LangGraph — Persistence](https://docs.langchain.com/oss/javascript/langgraph/persistence)
+- [LangGraph — Stores](https://docs.langchain.com/oss/javascript/langgraph/stores)
+- [LangGraph JavaScript Reference — InMemoryStore](https://reference.langchain.com/javascript/langchain-langgraph/index/InMemoryStore)
+
+---
+
+## 09 持久化：用 Namespace 组织和隔离长期记忆
+
+### 本节目标
+
+08 已经回答：
+
+```text
+一条 Store Item 怎样创建、读取、更新和删除？
+```
+
+09 继续回答：
+
+```text
+这些 Item 应该放在哪个 namespace？
+查询一个 namespace 前缀时会看到哪些数据？
+namespace 能不能直接当作安全权限边界？
+```
+
+学完本节后，应该能够：
+
+1. 把 namespace 理解成有顺序的层级路径。
+2. 设计稳定的组织、用户和数据类别层级。
+3. 解释为什么同名 key 可以存在于不同 namespace。
+4. 区分 `get()` 的精确寻址和 `search()` 的前缀范围查询。
+5. 使用 `listNamespaces()` 查看 namespace 目录。
+6. 理解 `maxDepth`、`limit` 和稳定排序的意义。
+7. 说清 namespace 为什么不是 ACL 或安全沙箱。
+
+### 1. 从一条地址变成一棵目录树
+
+08 使用过：
+
+```ts
+const namespace = ["users", "user-42", "preferences"];
+const key = "assistant-style";
+```
+
+09 把它扩展到多组织、多用户场景：
+
+```text
+organizations
+├── org-acme
+│   └── users
+│       ├── user-alice
+│       │   ├── preferences
+│       │   └── memories
+│       └── user-bob
+│           └── preferences
+└── org-beta
+    └── users
+        └── user-alice
+            └── preferences
+```
+
+每个叶子路径都可以包含多个 Item。
+
+### 2. Namespace 是有顺序的字符串数组
+
+本节的 namespace 工厂：
+
+```ts
+type Collection = "preferences" | "memories";
+
+function userNamespace(
+  organizationId: string,
+  userId: string,
+  collection: Collection
+): string[] {
+  return ["organizations", organizationId, "users", userId, collection];
+}
+```
+
+例如：
+
+```ts
+userNamespace("org-acme", "user-alice", "preferences");
+
+// [
+//   "organizations",
+//   "org-acme",
+//   "users",
+//   "user-alice",
+//   "preferences"
+// ]
+```
+
+数组中的每个元素都是一个层级片段，不应写成一个手工拼接的路径字符串：
+
+```ts
+// 推荐
+["organizations", "org-acme", "users", "user-alice", "preferences"];
+
+// 不推荐
+["organizations/org-acme/users/user-alice/preferences"];
+```
+
+顺序也是地址的一部分：
+
+```text
+["organizations", "org-acme", "users", "user-alice"]
+
+不等于
+
+["users", "user-alice", "organizations", "org-acme"]
+```
+
+### 3. 从查询范围反推层级设计
+
+一个实用设计原则是：
+
+```text
+稳定、范围大的维度放前面；
+更具体的数据类别放后面。
+```
+
+本节使用：
+
+```text
+organizations / <orgId> / users / <userId> / <collection>
+```
+
+它自然支持几种查询范围：
+
+```text
+["organizations", "org-acme"]
+  -> Acme 组织内的全部数据
+
+["organizations", "org-acme", "users"]
+  -> Acme 的全部用户数据
+
+["organizations", "org-acme", "users", "user-alice"]
+  -> Acme/Alice 的全部 collection
+
+["organizations", "org-acme", "users", "user-alice", "preferences"]
+  -> Acme/Alice 的偏好数据
+```
+
+生产项目还可以增加应用名和 schema 版本：
+
+```text
+assistant-app / v1 / organizations / <orgId> / users / <userId> / preferences
+```
+
+版本段能帮助未来迁移 namespace 结构，而不必静默改变旧地址的含义。
+
+### 4. 同一个 key 可以存在于多个 Namespace
+
+本节让四个 namespace 都使用同一个 key：
+
+```ts
+const key = "profile";
+```
+
+地址分别是：
+
+```text
+org-acme / user-alice / preferences + profile
+org-acme / user-alice / memories    + profile
+org-acme / user-bob   / preferences + profile
+org-beta / user-alice / preferences + profile
+```
+
+它们是四条互不覆盖的 Item，因为完整地址仍然是：
+
+```text
+全部 namespace 片段 + key
+```
+
+key 只需要在所属 namespace 内唯一，不需要在整个 Store 中全局唯一。
+
+### 5. get() 只执行精确寻址
+
+```ts
+const item = await store.get(
+  ["organizations", "org-acme", "users", "user-alice", "preferences"],
+  "profile"
+);
+```
+
+它只查询这一个完整地址。
+
+如果只提供父级 namespace：
+
+```ts
+await store.get(
+  ["organizations", "org-acme"],
+  "profile"
+);
+```
+
+结果是 `null`，因为：
+
+```text
+get()
+  = 精确 namespace + 精确 key
+  ≠ 自动向后代 namespace 递归搜索
+  ≠ 从子 namespace 继承值
+```
+
+需要查询整个层级范围时，应使用 `search()`。
+
+### 6. search() 使用 Namespace 前缀查询 Item
+
+查询 Acme/Alice 的所有 collection：
+
+```ts
+const prefix = [
+  "organizations",
+  "org-acme",
+  "users",
+  "user-alice"
+];
+
+const items = await store.search(prefix, { limit: 100 });
+```
+
+它会匹配：
+
+```text
+organizations / org-acme / users / user-alice / memories
+organizations / org-acme / users / user-alice / preferences
+```
+
+而不会只检查与 prefix 长度完全相同的 namespace。
+
+三个 API 的层级语义可以记成：
+
+```text
+get(namespace, key)
+  -> 精确读取一个 Item 地址
+
+search(namespacePrefix)
+  -> 查询该层级前缀自身及后代的 Item
+
+listNamespaces(options)
+  -> 查询 namespace 路径，而不是 Item
+```
+
+### 7. 前缀匹配应该逐段判断
+
+结构化 namespace 前缀判断可以写成：
+
+```ts
+function namespaceHasPrefix(
+  namespace: string[],
+  prefix: string[]
+): boolean {
+  return (
+    namespace.length >= prefix.length &&
+    prefix.every((segment, index) => namespace[index] === segment)
+  );
+}
+```
+
+本节示例对 `search()` 的结果再次逐段校验：
+
+```ts
+const candidates = await store.search(prefix, { limit: 100 });
+
+const authorizedShape = candidates.filter((item) =>
+  namespaceHasPrefix(item.namespace, prefix)
+);
+```
+
+这样明确表达了我们真正想要的是“数组片段前缀”，不是普通字符串前缀。
+
+但还要注意：结果过滤只是数据一致性防线，不是完整的授权系统。若底层错误候选先占满
+`limit`，过滤后仍可能漏掉合法结果，因此生产级隔离需要可靠后端查询与真正的权限控制。
+
+### 8. 不要依赖 search() 的默认顺序
+
+不同 Store 后端可能按插入时间、更新时间、索引顺序或其他规则返回结果。
+
+业务需要稳定顺序时，应自己排序：
+
+```ts
+function itemAddress(item: Item): string {
+  return `${item.namespace.join(" / ")} :: ${item.key}`;
+}
+
+const sorted = [...items].sort((left, right) =>
+  itemAddress(left).localeCompare(itemAddress(right))
+);
+```
+
+同时应显式设置合理的 `limit`。查询结果超过 limit 时可能被截断，需要使用 `offset` 分页，
+不能把“返回了 10 条”理解成“总共只有 10 条”。
+
+### 9. listNamespaces() 返回目录路径
+
+查询 Alice 下面存在哪些完整 namespace：
+
+```ts
+const namespaces = await store.listNamespaces({
+  prefix: [
+    "organizations",
+    "org-acme",
+    "users",
+    "user-alice"
+  ],
+  limit: 100
+});
+```
+
+结果类型是：
+
+```ts
+string[][]
+```
+
+结果类似：
+
+```ts
+[
+  ["organizations", "org-acme", "users", "user-alice", "memories"],
+  ["organizations", "org-acme", "users", "user-alice", "preferences"]
+]
+```
+
+它只返回路径，不包含 Item 的 `key`、`value`、`createdAt` 或 `updatedAt`。
+
+### 10. maxDepth 是从根开始计算的绝对深度
+
+本节还调用：
+
+```ts
+await store.listNamespaces({
+  prefix: ["organizations", "org-acme", "users"],
+  maxDepth: 4,
+  limit: 100
+});
+```
+
+原始 namespace 有五段：
+
+```text
+1 organizations
+2 org-acme
+3 users
+4 user-alice
+5 preferences
+```
+
+`maxDepth: 4` 会截断到：
+
+```text
+organizations / org-acme / users / user-alice
+organizations / org-acme / users / user-bob
+```
+
+相同的截断结果会去重。因此 `maxDepth` 很适合把深层目录折叠成较高层级的导航视图。
+
+它不是“从 prefix 后再向下四层”，而是从 namespace 根部开始计数。
+
+`listNamespaces()` 还支持 `suffix`、`offset` 和 `limit`；本节只保留最容易理解的
+`prefix + maxDepth`。
+
+### 11. Namespace 的基础合法性约束
+
+当前项目安装的 Store 实现会在 `put()` 时拒绝：
+
+```text
+[]
+  -> namespace 不能为空
+
+["organizations", ""]
+  -> 片段不能是空字符串
+
+["organizations", "user.alice"]
+  -> 片段不能包含句点 .
+
+["langgraph", "users"]
+  -> 根片段不能使用保留名称 langgraph
+```
+
+本节的失败案例：
+
+```ts
+await store.put(
+  ["organizations", "org-acme", "users", "user.alice", "preferences"],
+  "profile",
+  { invalid: true }
+);
+```
+
+会产生 `InvalidNamespaceError`。
+
+对于当前内存实现，还建议避免把 `:` 或 `*` 当作真实业务片段：它们可能与内部序列化或
+namespace 匹配语法产生歧义。最稳妥的片段通常是受约束的字母、数字、连字符和下划线 ID。
+
+### 12. Namespace 是逻辑分组，不是权限系统
+
+这是本节最重要的生产边界：
+
+```text
+namespace 可以组织数据
+namespace 不能自动证明调用者有权读取数据
+```
+
+Store 并不知道当前请求是不是 Alice。只要代码传入 Bob 或另一个组织的地址，底层 Store
+通常就会照常读取。
+
+因此多租户系统至少应该：
+
+1. 从服务端已经验证的认证上下文取得 `organizationId` 和 `userId`。
+2. 不要相信 Prompt、LLM 输出或客户端自报的 tenant/user ID。
+3. 使用统一 repository/helper 构造 namespace，避免每个 Node 自己拼路径。
+4. 不要把原始 `store.get()` / `store.search()` 直接暴露为无限制模型 Tool。
+5. 对返回 Item 的 namespace 做逐段范围校验。
+6. 高安全需求继续使用数据库 RLS、ACL、独立 Store、审计和加密。
+7. 限制 `search([])` 这类全库查询，只允许可信管理流程使用。
+
+一句话：
+
+```text
+namespace 是寻址方案；authorization 才是访问控制。
+```
+
+### 13. 当前 InMemoryStore 版本的前缀观察
+
+本项目当前使用 `@langchain/langgraph 1.4.8`，其传递依赖中的内存 Store 在执行
+`search()` 时存在字符串前缀实现细节。
+
+例如，从结构化语义看：
+
+```text
+["users", "user-1"]
+
+不应该匹配
+
+["users", "user-10"]
+```
+
+但当前内存版本可能把 namespace 序列化后执行字符串 `startsWith()`，从而产生误匹配。
+
+所以示例使用 `namespaceHasPrefix()` 二次验证。更重要的是：即使未来实现修复，也不能把
+Store namespace 本身当成 ACL。应用层授权仍然不可省略。
+
+这是版本观察，不是官方希望暴露的 namespace 语义；官方语义仍是按路径片段匹配前缀。
+
+### 14. 使用稳定而非敏感的路径片段
+
+建议使用：
+
+```text
+org_01HXYZ...
+user_01HABC...
+preferences
+```
+
+尽量避免：
+
+```text
+用户邮箱
+手机号
+显示名称
+访问令牌
+密码
+会频繁变化的业务文案
+```
+
+原因包括：
+
+- 邮箱、名称可能发生变化，导致地址不稳定。
+- namespace 可能出现在日志、追踪和错误信息中。
+- 敏感信息不应进入路径或可观测性元数据。
+- 使用稳定 ID 更容易迁移、审计和建立索引。
+
+### 15. Namespace、thread_id 和 checkpoint_ns 不相同
+
+| 名称 | 属于哪套机制 | 用途 |
+| --- | --- | --- |
+| Store `namespace` | 长期记忆 Store | 组织业务 Item |
+| `thread_id` | Checkpointer / 运行配置 | 标识一条图状态历史 |
+| `checkpoint_ns` | Checkpointer / 子图 | 区分根图和子图 checkpoint |
+
+它们不会自动互相转换：
+
+```text
+thread_id 不会自动成为 Store namespace；
+Store namespace 也不是 checkpoint_ns。
+```
+
+到第 11 节把 Store 接入 Graph 时，我们会通过可信的运行时 context 构造业务 namespace。
+
+### 16. 本节完整示例流程
+
+```text
+定义统一 namespace 工厂
+  ↓
+四个 namespace 写入同一个 profile key
+  ↓
+get() 精确读取 Acme/Alice 与 Beta/Alice
+  ↓
+父级 get() 返回 null
+  ↓
+search(Acme/Alice prefix) 找到 memories + preferences
+  ↓
+逐段验证返回 namespace
+  ↓
+listNamespaces() 枚举两个 collection
+  ↓
+maxDepth=4 折叠成 Alice/Bob 用户分支
+  ↓
+非法 user.alice 片段触发 InvalidNamespaceError
+```
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/09-store-namespaces.ts`](../langgraph-complete-guide-lab/src/examples/09-store-namespaces.ts)
+
+运行：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:09
+```
+
+示例不使用 Graph、LLM 或 Embedding，不需要 API Key。
+
+### 17. 本节边界
+
+本节包含：
+
+- namespace 层级模型。
+- 同 key 跨 namespace 隔离。
+- `get()` 精确寻址。
+- `search()` 前缀范围查询。
+- `listNamespaces()` 目录枚举和 `maxDepth`。
+- 多租户逻辑边界和防御性结果校验。
+
+本节暂不包含：
+
+- Embedding、`query`、`score` 和索引字段：留给 10。
+- `StateGraph`、`compile({ store })` 和 `runtime.store`：留给 11。
+- Checkpointer、`checkpoint_ns`、中断恢复和时间旅行。
+- 数据库后端、RLS 和真实认证系统的具体实现。
+
+### 常见误区
+
+1. **把 namespace 写成一个拼接字符串**：每一层应是数组中的独立片段。
+2. **认为 key 必须全局唯一**：key 只需在所属 namespace 内唯一。
+3. **认为 namespace 顺序不重要**：片段及其顺序共同决定地址。
+4. **认为父 namespace 会继承子 namespace 的 Item**：`get()` 只做精确读取。
+5. **认为 `search(prefix)` 是精确 namespace 查询**：它会包含后代 namespace。
+6. **认为 `listNamespaces()` 返回 Item**：它返回 `string[][]` 路径。
+7. **把 `maxDepth` 当成相对 prefix 深度**：它从根开始计数。
+8. **依赖默认结果顺序**：业务需要时应显式排序。
+9. **没有设置 limit 就认为拿到了全部数据**：结果可能被截断，需要分页。
+10. **把 namespace 当成 ACL**：Store 不会自动验证当前用户身份。
+11. **让客户端或 LLM 决定 organizationId**：身份范围应来自可信认证上下文。
+12. **使用邮箱、Token 等敏感数据作为片段**：路径可能进入日志和追踪。
+13. **把 thread_id 当成 namespace**：二者属于不同机制。
+14. **修改 namespace schema 后不迁移旧数据**：旧 Item 不会自动移动到新地址。
+15. **认为删除父路径会递归删除后代**：Store 没有文件系统式的隐式级联语义。
+
+### 本节小练习
+
+假设写入三条相同 key 为 `profile` 的 Item：
+
+```text
+organizations / acme / users / alice / preferences
+organizations / acme / users / bob   / preferences
+organizations / globex / users / alice / preferences
+```
+
+请先预测：
+
+1. 最终有几条 Item？
+2. 精确 `get(Acme/Alice, "profile")` 会得到几条？
+3. `search(["organizations", "acme", "users"])` 应得到几条？
+4. `search(["organizations"])` 应得到几条？
+5. `listNamespaces()` 返回 Item 还是路径？
+6. 如果客户端把组织 ID 从 `acme` 改成 `globex`，Store 自己会拒绝吗？
+
+预期结论：
+
+```text
+三条不同完整地址
+  -> 3 条 Item
+
+精确 namespace + key
+  -> 1 条 Item
+
+Acme users 前缀
+  -> 2 条 Item
+
+organizations 前缀
+  -> 3 条 Item
+
+listNamespaces()
+  -> 返回路径
+
+客户端篡改组织 ID
+  -> Store 本身通常不会拒绝，必须由应用授权层阻止
+```
+
+### 本节小结
+
+```text
+namespace
+  = 有顺序的业务层级路径
+
+namespace + key
+  = 一条 Item 的完整地址
+
+get
+  = 精确地址读取
+
+search
+  = namespace 前缀范围查询
+
+listNamespaces
+  = 目录枚举与层级折叠
+
+authorization
+  = 独立于 namespace 的安全责任
+```
+
+一句话记忆：
+
+```text
+Namespace 决定数据放在哪棵目录树中，但不自动决定谁有权读取它。
+```
+
+官方参考：
+
+- [LangGraph — Stores](https://docs.langchain.com/oss/javascript/langgraph/stores)
+- [LangGraph — Persistence](https://docs.langchain.com/oss/javascript/langgraph/persistence)
+- [LangGraph JavaScript Reference — BaseStore](https://reference.langchain.com/javascript/langchain-langgraph/index/BaseStore)

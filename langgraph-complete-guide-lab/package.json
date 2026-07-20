@@ -21,6 +21,8 @@
     "lesson:07e": "node --import tsx src/examples/07e-evaluator-optimizer.ts",
     "lesson:07f": "node --import tsx src/examples/07f-loop-safety-cost.ts",
     "lesson:07g": "node --import tsx src/examples/07g-workflow-vs-agent.ts",
+    "lesson:08": "node --import tsx src/examples/08-store-item-basics.ts",
+    "lesson:09": "node --import tsx src/examples/09-store-namespaces.ts",
     "check": "tsc --noEmit"
   },
   "dependencies": {
