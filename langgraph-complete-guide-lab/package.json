@@ -1,0 +1,35 @@
+{
+  "name": "langgraph-complete-guide-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Examples for learning the LangGraph complete guide chapter step by step.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lesson:01": "node --import tsx src/examples/01-node-edge.ts",
+    "lesson:02": "node --import tsx src/examples/02-conditional-routing.ts",
+    "lesson:03": "node --import tsx src/examples/03-email-intent-reply.ts",
+    "lesson:04": "node --import tsx src/examples/04-joke-prompt-chain.ts",
+    "lesson:05": "node --import tsx src/examples/05-parallel-story-merge.ts",
+    "lesson:06": "node --import tsx src/examples/06-content-routing.ts",
+    "lesson:07a": "node --import tsx src/examples/07a-workflow-pattern-selector.ts",
+    "lesson:07b": "node --import tsx src/examples/07b-orchestrator-planner.ts",
+    "lesson:07c": "node --import tsx src/examples/07c-send-dynamic-workers.ts",
+    "lesson:07d": "node --import tsx src/examples/07d-worker-state-reducer.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.0.0",
+    "@langchain/langgraph": "^1.4.7",
+    "@langchain/openai": "^1.0.0",
+    "dotenv": "^17.2.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  }
+}

@@ -1500,7 +1500,33 @@
             {
                 "title": "07 工作流程-剩余内容.mp4",
                 "size": 60847759,
-                "duration": "03:18"
+                "duration": "03:18",
+                "children": [
+                    {
+                        "title": "07A 五种经典工作流模式总览与选型"
+                    },
+                    {
+                        "title": "07B Orchestrator-worker：动态拆解任务与制定计划"
+                    },
+                    {
+                        "title": "07C 使用Send动态分发Worker任务"
+                    },
+                    {
+                        "title": "07D 并行Worker的State隔离与Reducer结果汇总"
+                    },
+                    {
+                        "title": "07E Evaluator-optimizer：生成、评价与反馈循环"
+                    },
+                    {
+                        "title": "07F 循环终止、失败处理与模型成本控制"
+                    },
+                    {
+                        "title": "07G Workflow与Agent的边界"
+                    },
+                    {
+                        "title": "07H 综合案例：动态生成报告并进行质量优化"
+                    }
+                ]
             },
             {
                 "title": "08 持久化-存档点位信息.mp4",
