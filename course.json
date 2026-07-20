@@ -1413,6 +1413,23 @@
                 "duration": "11:49"
             },
             {
+                "title": "03 补充：进入checkpointer前的必备知识",
+                "children": [
+                    {
+                        "title": "03A State更新规则与reducer"
+                    },
+                    {
+                        "title": "03B super-step与图的执行边界"
+                    },
+                    {
+                        "title": "03C 用stream观察State变化"
+                    },
+                    {
+                        "title": "03D 最小checkpointer持久化案例"
+                    }
+                ]
+            },
+            {
                 "title": "04 checkpointer属性解读.mp4",
                 "size": 172188665,
                 "duration": "10:44"

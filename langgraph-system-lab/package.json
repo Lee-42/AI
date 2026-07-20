@@ -1,0 +1,33 @@
+{
+  "name": "langgraph-system-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript lab for learning LangGraph step by step.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node --import tsx src/index.ts",
+    "check": "tsc --noEmit",
+    "example:env": "node --import tsx src/examples/00-env-check.ts",
+    "example:hello": "node --import tsx src/examples/01-hello-graph.ts",
+    "example:conditional": "node --import tsx src/examples/02-conditional-graph.ts",
+    "example:state:reducer": "node --import tsx src/examples/03a-state-update-reducer.ts",
+    "example:super-step": "node --import tsx src/examples/03b-super-step.ts",
+    "example:stream:state": "node --import tsx src/examples/03c-stream-state.ts",
+    "example:llm": "node --import tsx src/examples/provider-llm-node.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.0.0",
+    "@langchain/langgraph": "^1.4.7",
+    "@langchain/openai": "^1.0.0",
+    "dotenv": "^17.2.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  }
+}
