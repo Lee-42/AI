@@ -23,6 +23,13 @@
     "lesson:07g": "node --import tsx src/examples/07g-workflow-vs-agent.ts",
     "lesson:08": "node --import tsx src/examples/08-store-item-basics.ts",
     "lesson:09": "node --import tsx src/examples/09-store-namespaces.ts",
+    "lesson:10": "node --import tsx src/examples/10-store-vector-search.ts",
+    "lesson:11": "node --import tsx src/examples/11-persistent-workflow.ts",
+    "lesson:12": "node --import tsx src/examples/12-graph-stream.ts",
+    "lesson:13-14": "node --import tsx src/examples/13-14-interrupt-three-party.ts",
+    "lesson:15": "node --import tsx src/examples/15-interrupt-rules.ts",
+    "lesson:16": "node --import tsx src/examples/16-time-travel-replay.ts",
+    "lesson:17": "node --import tsx src/examples/17-subgraph-purpose.ts",
     "check": "tsc --noEmit"
   },
   "dependencies": {

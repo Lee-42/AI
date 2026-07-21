@@ -5233,3 +5233,1826 @@ Namespace 决定数据放在哪棵目录树中，但不自动决定谁有权读�
 - [LangGraph — Stores](https://docs.langchain.com/oss/javascript/langgraph/stores)
 - [LangGraph — Persistence](https://docs.langchain.com/oss/javascript/langgraph/persistence)
 - [LangGraph JavaScript Reference — BaseStore](https://reference.langchain.com/javascript/langchain-langgraph/index/BaseStore)
+
+## 10 持久化：对 Store 进行向量存储
+
+前两节已经学会：
+
+```text
+08：一条 Item 由 namespace + key + value + 时间元数据组成
+09：namespace 用来组织和隔离不同用户、组织与业务集合
+```
+
+但此前的读取方式都需要知道地址，或者只能列出某个 namespace 下的记录：
+
+```ts
+await store.get(namespace, key);
+await store.search(namespace, { limit: 10 });
+```
+
+如果用户问：
+
+```text
+“他平时喜欢什么运动？”
+```
+
+应用并不知道答案存在哪个 key 中。第 10 节要解决的就是：**根据语义查找最相关的长期记忆**。
+
+### 1. “向量存储”到底存了什么？
+
+最容易产生的误解是：
+
+```text
+Item 被转换成向量后，原始 JSON 就消失了。
+```
+
+实际模型是：
+
+```text
+Store Item
+  -> 继续保存 namespace、key、value 和时间元数据
+
+Vector index
+  -> 为选定文本字段额外保存 Embedding，供相似度搜索使用
+```
+
+所以向量是 Item 的**检索索引**，不是 Item 本身。
+
+查询结果返回的仍然是原始 Item，只是多了一个可选的 `score`：
+
+```ts
+{
+  namespace: ["users", "user-42", "memories"],
+  key: "exercise",
+  value: {
+    memory: "用户周末喜欢沿江跑步。",
+    source: "weekend-plan"
+  },
+  createdAt: Date,
+  updatedAt: Date,
+  score: 1
+}
+```
+
+### 2. 完整的数据流
+
+写入时：
+
+```text
+value.memory
+  -> Embedding 模型
+  -> 文档向量
+  -> 保存 Item，同时建立向量索引
+```
+
+查询时：
+
+```text
+自然语言 query
+  -> 同一个 Embedding 模型
+  -> 查询向量
+  -> 与候选 Item 的向量计算相似度
+  -> 按 score 从高到低返回原始 Item
+```
+
+代码层面就是：
+
+```ts
+await store.put(namespace, key, value);
+
+const results = await store.search(namespace, {
+  query: "用户平时喜欢什么运动？",
+  limit: 2
+});
+```
+
+`put()` 没有变化，Store 会根据初始化时的索引配置自动处理 Embedding。
+
+### 3. 创建支持向量搜索的 InMemoryStore
+
+```ts
+const store = new InMemoryStore({
+  index: {
+    embeddings: new LocalTopicEmbeddings(),
+    dims: 3,
+    fields: ["memory"]
+  }
+});
+```
+
+三个配置项分别表示：
+
+| 字段         | 含义                                     |
+| ------------ | ---------------------------------------- |
+| `embeddings` | 怎样把文本转换成向量                     |
+| `dims`       | 每个向量必须包含多少个数字               |
+| `fields`     | 从 Item value 的哪些字段提取文本建立索引 |
+
+如果不提供 `index`：
+
+```ts
+const store = new InMemoryStore();
+```
+
+那么 Store 仍然支持 `put/get/search` 的普通键值操作，但没有可用于语义排序的向量索引。
+
+### 4. 为什么示例使用本地 3 维 Embedding？
+
+本节目标是观察 Store 的向量检索机制，不是学习某个收费模型的配置。因此示例把文本映射到三个教学维度：
+
+```text
+第 0 维：饮食
+第 1 维：运动
+第 2 维：学习
+```
+
+例如：
+
+```text
+“用户周末喜欢沿江跑步”
+  -> [0, 1, 0]
+
+“用户平时喜欢什么运动？”
+  -> [0, 1, 0]
+```
+
+两个向量方向相同，因此余弦相似度为 `1`。
+
+本地实现只识别代码中列举的关键词，不具备真正 Embedding 模型的泛化能力。它的价值是：
+
+```text
+无需 API Key
+没有调用费用
+每次运行顺序稳定
+可以清楚看到 dims、embedDocuments 和 embedQuery 的职责
+```
+
+真实项目只需把 `LocalTopicEmbeddings` 替换成实际 Embedding 实现，Store 的读写方式保持不变。
+
+### 5. dims 不能随便填写
+
+```ts
+dims: 3
+```
+
+因为本地 Embedding 每次固定返回三个数字：
+
+```ts
+[foodScore, exerciseScore, learningScore]
+```
+
+生产中 `dims` 必须与所选 Embedding 模型的实际输出维度一致：
+
+```text
+Embedding 返回 N 个数字
+  -> dims 必须等于 N
+```
+
+它不是“越大越好”的调优参数，也不能在不更换或重新配置 Embedding 模型的情况下任意修改。
+
+如果更换成不同维度的模型，已有向量通常也需要重新生成索引。
+
+### 6. fields 决定哪些内容参与相似度
+
+本例使用：
+
+```ts
+fields: ["memory"]
+```
+
+写入的数据是：
+
+```ts
+{
+  memory: "用户周末喜欢沿江跑步。",
+  source: "weekend-plan"
+}
+```
+
+只有 `memory` 会送给 Embedding：
+
+```text
+memory -> 参与语义检索
+source -> 作为普通元数据保存，不参与语义检索
+```
+
+如果省略 `fields`，默认的 `"$"` 表示为整个 value 建立索引。Store 也支持嵌套路径和数组路径，例如：
+
+```text
+metadata.title
+chapters[*].content
+authors[0].name
+```
+
+只索引真正用于召回的文本字段，通常能减少无关内容对相似度的干扰，也能降低 Embedding 成本。
+
+### 7. 写入三条长期记忆
+
+```ts
+await store.put(namespace, "food", {
+  memory: "用户喜欢清淡的意大利面。",
+  source: "dinner-chat"
+});
+
+await store.put(namespace, "exercise", {
+  memory: "用户周末喜欢沿江跑步。",
+  source: "weekend-plan"
+});
+
+await store.put(namespace, "learning", {
+  memory: "用户正在学习 TypeScript 和 LangGraph。",
+  source: "course-progress"
+});
+```
+
+每次 `put()` 同时发生两件事：
+
+```text
+保存原始 Item
+为 memory 字段建立向量索引
+```
+
+应用通常不需要直接保存或读取那串浮点数；向量由 Store 后端管理。
+
+### 8. 使用 query 做语义检索
+
+```ts
+const results = await store.search(namespace, {
+  query: "用户平时喜欢什么运动？",
+  limit: 2
+});
+```
+
+运行结果：
+
+```text
+1. exercise score=1.000 -> 用户周末喜欢沿江跑步。
+2. food     score=0.000 -> 用户喜欢清淡的意大利面。
+```
+
+注意查询中没有出现“沿江跑步”原句，也不知道 key 是 `exercise`。它通过查询向量和记忆向量的相似度找到了目标。
+
+另一个查询：
+
+```text
+query: 他最近在学习什么编程课程？
+
+1. learning score=1.000
+   -> 用户正在学习 TypeScript 和 LangGraph。
+```
+
+这就是 Store 从“按地址读取”升级为“按含义召回”。
+
+### 9. score 是什么？
+
+当前 `InMemoryStore` 使用余弦相似度：
+
+```text
+cosine(q, d) = (q · d) / (|q| × |d|)
+```
+
+一般可以先这样理解：
+
+```text
+score 越高
+  -> 两个向量方向越接近
+  -> Item 与 query 在该 Embedding 空间中越相似
+```
+
+但 `score` 不是“答案有 90% 正确”的概率。不同 Embedding、数据分布和 Store 后端的分数范围与可用阈值可能不同。
+
+生产中应使用自己的验证集测量召回效果，再选择 `limit` 或最低分数阈值，不能照抄一个通用数字。
+
+### 10. namespace 与向量检索怎样配合？
+
+```ts
+store.search(namespacePrefix, { query })
+```
+
+两个参数承担不同责任：
+
+```text
+namespacePrefix
+  -> 先限制在哪个业务范围内找候选 Item
+
+query
+  -> 再按语义相似度对候选 Item 排序
+```
+
+例如：
+
+```text
+["users", "alice", "memories"]
+  -> 只搜索 Alice 的长期记忆
+
+["users", "bob", "memories"]
+  -> 只搜索 Bob 的长期记忆
+```
+
+不要先在所有用户数据中做全局向量搜索，再依赖模型忽略其他用户结果。可信用户身份仍应由应用层构造 namespace，并在查询前完成授权。
+
+### 11. 某条 Item 不需要向量索引怎么办？
+
+第四个参数传入 `false`：
+
+```ts
+await store.put(
+  namespace,
+  "internal",
+  { memory: "内部同步版本 3", source: "system" },
+  false
+);
+```
+
+这表示：
+
+```text
+原始 Item 仍然保存
+不为该 Item 创建向量
+```
+
+因此仍然可以精确读取：
+
+```ts
+await store.get(namespace, "internal");
+```
+
+但它没有向量相似度分数，不能参与正常的语义排名。`index: false` 不是删除，也不是访问控制。
+
+还可以在单次 `put()` 的第四个参数中传入字段路径数组，覆盖 Store 的默认 `fields`：
+
+```ts
+await store.put(namespace, key, value, ["title", "content"]);
+```
+
+### 12. get、普通 search 和向量 search 的区别
+
+| 调用方式                                | 作用                           |
+| --------------------------------------- | ------------------------------ |
+| `get(namespace, key)`                   | 按完整地址精确读取一条 Item    |
+| `search(namespace, { limit })`          | 列出 namespace 前缀下的 Item   |
+| `search(namespace, { query, limit })`   | 在范围内按向量相似度排序       |
+
+向量索引不会改变 `get()` 的语义：已经知道完整地址时，直接 `get()` 最准确，也没有必要调用 Embedding。
+
+### 13. 它与向量数据库是什么关系？
+
+概念上完全一致：
+
+```text
+文本 -> Embedding -> 向量索引 -> 相似度 Top-K
+```
+
+区别在于本节的 `InMemoryStore`：
+
+```text
+数据只存在当前进程
+进程退出后丢失
+适合教学与测试
+不代表生产级 ANN 向量索引
+```
+
+生产后端可能使用 PostgreSQL/pgvector、MongoDB、专用向量数据库或其他 Store 实现，并采用 HNSW、IVF 等索引。但上层仍围绕相同抽象：
+
+```text
+namespace + key + value
+put / get / search
+Embedding + vector index
+```
+
+### 14. Chat Model 与 Embedding Model 不相同
+
+```text
+Chat Model
+  -> 根据上下文生成下一段 Token
+
+Embedding Model
+  -> 把文本映射成固定维度向量
+```
+
+已经配置聊天模型，不表示 Store 会自动获得 Embedding 能力。需要单独提供实现了：
+
+```ts
+embedDocuments(texts)
+embedQuery(query)
+```
+
+的 Embeddings 对象。
+
+二者可以来自同一家 Provider，也可以来自不同 Provider；关键是写入和查询必须使用兼容的向量空间。
+
+### 15. 运行示例
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/10-store-vector-search.ts`](../langgraph-complete-guide-lab/src/examples/10-store-vector-search.ts)
+
+运行：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:10
+```
+
+示例不使用 Graph、LLM 或外部 Embedding API，不需要 API Key。
+
+### 16. 本节边界
+
+本节包含：
+
+- 配置 Store 的 Embedding、维度和索引字段。
+- 写入时自动建立向量索引。
+- 使用自然语言 `query` 做语义检索。
+- 读取 `score` 并理解其边界。
+- 使用 `false` 跳过单条 Item 的索引。
+- namespace 范围与向量排名的配合。
+
+本节暂不包含：
+
+- `StateGraph` 中通过 `runtime.store` 读写长期记忆：留给 11。
+- Checkpointer 与 Store 的组合。
+- 真实 Embedding Provider 的账号和计费配置。
+- 数据库后端的 ANN 索引创建与参数调优。
+
+### 常见误区
+
+1. **认为 value 会被向量替换**：原始 Item 仍然保留，向量只是额外索引。
+2. **没有配置 index 也能语义搜索**：必须先提供 Embeddings 和正确 dims。
+3. **dims 越大越好**：dims 必须匹配 Embedding 的实际输出。
+4. **把整个 value 全部送去 Embedding**：优先明确选择真正用于召回的文本字段。
+5. **score 是正确率**：它只是向量空间中的相似度，不是答案正确概率。
+6. **向量搜索不需要 namespace**：必须先限制可信业务范围，再做相似度排序。
+7. **index=false 会删除 Item**：它只跳过向量索引，精确 get 仍然有效。
+8. **更换 Embedding 后旧向量继续兼容**：模型或维度变化通常需要重新索引。
+9. **聊天模型就是 Embedding 模型**：它们的输入输出接口和任务不同。
+10. **InMemoryStore 是生产持久化数据库**：进程退出后数据会丢失。
+
+### 本节小结
+
+```text
+put
+  = 保存原始 Item，并为选定字段建立向量索引
+
+search({ query })
+  = 将 query 向量化，在 namespace 范围内按相似度排序
+
+score
+  = 相关度信号，不是正确率
+
+fields
+  = 决定哪些 value 内容参与 Embedding
+
+index=false
+  = 保存 Item，但不建立向量索引
+```
+
+一句话记忆：
+
+```text
+Store 保存原始记忆，Embedding 为记忆建立语义索引，query 用相同向量空间找回最相关的 Item。
+```
+
+官方参考：
+
+- [LangGraph — Store semantic search](https://docs.langchain.com/oss/javascript/langgraph/persistence#semantic-search)
+- [LangGraph JavaScript Reference — InMemoryStore](https://reference.langchain.com/javascript/langchain-langgraph/index/InMemoryStore)
+- [LangGraph JavaScript Reference — InMemoryStore.search](https://reference.langchain.com/javascript/langchain-langgraph/index/InMemoryStore/search)
+- [LangGraph JavaScript Reference — InMemoryStore.put](https://reference.langchain.com/javascript/langchain-langgraph/index/InMemoryStore/put)
+
+## 11 持久化工作流
+
+前面三节都是在 Graph 外单独操作 Store。本节只解决一个问题：
+
+```text
+怎样让 Graph 中的 Node 读写长期记忆？
+```
+
+只需要掌握四个核心点：
+
+```text
+1. compile 时把 Store 交给 Graph
+2. Node 通过 runtime.store 访问它
+3. runtime.context 提供可信 userId
+4. Checkpointer 保存 thread State，Store 保存跨 thread 记忆
+```
+
+### 核心 1：compile 时注入 Store
+
+```ts
+const store = new InMemoryStore();
+const checkpointer = new MemorySaver();
+
+const graph = workflow.compile({
+  checkpointer,
+  store
+});
+```
+
+`compile({ store })` 会让 LangGraph 在运行 Node 时自动注入这份 Store。
+
+```text
+应用创建 Store
+  -> compile({ store })
+  -> LangGraph runtime
+  -> Node
+```
+
+Store 不需要放进 State，也不需要作为普通函数参数逐层传递。
+
+### 核心 2：Node 使用 runtime.store
+
+Node 的第二个参数是本次执行的 runtime：
+
+```ts
+const handlePreference = async (state, runtime) => {
+  await runtime.store.put(namespace, key, value);
+  const item = await runtime.store.get(namespace, key);
+};
+```
+
+本例支持两个动作：
+
+```text
+save
+  -> runtime.store.put(...)
+
+recall
+  -> runtime.store.get(...)
+```
+
+Node 使用的仍然是前几节学过的同一套 Store API。变化只在于 Store 现在由 Graph runtime 提供。
+
+### 核心 3：用 context 提供 userId
+
+不同用户的记忆必须进入不同 namespace：
+
+```ts
+const userId = runtime.context.userId;
+const namespace = ["users", userId, "preferences"];
+```
+
+调用 Graph 时传入：
+
+```ts
+await graph.invoke(input, {
+  configurable: { thread_id: "thread-1" },
+  context: { userId: "user-42" }
+});
+```
+
+这里三个数据区域不要混在一起：
+
+| 数据                         | 放在哪里               |
+| ---------------------------- | ---------------------- |
+| 当前任务的 action、reply     | State                  |
+| 当前调用者的可信 userId      | runtime context        |
+| 跨会话保存的用户偏好         | Store                  |
+
+生产环境中的 `userId` 应来自认证结果，而不是让用户 Prompt 或模型自己生成。
+
+### 核心 4：Checkpointer 与 Store 分工不同
+
+```text
+Checkpointer
+  -> 按 thread_id 保存 Graph State
+
+Store
+  -> 按 namespace + key 保存长期记忆
+```
+
+本例进行两次调用：
+
+```text
+thread-1 + user-42
+  -> 保存“回答保持简洁”
+
+thread-2 + user-42
+  -> 读取“回答保持简洁”
+```
+
+两个 `thread_id` 不同，所以它们拥有独立的 checkpoint State；但 `userId` 相同，构造出的 Store namespace 相同，因此第二个 thread 可以读取第一个 thread 保存的长期记忆。
+
+```text
+thread-1 State ----┐
+                   ├── user-42 Store memory
+thread-2 State ----┘
+```
+
+这就是短期状态与长期记忆的配合方式。
+
+### 完整执行流程
+
+```text
+创建 InMemoryStore + MemorySaver
+  -> compile({ checkpointer, store })
+  -> thread-1 调用 save
+  -> Node 从 context 读取 user-42
+  -> runtime.store.put(...)
+  -> thread-2 调用 recall
+  -> 使用相同 user namespace
+  -> runtime.store.get(...)
+  -> 返回已保存偏好
+```
+
+### 运行示例
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/11-persistent-workflow.ts`](../langgraph-complete-guide-lab/src/examples/11-persistent-workflow.ts)
+
+运行：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:11
+```
+
+输出：
+
+```text
+thread-1: 已记住：回答保持简洁
+thread-2: 读取到长期记忆：回答保持简洁
+
+Same user + different threads -> shared Store memory
+```
+
+示例不调用 LLM，不需要 API Key。
+
+### 三个常见误区
+
+1. **把 Store 放进 State**：应在 `compile()` 时注入，再通过 `runtime.store` 使用。
+2. **认为 thread_id 就是 userId**：thread 标识一次会话，userId 标识用户，两者生命周期不同。
+3. **认为 InMemoryStore 能跨进程重启**：它只能在当前进程中演示接口；生产环境应替换为数据库后端。
+
+### 可选扩展
+
+理解主流程后，再按需要扩展：
+
+- 将本例的精确 `get()` 换成第 10 节的 `search({ query })`，召回相关记忆。
+- 使用 PostgresStore、MongoDBStore 等后端获得真正的跨进程持久化。
+- 在调用 LLM 前读取记忆并加入上下文，在对话后提取新记忆写回 Store。
+
+### 本节小结
+
+```text
+compile({ store })
+  = 把长期记忆能力注入 Graph
+
+runtime.store
+  = Node 中的 Store 入口
+
+runtime.context.userId
+  = 构造用户 namespace 的可信身份
+
+Checkpointer + thread_id
+  = 保存会话 State
+
+Store + namespace
+  = 保存跨会话长期记忆
+```
+
+一句话记忆：
+
+```text
+Checkpointer 记住这条 thread 走到了哪里，Store 记住这个用户跨 thread 仍需要什么。
+```
+
+官方参考：
+
+- [LangGraph — Add long-term memory](https://docs.langchain.com/oss/javascript/langgraph/add-memory#add-long-term-memory)
+- [LangGraph — Persistence and memory store](https://docs.langchain.com/oss/javascript/langgraph/persistence#memory-store)
+
+## 12 Graph 中的 stream
+
+`invoke()` 会等待 Graph 完整结束，再返回最终 State：
+
+```ts
+const result = await graph.invoke(input);
+```
+
+`stream()` 则允许应用在 Graph 执行过程中逐步收到结果：
+
+```ts
+for await (const chunk of await graph.stream(input, options)) {
+  console.log(chunk);
+}
+```
+
+本节只掌握四个核心点：
+
+```text
+1. stream() 返回异步可迭代流
+2. updates 只发送 Node 的局部更新
+3. values 发送每个 step 后的完整 State
+4. Graph State 流不等于 LLM Token 流
+```
+
+### 核心 1：使用 for await 消费 stream
+
+```ts
+const stream = await graph.stream(input, {
+  streamMode: "updates"
+});
+
+for await (const chunk of stream) {
+  console.log(chunk);
+}
+```
+
+Graph 每产生一个 chunk，循环就执行一次。应用可以立即把进度发送给前端，而不必等到整个 Graph 完成。
+
+调用一次 `graph.stream()` 就会启动一次新的 Graph 执行。它不是对之前 `invoke()` 结果的回放。
+
+### 核心 2：updates 只看局部更新
+
+示例 Graph 有两个 Node：
+
+```text
+START -> refine_topic -> write_summary -> END
+```
+
+它们分别只返回一个字段：
+
+```ts
+refine_topic
+  -> { refinedTopic: "..." }
+
+write_summary
+  -> { summary: "..." }
+```
+
+使用：
+
+```ts
+streamMode: "updates"
+```
+
+得到两个 chunk：
+
+```json
+{"refine_topic":{"refinedTopic":"LangGraph stream（面向初学者）"}}
+{"write_summary":{"summary":"用一个最小示例解释LangGraph stream（面向初学者）。"}}
+```
+
+`updates` 的结构可以理解为：
+
+```text
+Node 名称 -> 这个 Node 返回的 State 更新
+```
+
+它适合显示“当前完成了哪个步骤”，数据量通常也更小。
+
+### 核心 3：values 查看完整 State
+
+使用：
+
+```ts
+streamMode: "values"
+```
+
+得到：
+
+```json
+{"topic":"LangGraph stream","refinedTopic":"","summary":""}
+{"topic":"LangGraph stream","refinedTopic":"LangGraph stream（面向初学者）","summary":""}
+{"topic":"LangGraph stream","refinedTopic":"LangGraph stream（面向初学者）","summary":"用一个最小示例解释LangGraph stream（面向初学者）。"}
+```
+
+三个 chunk 分别是：
+
+```text
+输入形成的初始 State
+refine_topic 执行后的完整 State
+write_summary 执行后的完整 State
+```
+
+`values` 适合需要随时拿到完整页面状态的场景，但 State 很大时，每次发送完整副本会比 `updates` 更占带宽。
+
+### 核心 4：Graph stream 不一定是 Token stream
+
+本例没有 LLM，但仍然可以 stream，因为流式输出的是 Graph 的执行进度。
+
+```text
+updates / values
+  -> State 在 step 之间怎样变化
+
+messages
+  -> LLM 生成的消息或 Token chunk
+```
+
+所以看到 `stream()` 不应自动理解成“文字一个字一个字出现”。本节的 chunk 通常在一个 Node 完成后产生。
+
+如果以后需要 LLM Token，再学习 `streamMode: "messages"`；如果需要 Node 内部主动汇报百分比，再使用 `custom` 模式。
+
+### updates 还是 values？
+
+| 需求                         | 推荐模式  |
+| ---------------------------- | --------- |
+| 显示哪个 Node 刚刚完成       | `updates` |
+| 前端自行合并局部 State       | `updates` |
+| 每次都需要完整 State         | `values`  |
+| State 很大、希望减少传输量   | `updates` |
+
+入门时可以优先使用 `updates`，因为它最直观地展示 Graph 的执行路径。
+
+### 运行示例
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/12-graph-stream.ts`](../langgraph-complete-guide-lab/src/examples/12-graph-stream.ts)
+
+运行：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:12
+```
+
+示例先运行一次 `invoke()`，再分别运行一次 `updates` 和一次 `values`，不调用 LLM，不需要 API Key。
+
+`invoke()` 在两个 Node 全部结束后才一次性输出：
+
+```text
+## invoke: 等待完整结果
+[+2.0s] 完整最终 State
+```
+
+而 `updates` 会更早暴露中间进度：
+
+为了让终端中的流式效果肉眼可见，两个 Node 各自加入了 1 秒教学延迟，并在每个 chunk 前打印相对时间：
+
+```text
+[+1.0s] refine_topic 的 chunk
+[+2.0s] write_summary 的 chunk
+```
+
+`stream()` 本身不会故意减慢 Graph。真实应用中的等待通常来自 LLM、HTTP、数据库或 Tool；示例中的 `sleep` 只是模拟这种耗时，不属于业务实现。
+
+### 三个常见误区
+
+1. **认为 stream 只是把最终答案切碎**：它可以发送每个 Graph step 的 State 变化。
+2. **把 updates 当成完整 State**：updates 只包含 Node 本轮返回的字段，消费方需要自行合并。
+3. **认为三段输出来自同一次 Graph**：示例中的一次 `invoke()` 和两次 `stream()` 是三次独立执行。
+
+### 可选扩展
+
+LangGraph 还支持 `messages`、`custom`、`tools`、`checkpoints`、`tasks` 和 `debug` 等模式，也能一次订阅多个模式。本节先不展开。
+
+### 本节小结
+
+```text
+invoke
+  = 等待结束，返回最终 State
+
+stream
+  = 执行过程中逐个产生 chunk
+
+updates
+  = Node 名称 + 局部 State 更新
+
+values
+  = 每个 step 后的完整 State
+```
+
+一句话记忆：
+
+```text
+updates 看这一步改了什么，values 看这一步之后全部是什么。
+```
+
+官方参考：
+
+- [LangGraph — Streaming](https://docs.langchain.com/oss/javascript/langgraph/streaming)
+- [LangGraph JavaScript Reference — CompiledGraph.stream](https://reference.langchain.com/javascript/langchain-langgraph/index/CompiledGraph/stream)
+
+## 13～14 Interrupt：AI、后台与前端如何配合
+
+这两节讲的是同一条人机协作链路，可以合并学习。
+
+假设 AI 已经生成一封邮件草稿，但“发送邮件”是有副作用的操作，必须让用户先审核：
+
+```text
+START -> 生成草稿 -> 等待人工审核 -> 应用审核结果 -> END
+```
+
+这里的“三方”分别是：
+
+| 角色 | 主要职责 |
+| --- | --- |
+| AI / LangGraph | 生成内容，在危险操作前调用 `interrupt()` |
+| 后台 | 运行 Graph、保存 checkpoint、转发中断和恢复数据 |
+| 前端 / 用户 | 展示审核内容，提交批准或拒绝决定 |
+
+本节只掌握四个核心动作：
+
+```text
+1. AI 使用 interrupt(payload) 暂停
+2. 后台把 __interrupt__ 数据返回前端
+3. 前端把用户决定提交给后台
+4. 后台用相同 thread_id + Command({ resume }) 恢复
+```
+
+### 完整协作流程
+
+```text
+前端                    后台                         AI / LangGraph
+  |                       |                               |
+  |--- 请求生成邮件 ------>|                               |
+  |                       |--- invoke(input) ------------>|
+  |                       |                               | 生成草稿
+  |                       |<-- __interrupt__ -------------| 暂停审核
+  |<-- waiting_review ----|                               |
+  |                                                       |
+  | 用户查看并点击批准                                    |
+  |                                                       |
+  |--- 提交 decision ---->|                               |
+  |                       |--- Command({ resume }) ------->|
+  |                       |                               | 继续执行
+  |                       |<-- 最终 State ----------------|
+  |<-- completed ---------|                               |
+```
+
+关键点是：**AI 不会直接弹出前端窗口**。`interrupt()` 只负责暂停 Graph，并产生一份可序列化的数据；后台负责把它转成 HTTP 或 WebSocket 响应，前端再决定如何展示。
+
+### 动作 1：AI 暂停并提出审核请求
+
+审核 Node 调用：
+
+```ts
+const decision = interrupt<ApprovalRequest, ApprovalDecision>({
+  kind: "email_approval",
+  question: "是否发送这封邮件？",
+  draft: state.draft
+});
+```
+
+第一次运行到这里时，Graph 会暂停，调用方收到：
+
+```json
+{
+  "__interrupt__": [
+    {
+      "value": {
+        "kind": "email_approval",
+        "question": "是否发送这封邮件？",
+        "draft": "..."
+      }
+    }
+  ]
+}
+```
+
+此时 Graph 是“暂停等待”，并不是已经执行到 `END`。
+
+等后台恢复 Graph 后，`Command` 中的 `resume` 数据会成为 `interrupt()` 的返回值，也就是上面代码里的 `decision`。
+
+### 动作 2：后台保存位置并返回审核数据
+
+要让 Graph 能在稍后恢复，需要 checkpointer：
+
+```ts
+const graph = builder.compile({
+  checkpointer: new MemorySaver()
+});
+```
+
+每次调用还要携带一个稳定的 `thread_id`：
+
+```ts
+const config = {
+  configurable: {
+    thread_id: "email-review-001"
+  }
+};
+```
+
+后台检测中断并把业务数据返回前端：
+
+```ts
+const pausedState = await graph.invoke(input, config);
+
+if (isInterrupted(pausedState)) {
+  const review = pausedState[INTERRUPT][0].value;
+  return {
+    status: "waiting_review",
+    threadId: "email-review-001",
+    review
+  };
+}
+```
+
+可以把 `thread_id` 理解成这次工作流的“取件号”：checkpointer 通过它找到暂停时保存的 State。
+
+### 动作 3：前端只提交业务决定
+
+前端收到的数据可以渲染成审核卡片：
+
+```text
+是否发送这封邮件？
+
+主题：发送本周项目进展
+正文：项目周报已经整理完毕。
+
+[拒绝] [批准]
+```
+
+用户操作后，前端提交一份结构化决定：
+
+```json
+{
+  "threadId": "email-review-001",
+  "decision": {
+    "approved": true,
+    "feedback": "同意发送"
+  }
+}
+```
+
+前端不需要保存完整 Graph State，也不需要知道下一个 Node 是什么；这些都由后台和 checkpointer 管理。
+
+### 动作 4：后台恢复同一条 thread
+
+后台收到决定后，用 `Command({ resume })` 恢复：
+
+```ts
+const finalState = await graph.invoke(
+  new Command({ resume: decision }),
+  {
+    configurable: {
+      thread_id: threadId
+    }
+  }
+);
+```
+
+这里必须使用暂停时的同一个 `thread_id`。换一个 ID 会创建另一条工作流，找不到原来的中断位置。
+
+整个数据转换过程是：
+
+```text
+interrupt payload
+  -> 后台响应
+  -> 前端审核卡片
+  -> 用户 decision
+  -> Command resume
+  -> interrupt() 的返回值
+```
+
+### 最小可运行示例
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/13-14-interrupt-three-party.ts`](../langgraph-complete-guide-lab/src/examples/13-14-interrupt-three-party.ts)
+
+示例把前端、后台和 AI 工作流写在同一个文件中，但通过函数边界模拟真实系统的调用关系：
+
+```text
+frontendReview()
+  = 前端展示和收集用户决定
+
+backendStartReview()
+  = 第一次 invoke，接收 interrupt
+
+backendResumeReview()
+  = 使用 Command 恢复同一条 thread
+
+writeDraft / waitForApproval / applyDecision
+  = AI / LangGraph 内部工作流
+```
+
+运行批准路径：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:13-14
+```
+
+运行拒绝路径：
+
+```bash
+pnpm lesson:13-14 -- --reject
+```
+
+示例不调用 LLM，不需要 API Key，也不会真的发送邮件。
+
+### 三个常见误区
+
+1. **认为 `interrupt()` 会操作前端**：它只暂停 Graph 并暴露 payload，UI 由应用自己实现。
+2. **恢复时使用新的 `thread_id`**：新 ID 找不到原 checkpoint，必须复用原来的 ID。
+3. **把审核结果当作新的普通输入**：恢复中断要使用 `Command({ resume: decision })`。
+
+### 生产环境再补两件事
+
+- `MemorySaver` 只适合本地学习；生产环境应使用数据库支持的持久化 checkpointer。
+- 后台应鉴权并校验 `threadId`、审核人权限和 `decision`，不能直接信任前端数据。
+
+中断 Node 为什么可能重新执行、`interrupt()` 前为什么不能随便写副作用，将放到下一节“关于中断要特别注意的几点”中解释。
+
+### 本节小结
+
+```text
+AI 决定在哪里暂停
+后台保证状态能够找回
+前端负责人与系统的交互
+Command 把人的决定送回 Graph
+```
+
+一句话记忆：
+
+```text
+interrupt 把控制权交给应用，Command({ resume }) 再把控制权交还给 Graph。
+```
+
+官方参考：
+
+- [LangGraph — Interrupts](https://docs.langchain.com/oss/javascript/langgraph/interrupts)
+- [LangGraph — Persistence](https://docs.langchain.com/oss/javascript/langgraph/persistence)
+
+## 15 关于 Interrupt 要特别注意的几点
+
+先记住这节最重要的底层事实：
+
+```text
+恢复 interrupt 时，LangGraph 会从头重新执行发生中断的 Node，
+而不是从 interrupt() 下一行恢复 JavaScript 调用栈。
+```
+
+执行过程实际上是：
+
+```text
+第一次进入 Node
+  -> 执行 interrupt() 之前的代码
+  -> interrupt() 暂停，Node 尚未正常返回
+
+使用 Command 恢复
+  -> 再次从头进入同一个 Node
+  -> interrupt() 之前的代码再次执行
+  -> interrupt() 返回 resume 数据
+  -> Node 继续执行并正常返回
+```
+
+理解这个现象后，下面四条规则就不需要死记了。
+
+### 规则 1：interrupt 前的副作用必须可重复
+
+下面的代码很危险：
+
+```ts
+const reviewNode = async () => {
+  await db.auditLogs.insert({ action: "等待审核" });
+  const approved = interrupt("是否批准？");
+  return { approved };
+};
+```
+
+第一次暂停前会插入一次记录；恢复时 Node 从头执行，又会插入一次。
+
+副作用包括：
+
+- 发送邮件或消息
+- 扣款、创建订单
+- 数据库 `insert`、数组追加
+- 调用会产生实际变化的外部 API
+
+最清晰的做法是把审核和执行拆成两个 Node：
+
+```text
+START -> review(interrupt) -> execute(副作用) -> END
+```
+
+```ts
+const reviewNode = () => {
+  const approved = interrupt("是否批准？");
+  return { approved };
+};
+
+const executeNode = async (state) => {
+  if (state.approved) {
+    await sendEmail();
+  }
+  return { status: "finished" };
+};
+```
+
+如果确实需要在 `interrupt()` 前写数据，应使用具有确定业务键的 `upsert` 等幂等操作。幂等表示同一个操作执行多次，最终效果仍然与执行一次相同。
+
+### 规则 2：不要用普通 try/catch 包住 interrupt
+
+`interrupt()` 通过抛出 LangGraph 内部的特殊异常通知运行时暂停。如果被普通 `catch` 吃掉，Graph 就收不到中断信号。
+
+错误写法：
+
+```ts
+try {
+  const approved = interrupt("是否批准？");
+} catch (error) {
+  console.error(error);
+}
+```
+
+推荐把可能失败的业务代码和 `interrupt()` 分开：
+
+```ts
+const approved = interrupt("是否批准？");
+
+try {
+  await callExternalApi();
+} catch (error) {
+  console.error(error);
+}
+```
+
+一句话理解：**业务异常可以捕获，LangGraph 的暂停信号应交还给 LangGraph。**
+
+### 规则 3：多个 interrupt 的数量和顺序必须稳定
+
+同一个 Node 中存在多个 `interrupt()` 时，LangGraph 会按调用顺序匹配每个 resume 值。
+
+下面这种条件变化可能使顺序错位：
+
+```ts
+const name = interrupt("姓名？");
+
+if (state.needsAge) {
+  const age = interrupt("年龄？");
+}
+
+const city = interrupt("城市？");
+```
+
+入门阶段最稳妥的设计是：
+
+```text
+一个 Node 只放一个 interrupt()
+```
+
+需要多个问题时，可以拆成多个 Node；需要校验后重新提问时，使用 State 加条件边循环，不要在一个 Node 中写不确定次数的 `while + interrupt()`。
+
+### 规则 4：payload 和 resume 数据保持可序列化
+
+下面这些值适合放进 `interrupt()`：
+
+```ts
+interrupt({
+  kind: "email_approval",
+  question: "是否发送？",
+  draft: "邮件正文"
+});
+```
+
+推荐使用 JSON 能自然表达的数据：
+
+```text
+string / number / boolean / null
+普通 object / array
+```
+
+不要传递：
+
+```text
+函数、class 实例、数据库连接、Stream、带方法的复杂对象
+```
+
+原因是 interrupt 数据需要经过 checkpointer 持久化，也可能经过 HTTP 在后台和前端之间传输。`Command({ resume })` 中的数据也应遵守同样的约束。
+
+### 最小示例：Node 两次，副作用一次
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/15-interrupt-rules.ts`](../langgraph-complete-guide-lab/src/examples/15-interrupt-rules.ts)
+
+示例 Graph：
+
+```text
+START -> review -> execute -> END
+```
+
+- `review` 包含 `interrupt()`，用教学计数器观察 Node 重入。
+- `execute` 模拟真正的发送操作，放在审核 Node 之后。
+
+运行：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:15
+```
+
+关键输出：
+
+```text
+## 第一次 invoke
+[review] 第 1 次进入 Node
+[caller] Graph 已暂停
+
+## 使用 Command({ resume: true }) 恢复
+[review] 第 2 次进入 Node
+[execute] 第 1 次执行模拟发送
+
+review Node 进入 2 次
+模拟发送只执行 1 次
+```
+
+为什么是这个结果？
+
+```text
+review 第 1 次进入：运行到 interrupt 后暂停
+review 第 2 次进入：interrupt 取得 resume=true，Node 正常结束
+execute 第 1 次进入：审核完成后才执行副作用
+```
+
+示例中的 `reviewNodeRuns += 1` 只是为了把重入现象打印出来，不能把它替换成真实的发送、扣款或数据库插入。
+
+### 开发检查表
+
+```text
+[ ] interrupt() 没有被普通 try/catch 包住
+[ ] interrupt() 前没有非幂等副作用
+[ ] 一个 Node 中的 interrupt 数量和顺序固定
+[ ] payload 与 resume 都是简单可序列化数据
+[ ] 使用 checkpointer，并用同一个 thread_id 恢复
+```
+
+### 本节小结
+
+```text
+Node 会重入
+  -> interrupt 前的代码可能重复
+
+暂停依赖特殊异常
+  -> 不要随便 catch interrupt
+
+resume 按调用位置匹配
+  -> interrupt 顺序必须稳定
+
+状态需要持久化和传输
+  -> 只传简单可序列化数据
+```
+
+一句话记忆：
+
+```text
+把 interrupt Node 当成可能从头重放的代码，并把真正的副作用放到审核之后。
+```
+
+官方参考：
+
+- [LangGraph — Rules of interrupts](https://docs.langchain.com/oss/javascript/langgraph/interrupts#rules-of-interrupts)
+
+## 16 利用时间旅行恢复 Node 运行
+
+LangGraph 的“时间旅行”不是让程序真的倒着执行，而是：
+
+```text
+读取过去保存的 checkpoint
+  -> 选择一个旧 checkpoint
+  -> 从这个位置重新执行后续 Node
+```
+
+它主要有两种用途：
+
+```text
+Replay：使用旧 State 原样重放后续步骤
+Fork：修改旧 State，再运行一条新的分支
+```
+
+本节只学习最基础的 Replay，并掌握四个动作：
+
+```text
+1. 使用 checkpointer 保存 checkpoint
+2. 使用 getStateHistory() 查看历史
+3. 根据 snapshot.next 选择恢复点
+4. 使用旧 snapshot.config 重新 invoke
+```
+
+### 动作 1：开启 checkpoint
+
+时间旅行依赖持久化，因此 Graph 编译时必须配置 checkpointer：
+
+```ts
+const graph = builder.compile({
+  checkpointer: new MemorySaver()
+});
+```
+
+运行时仍然需要 `thread_id`：
+
+```ts
+const config = {
+  configurable: {
+    thread_id: "time-travel-001"
+  }
+};
+```
+
+LangGraph 会在每个 super-step 边界保存 checkpoint。对于顺序 Graph：
+
+```text
+START -> prepare -> calculate -> format -> END
+```
+
+会留下输入、`prepare` 完成、`calculate` 完成、`format` 完成等不同时间点的 State 快照。
+
+### 动作 2：读取历史 checkpoint
+
+先让 Graph 正常运行一次：
+
+```ts
+await graph.invoke({ base: 10 }, config);
+```
+
+然后读取这条 thread 的历史：
+
+```ts
+const history = [];
+
+for await (const snapshot of graph.getStateHistory(config)) {
+  history.push(snapshot);
+}
+```
+
+每个 `StateSnapshot` 中最值得先关注三个字段：
+
+| 字段 | 含义 |
+| --- | --- |
+| `values` | 这个时间点的完整 State |
+| `next` | 从这个时间点继续时，下一批要执行的 Node |
+| `config` | 包含 `thread_id` 和 `checkpoint_id` 的恢复地址 |
+
+这里尤其要注意：
+
+```text
+snapshot.next = ["calculate"]
+```
+
+表示 `calculate` **接下来要执行**，不是它刚刚执行完。
+
+### 动作 3：选择 Node 执行前的 checkpoint
+
+如果希望重新运行 `calculate`，应找到 `next` 中包含它的 checkpoint：
+
+```ts
+const beforeCalculate = history.find((snapshot) =>
+  snapshot.next.includes("calculate")
+);
+```
+
+此时的执行位置是：
+
+```text
+prepare 已完成
+      ↓ checkpoint
+calculate 尚未执行
+      ↓
+format 尚未执行
+```
+
+因此这个 checkpoint 的 State 已经包含 `prepare` 的结果。
+
+### 动作 4：从旧 checkpoint 重放
+
+将旧 snapshot 的 `config` 传给 `invoke()`：
+
+```ts
+const replayResult = await graph.invoke(
+  null,
+  beforeCalculate.config
+);
+```
+
+传入 `null` 表示不提供一份新的初始输入，而是加载 checkpoint 中已有的 State。
+
+这次执行会变成：
+
+```text
+prepare   -> 跳过，结果从 checkpoint 读取
+calculate -> 重新执行
+format    -> 重新执行
+```
+
+Replay 不是读取过去缓存好的最终结果。checkpoint 后面的 Node 会真正再执行一次，因此其中的 LLM、HTTP 请求、Tool 和副作用也会再次发生。
+
+### 最小可运行示例
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/16-time-travel-replay.ts`](../langgraph-complete-guide-lab/src/examples/16-time-travel-replay.ts)
+
+运行：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:16
+```
+
+关键输出：
+
+```text
+## 首次运行完整 Graph
+[prepare] 第 1 次执行
+[calculate] 第 1 次执行
+[format] 第 1 次执行
+
+[history] 选中 checkpoint，下一步：calculate
+
+## 从旧 checkpoint 重放
+[calculate] 第 2 次执行
+[format] 第 2 次执行
+
+执行次数：{ prepare: 1, calculate: 2, format: 2 }
+```
+
+它证明了：
+
+```text
+checkpoint 之前的 Node 不重跑
+checkpoint 的 next 以及后续 Node 会重跑
+```
+
+示例不调用 LLM，不需要 API Key。
+
+### Replay 和 Fork 的边界
+
+如果只想用原来的 State 再跑一次，使用 Replay：
+
+```ts
+await graph.invoke(null, oldSnapshot.config);
+```
+
+如果想回到过去并修改 State，再探索另一种结果，则先创建 Fork：
+
+```ts
+const forkConfig = await graph.updateState(
+  oldSnapshot.config,
+  { prepared: 100 }
+);
+
+await graph.invoke(null, forkConfig);
+```
+
+`updateState()` 会创建一个新的 checkpoint 分支，不会修改或删除原来的历史。本节示例先不加入 Fork，避免把“恢复 Node 运行”与“修改历史 State”混在一起。
+
+### 三个常见误区
+
+1. **认为时间旅行会删除后面的历史**：它从旧 checkpoint 创建新的执行分支，原历史仍保留。
+2. **选择刚执行完目标 Node 的 checkpoint**：要重跑某个 Node，应选择 `snapshot.next` 包含该 Node 的快照。
+3. **认为 Replay 不会产生外部调用**：checkpoint 后的 Node 会真实重跑，副作用仍应设计为幂等。
+
+### 本节小结
+
+```text
+getStateHistory()
+  = 查看一条 thread 的 checkpoint 历史
+
+snapshot.next
+  = 从该 checkpoint 恢复后要执行的 Node
+
+snapshot.config
+  = 指向具体 checkpoint 的恢复地址
+
+invoke(null, snapshot.config)
+  = 从旧 checkpoint 重放后续 Node
+```
+
+一句话记忆：
+
+```text
+找到 next 指向目标 Node 的 checkpoint，再拿它的 config 重新 invoke。
+```
+
+官方参考：
+
+- [LangGraph — Use time-travel](https://docs.langchain.com/oss/javascript/langgraph/use-time-travel)
+- [LangGraph — Persistence and checkpoints](https://docs.langchain.com/oss/javascript/langgraph/persistence)
+
+## 17 Graph 中子图的作用
+
+子图的定义很简单：
+
+```text
+Subgraph = 一个被当作父 Graph 中某个 Node 使用的 Graph
+```
+
+例如，订单流程不需要知道运费计算的每个细节：
+
+```text
+父图：
+START -> 准备订单 -> shipping 子图 -> 汇总订单 -> END
+
+shipping 子图内部：
+START -> 判断配送区域 -> 计算运费 -> END
+```
+
+从父图看，`shipping` 是一个 Node；进入它之后，LangGraph 会执行子图内部的多个 Node。
+
+本节只掌握四个核心点：
+
+```text
+1. 子图封装一段完整的小工作流
+2. 子图可以复用、独立开发和测试
+3. 父图与子图通过 State 字段通信
+4. State 相同可直接添加，不同则用包装 Node 转换
+```
+
+### 作用 1：封装复杂流程
+
+如果所有步骤都放在一张 Graph 中：
+
+```text
+prepare_order
+classify_zone
+calculate_shipping
+check_coupon
+reserve_stock
+finish_order
+...
+```
+
+Graph 很快就会难以阅读。将相关步骤收进子图后，父图只保留业务级流程：
+
+```text
+prepare_order -> shipping -> finish_order
+```
+
+子图隐藏的是实现细节，而不是运行逻辑。内部 Node 仍然会真实执行，也可以拥有条件边、循环、interrupt 和自己的子图。
+
+### 作用 2：复用和独立测试
+
+编译后的子图既可以放入父图，也可以独立调用：
+
+```ts
+const shippingSubgraph = shippingBuilder.compile();
+
+await shippingSubgraph.invoke({
+  destination: "成都",
+  weightKg: 3
+});
+```
+
+因此同一个运费子图可以被订单 Graph、售后 Graph 和报价 Graph 复用。
+
+在大型项目中，还可以由不同团队分别维护父图和子图。双方只需要约定输入、输出 State，不需要互相了解全部内部实现。多 Agent 系统中的专业 Agent，也经常以子图形式存在。
+
+### 作用 3：通过 State 接口通信
+
+本节示例使用两个 State Schema。
+
+父图 State：
+
+```text
+orderId
+destination   <- 与子图共享
+weightKg      <- 与子图共享
+shippingFee   <- 与子图共享
+summary
+```
+
+子图 State：
+
+```text
+destination   <- 与父图共享
+weightKg      <- 与父图共享
+shippingFee   <- 与父图共享
+zone          <- 子图私有
+```
+
+运行到 `shipping` 时：
+
+```text
+父图把共享字段交给子图
+  -> 子图使用 zone 完成内部计算
+  -> 子图把 shippingFee 写回共享字段
+  -> 父图继续运行
+```
+
+`zone` 只服务于子图内部两个 Node，不会出现在父图最终 State 中。这就是一个清晰的模块接口：
+
+```text
+子图输入：destination + weightKg
+子图输出：shippingFee
+子图私有：zone
+```
+
+### 作用 4：选择合适的接入方式
+
+#### 方式 A：存在共享 State 字段
+
+当父图和子图共享字段时，可以把编译后的子图直接加入父图：
+
+```ts
+const shippingSubgraph = shippingBuilder.compile();
+
+const orderGraph = new StateGraph(OrderState)
+  .addNode("prepare_order", prepareOrder)
+  .addNode("shipping", shippingSubgraph)
+  .addNode("finish_order", finishOrder);
+```
+
+这是本节示例采用的方式，代码最少。
+
+#### 方式 B：State 完全不同或需要转换
+
+如果父图使用 `order`，子图却要求 `destination` 和 `weightKg`，可以增加包装 Node：
+
+```ts
+const runShipping: typeof OrderState.Node = async (state) => {
+  const childResult = await shippingSubgraph.invoke({
+    destination: state.order.city,
+    weightKg: state.order.weight
+  });
+
+  return {
+    shippingFee: childResult.shippingFee
+  };
+};
+```
+
+包装 Node 负责两次转换：
+
+```text
+父 State -> 子图输入
+子图输出 -> 父 State 更新
+```
+
+可以这样选择：
+
+| 场景 | 接入方式 |
+| --- | --- |
+| 父子图共享字段 | 直接把 compiled subgraph 传给 `addNode()` |
+| 字段名称或结构不同 | 在包装 Node 中调用 `subgraph.invoke()` |
+| 需要严格控制暴露数据 | 使用包装 Node 显式映射输入和输出 |
+
+### 最小可运行示例
+
+代码位于：
+
+[`langgraph-complete-guide-lab/src/examples/17-subgraph-purpose.ts`](../langgraph-complete-guide-lab/src/examples/17-subgraph-purpose.ts)
+
+运行：
+
+```bash
+cd langgraph-complete-guide-lab
+pnpm lesson:17
+```
+
+关键输出：
+
+```text
+[父图] 准备订单 ORDER-001
+[子图] 判断配送区域
+[子图] 计算运费
+[父图] 汇总结果
+
+最终结果：ORDER-001 发往成都，运费 21 元
+子图私有字段 zone 是否进入父图：false
+```
+
+示例不调用 LLM，不需要 API Key。
+
+### 什么时候值得拆子图？
+
+适合拆分：
+
+- 一组 Node 共同完成一个清晰的业务能力。
+- 这组流程需要在多个父图中复用。
+- 子流程由另一个团队或专业 Agent 独立维护。
+- 父图已经大到难以理解和测试。
+
+只有一个很简单的计算步骤时，普通 Node 或函数通常就够了，不必为了使用子图而拆子图。
+
+### 关于持久化
+
+基础场景中，子图直接 `compile()` 即可。如果父图配置了 checkpointer，LangGraph 默认会把持久化能力传播给子图，以支持一次子图调用中的恢复和 interrupt。
+
+子图是否需要跨多次调用保留独立记忆，属于更深入的 persistence 策略，本节先不展开。
+
+### 三个常见误区
+
+1. **认为子图会自动并行执行**：子图只是嵌套工作流，是否并行仍由边和调度结构决定。
+2. **认为子图能读取父图所有字段**：它只能使用自己 State Schema 声明的字段，或由包装 Node 显式传入的数据。
+3. **把每一个 Node 都包装成子图**：子图适合封装完整能力，简单操作继续使用普通 Node。
+
+### 本节小结
+
+```text
+Graph
+  = 完整工作流
+
+Subgraph
+  = 被父 Graph 当作一个 Node 使用的工作流
+
+共享 State 字段
+  = 父子图直接通信
+
+包装 Node
+  = 在不同 State Schema 之间转换
+```
+
+一句话记忆：
+
+```text
+父图负责业务全貌，子图负责一个可复用、边界清晰的局部流程。
+```
+
+官方参考：
+
+- [LangGraph — Subgraphs](https://docs.langchain.com/oss/javascript/langgraph/use-subgraphs)
