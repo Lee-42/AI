@@ -1,0 +1,53 @@
+[
+  {
+    "sku": "laptop-air-14",
+    "name": "Aurora Air 14",
+    "category": "laptop",
+    "brand": "Northstar",
+    "price": 6999,
+    "inStock": true,
+    "description": "14英寸轻薄笔记本电脑，2.8K高色域屏幕，长续航，适合移动办公和轻度图片处理。",
+    "useCases": ["移动办公", "图片处理", "在线会议"],
+    "specifications": {
+      "screen": "14-inch 2.8K OLED",
+      "memoryGb": 16,
+      "weightKg": 1.2
+    },
+    "imageUrl": null,
+    "manualPath": "data/manuals/laptop-air-14.md"
+  },
+  {
+    "sku": "laptop-studio-16",
+    "name": "Aurora Studio 16",
+    "category": "laptop",
+    "brand": "Northstar",
+    "price": 9999,
+    "inStock": true,
+    "description": "16英寸高性能笔记本电脑，独立显卡和高刷新率屏幕，适合视频剪辑与三维设计。",
+    "useCases": ["视频剪辑", "三维设计", "软件开发"],
+    "specifications": {
+      "screen": "16-inch 3.2K 120Hz",
+      "memoryGb": 32,
+      "weightKg": 2.0
+    },
+    "imageUrl": null,
+    "manualPath": "data/manuals/laptop-studio-16.md"
+  },
+  {
+    "sku": "notebook-paper-a5",
+    "name": "A5 方格笔记本",
+    "category": "stationery",
+    "brand": "Paperwork",
+    "price": 29,
+    "inStock": true,
+    "description": "A5尺寸纸质方格笔记本，适合记录会议纪要、学习笔记和手账。",
+    "useCases": ["纸质记录", "学习笔记", "手账"],
+    "specifications": {
+      "pages": 160,
+      "paperWeightGsm": 100,
+      "cover": "hardcover"
+    },
+    "imageUrl": null,
+    "manualPath": null
+  }
+]

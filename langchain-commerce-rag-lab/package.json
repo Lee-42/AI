@@ -1,0 +1,30 @@
+{
+  "name": "langchain-commerce-rag-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A TypeScript lab for product retrieval, multimodal search, and RAG with LangChain and Chroma.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node --import tsx src/index.ts",
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "verify": "pnpm check && pnpm test"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.2.3",
+    "@langchain/openai": "^1.5.5",
+    "@langchain/textsplitters": "^1.0.1",
+    "chromadb": "^3.5.0",
+    "dotenv": "^17.4.2",
+    "langchain": "^1.5.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}

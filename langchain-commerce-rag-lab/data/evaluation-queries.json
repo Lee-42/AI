@@ -1,0 +1,14 @@
+[
+  {
+    "id": "text-hard-negative-001",
+    "query": "屏幕不错并且方便出差携带的笔记本",
+    "expectedSkus": ["laptop-air-14"],
+    "tags": ["semantic", "hard-negative", "chinese"]
+  },
+  {
+    "id": "text-use-case-001",
+    "query": "适合剪辑视频和做三维设计的电脑",
+    "expectedSkus": ["laptop-studio-16"],
+    "tags": ["semantic", "use-case", "chinese"]
+  }
+]
