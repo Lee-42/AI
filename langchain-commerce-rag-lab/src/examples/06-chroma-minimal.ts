@@ -1,12 +1,15 @@
 import { config } from "../config.js";
 import { createChromaClient } from "../vectorstores/chroma-client.js";
-
-const COLLECTION_NAME = "course_lesson06_minimal_v1";
+import { COLLECTION_NAMES } from "../vectorstores/collection-names.js";
+import {
+  MINIMAL_QUERY_VECTOR,
+  MINIMAL_VECTOR_RECORDS
+} from "../vectorstores/minimal-vector-fixture.js";
 
 async function main(): Promise<void> {
   const client = createChromaClient();
   const collection = await client.getOrCreateCollection({
-    name: COLLECTION_NAME,
+    name: COLLECTION_NAMES.lesson06Minimal,
     embeddingFunction: null,
     configuration:
       config.chroma.mode === "cloud"
@@ -21,23 +24,17 @@ async function main(): Promise<void> {
 
   // 三个二维向量分别表示东、东北和北。
   await collection.upsert({
-    ids: ["east", "northeast", "north"],
-    embeddings: [
-      [1, 0],
-      [1, 1],
-      [0, 1]
-    ],
-    documents: ["正东方向", "东北方向", "正北方向"],
-    metadatas: [
-      { direction: "east" },
-      { direction: "northeast" },
-      { direction: "north" }
-    ]
+    ids: MINIMAL_VECTOR_RECORDS.map((record) => record.id),
+    embeddings: MINIMAL_VECTOR_RECORDS.map((record) => [
+      ...record.embedding
+    ]),
+    documents: MINIMAL_VECTOR_RECORDS.map((record) => record.document),
+    metadatas: MINIMAL_VECTOR_RECORDS.map((record) => record.metadata)
   });
 
   const recordsAfter = await collection.count();
   const result = await collection.query({
-    queryEmbeddings: [[1, 0]],
+    queryEmbeddings: [[...MINIMAL_QUERY_VECTOR]],
     nResults: 3,
     include: ["documents", "distances"]
   });

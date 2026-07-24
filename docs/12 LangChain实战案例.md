@@ -12,7 +12,8 @@ RAG 导购助手。完整规格见
 - [x] 04 向量数据库的“训练”过程
 - [x] 05 向量数据库的存储和查询过程
 - [x] 06 ChromaDB 最简案例
-- [ ] 07～08 Chroma 与向量检索基线
+- [x] 07 向量数据库中的距离表示
+- [ ] 08 Chroma 与向量检索基线
 - [ ] 09～12 检索精度与数据维护
 - [ ] 13～18 长文本、RAG 与 ID 设计
 - [ ] 19～22 多模态检索
@@ -1056,3 +1057,171 @@ Chroma Cloud 中，方便在控制台查看。
 - [Chroma 添加预计算向量](https://docs.trychroma.com/docs/collections/add-data)
 - [Chroma 查询 Collection](https://docs.trychroma.com/docs/querying-collections/query-and-get)
 - [Chroma Collection 配置](https://docs.trychroma.com/docs/collections/configure)
+
+---
+
+## 07 向量数据库中的距离表示
+
+### 1. 本课目标
+
+Chroma 支持三种常见向量距离：
+
+```text
+l2      -> 坐标位置相差多少
+cosine  -> 方向夹角相差多少
+ip      -> 方向和向量长度的综合作用
+```
+
+Chroma 返回的是 distance，三种模式都是数值越小越相似。
+
+### 2. 三种公式
+
+设两个向量为 `A` 和 `B`。
+
+Squared L2：
+
+```text
+distance = Σ(Aᵢ - Bᵢ)²
+```
+
+它关注坐标的绝对差异。Chroma 的 `l2` 没有再开平方。
+
+Cosine：
+
+```text
+cosine similarity = (A · B) / (|A| × |B|)
+cosine distance   = 1 - cosine similarity
+```
+
+它主要关注方向，忽略整体长度。零向量没有方向，不能计算 cosine。
+
+Inner Product：
+
+```text
+dot product = Σ(Aᵢ × Bᵢ)
+ip distance = 1 - dot product
+```
+
+它同时受方向和长度影响，distance 可以是负数。
+
+实现见
+[distances.ts](../langchain-commerce-rag-lab/src/vector-math/distances.ts)。
+
+### 3. 手算东北方向
+
+查询向量是正东：
+
+```text
+A = [1, 0]
+B = [1, 1]  // 东北
+```
+
+Squared L2：
+
+```text
+(1 - 1)² + (0 - 1)² = 1
+```
+
+Cosine：
+
+```text
+A · B = 1
+|A| = 1
+|B| = √2
+similarity = 1 / √2 = 0.707107
+distance = 1 - 0.707107 = 0.292893
+```
+
+Inner Product：
+
+```text
+distance = 1 - (A · B) = 1 - 1 = 0
+```
+
+同一对向量得到三个不同数值，所以 distance 必须结合 metric 解释。
+
+### 4. 为什么 cosine 忽略长度
+
+比较：
+
+```text
+[1, 0]
+[2, 0]
+```
+
+二者方向相同：
+
+```text
+cosine distance = 0
+squared L2      = 1
+ip distance     = -1
+```
+
+这也是文本 Embedding 常用 cosine 的直观原因：通常更关心语义方向，而不是向量
+整体有多长。
+
+### 5. 运行与真实对照
+
+先确保第 06 课已运行，再执行：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:07
+```
+
+真实结果：
+
+```text
+ID         squared-l2  cosine     inner-prod  Chroma
+east       0.000000    0.000000   0.000000    0.000000
+northeast  1.000000    0.292893   0.000000    0.292893
+north      2.000000    1.000000   1.000000    1.000000
+```
+
+沙盒 Collection 配置为 cosine，因此 Chroma 列与手算 cosine 列完全一致。
+
+入口见
+[07-vector-distances.ts](../langchain-commerce-rag-lab/src/examples/07-vector-distances.ts)。
+
+### 6. 不要把 distance 当概率
+
+下面的理解是错误的：
+
+```text
+distance = 0.3，所以有 70% 相关
+```
+
+`1 - distance` 在 cosine 模式下可以还原 cosine similarity，但 similarity 也
+不是业务正确率或概率。阈值必须结合 Embedding 模型、distance metric 和评估
+数据选择，不能照搬其他项目的数值。
+
+### 7. 本课验收
+
+- [x] 实现 squared L2、cosine 和 inner product distance。
+- [x] 校验空向量、维度不一致、非有限数值和 cosine 零向量。
+- [x] 本地手算 cosine 与 Chroma Cloud 返回值一致。
+- [x] 没有写入 Cloud，也没有调用豆包。
+- [x] 类型检查与 28 个测试通过。
+
+### 8. 检查理解
+
+1. 为什么 Chroma 的 cosine similarity 越大越好，但 distance 越小越好？
+2. 为什么 `[1, 0]` 和 `[2, 0]` 的 cosine distance 为 0？
+3. `distance = 0.2` 能否解释为“80% 相关”？
+
+答案：
+
+1. Chroma 返回 `1 - cosine similarity`。
+2. 两个向量长度不同，但方向完全相同。
+3. 不能；distance 和 similarity 都不是业务概率。
+
+### 9. 下一课
+
+第 08 课会分析“笔记本屏幕不错”和“笔记本毫不相关”这类反直觉结果，理解
+Embedding 语义、文本内容和困难负样本如何共同影响检索。
+
+## 07 官方参考
+
+- [Chroma Collection 距离配置](https://docs.trychroma.com/docs/collections/configure)
+- [Chroma Ranking 与 distance](https://docs.trychroma.com/cloud/search-api/ranking)
+- [Chroma Index Configuration](https://docs.trychroma.com/cloud/schema/index-reference)

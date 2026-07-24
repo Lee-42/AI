@@ -25,6 +25,7 @@ pnpm lesson:03 # 连接 Chroma 并创建课程 Collection
 pnpm lesson:04 # 区分模型推理与向量索引
 pnpm lesson:05 # 将商品向量写入 Chroma 并查询
 pnpm lesson:06 # 用二维向量观察 Chroma 最小 API
+pnpm lesson:07 # 手算并核对三种向量距离
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
@@ -118,3 +119,12 @@ pnpm lesson:06
 
 二维向量保存在独立的 `course_lesson06_minimal_v1`，不会与商品的 2048 维向量
 混合。Collection 使用稳定 ID，重复运行不会增加记录数。
+
+## 07 向量数据库中的距离表示
+
+本课手算 squared L2、cosine 和 inner product distance，并把 cosine 结果与
+第 06 课沙盒 Collection 的真实查询结果逐项对照：
+
+```bash
+pnpm lesson:07
+```
