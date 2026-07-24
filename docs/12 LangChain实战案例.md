@@ -13,8 +13,11 @@ RAG 导购助手。完整规格见
 - [x] 05 向量数据库的存储和查询过程
 - [x] 06 ChromaDB 最简案例
 - [x] 07 向量数据库中的距离表示
-- [ ] 08 Chroma 与向量检索基线
-- [ ] 09～12 检索精度与数据维护
+- [x] 08 “笔记本屏幕不错”和“笔记本”相关吗
+- [x] 09 如何提升向量数据库的检索精度
+- [ ] 10 改成 cosine 方式优化文本检索精度
+- [x] 11 ChromaDB 中的查询操作符
+- [x] 12 ChromaDB 查询、删除操作
 - [ ] 13～18 长文本、RAG 与 ID 设计
 - [ ] 19～22 多模态检索
 
@@ -1225,3 +1228,615 @@ Embedding 语义、文本内容和困难负样本如何共同影响检索。
 - [Chroma Collection 距离配置](https://docs.trychroma.com/docs/collections/configure)
 - [Chroma Ranking 与 distance](https://docs.trychroma.com/cloud/search-api/ranking)
 - [Chroma Index Configuration](https://docs.trychroma.com/cloud/schema/index-reference)
+
+---
+
+## 08 为什么“笔记本屏幕不错”和“笔记本”毫不相关？
+
+### 1. 先修正问题
+
+使用当前豆包模型实测：
+
+```text
+“笔记本” ↔ “笔记本屏幕不错”
+cosine distance ≈ 0.334
+```
+
+所以不能说它们“毫不相关”。但它们也不会因为共享“笔记本”三个字就得到接近
+0 的 distance。
+
+原因是 Embedding 表示整段文本的上下文，不是关键词计数：
+
+```text
+“笔记本”             -> 电脑或纸质本，含义不完整
+“笔记本屏幕不错”      -> 屏幕把语义推向笔记本电脑
+```
+
+增加上下文会移动向量的位置，这是正常现象。
+
+### 2. 本课诊断方法
+
+本课一次向量化五个查询，再用一次 Chroma 批量查询进行对照：
+
+```text
+笔记本
+笔记本屏幕不错
+这台笔记本屏幕很好
+这台笔记本屏幕很差
+A5纸质笔记本适合手写记录
+```
+
+[query-diagnostics.ts](../langchain-commerce-rag-lab/src/evaluation/query-diagnostics.ts)
+返回：
+
+```text
+Top 1 distance
+Top 2 distance
+Top gap = Top 2 distance - Top 1 distance
+```
+
+`Top gap` 越小，说明前两名越难区分。它只是诊断信号，不是置信概率。
+
+### 3. 真实商品检索
+
+本次结果：
+
+| 查询 | Top 1 | Top 1 distance | Top 2 | Top gap |
+| --- | --- | ---: | --- | ---: |
+| 笔记本 | Studio 16 | 0.532084 | Air 14 | 0.021598 |
+| 笔记本屏幕不错 | Air 14 | 约 0.556 | Studio 16 | 约 0.009 |
+| 这台笔记本屏幕很好 | Studio 16 | 0.550685 | Air 14 | 0.000719 |
+| 这台笔记本屏幕很差 | Studio 16 | 0.598410 | Air 14 | 0.015171 |
+| A5纸质笔记本适合手写记录 | 纸质笔记本 | 约 0.392 | Air 14 | 约 0.24 |
+
+可以得到三个结论：
+
+1. 单独的“笔记本”有歧义，两款电脑的差距很小。
+2. “屏幕不错”能指向电脑，但没有足够信息区分两款电脑。
+3. 明确加入“A5、纸质、手写”后，纸质笔记本以较大间隔排在第一。
+
+### 4. Embedding 不等于逻辑判断
+
+当前模型实测：
+
+```text
+“这台笔记本屏幕很好”
+“这台笔记本屏幕很差”
+cosine distance ≈ 0.146
+```
+
+两个句子立场相反，却共享相同对象和主题，因此向量仍然很接近。
+
+这说明 Embedding 适合做候选召回，但不能独自承担：
+
+- 判断好评还是差评。
+- 判断事实是否矛盾。
+- 判断一句话是否蕴含另一句话。
+
+这些任务需要 metadata、规则、分类模型、reranker 或 LLM 进一步判断。
+
+### 5. 不要用单个 distance 判死刑
+
+下面的判断没有依据：
+
+```text
+distance > 0.3，所以毫不相关
+```
+
+Distance 会受到这些因素影响：
+
+```text
+Embedding 模型
+文本长度与内容
+距离策略
+数据分布
+查询任务
+```
+
+更可靠的做法是：
+
+```text
+固定评估查询
+  -> 观察正确结果是否进入 Top K
+  -> 比较正例和困难负样本的排名
+  -> 再选择阈值或优化策略
+```
+
+### 6. 运行
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:08
+```
+
+入口见
+[08-notebook-relevance.ts](../langchain-commerce-rag-lab/src/examples/08-notebook-relevance.ts)。
+
+一次运行使用 5 个短文本 Embedding，本次观察用量为 `116 tokens`。示例只查询
+已有商品，不写入 Chroma。
+
+### 7. 本课验收
+
+- [x] 使用当前模型实测，而不是照搬旧课程 distance。
+- [x] 对比歧义、上下文、否定表达和纸质笔记本。
+- [x] 一次 Chroma 请求完成五组查询。
+- [x] 输出 Top 1、Top 2 和 Top gap。
+- [x] Chroma 写入数为 0。
+- [x] 类型检查与 30 个测试通过。
+
+### 8. 检查理解
+
+1. 为什么共享“笔记本”不代表 distance 一定接近 0？
+2. 为什么“屏幕很好”和“屏幕很差”的向量仍然接近？
+3. Top gap 很小意味着什么？
+
+答案：
+
+1. Embedding 编码整段上下文，不是计算关键词重合率。
+2. 两句话的对象和主题高度一致，否定或评价方向只是部分语义。
+3. 前两名难以区分，第一名的领先优势很弱。
+
+### 9. 下一课
+
+第 09 课开始系统提升检索精度：建立固定评估集，分别调整查询表达、商品内容
+模板和检索策略，并用 Recall@K、MRR 和困难负样本结果验证。
+
+## 08 官方参考
+
+- [Chroma Query](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+- [Chroma Ranking 与 distance](https://docs.trychroma.com/cloud/search-api/ranking)
+- [Chroma Collection 距离配置](https://docs.trychroma.com/docs/collections/configure)
+
+---
+
+## 09 如何提升向量数据库的检索精度
+
+### 1. 先建立可重复的评估
+
+优化检索不能只试一句查询，再凭感觉判断。先固定：
+
+```text
+用户查询 + 期望命中的 SKU
+```
+
+本课把 8 条查询写入
+[evaluation-queries.json](../langchain-commerce-rag-lab/data/evaluation-queries.json)，
+其中包含：
+
+- 商品用途：“轻度图片处理”“移动办公”。
+- 明确规格：“3.2K 120Hz”。
+- 困难负样本：电脑“笔记本”与纸质“笔记本”。
+- 暂未解决的查询：“在线会议”和精确价格。
+
+以后改变内容模板、模型或检索策略时，都应复用这组查询，才能判断改动是提升还是
+退步。
+
+### 2. 三个简单指标
+
+假设一共有 `N` 条评估查询：
+
+```text
+Recall@1 = 正确商品排第 1 的查询数 / N
+Recall@K = 正确商品进入前 K 名的查询数 / N
+MRR      = 每条查询的 1 / 正确商品首次出现名次，再求平均
+```
+
+例如两条查询的正确商品分别排第 1、第 2：
+
+```text
+Recall@1 = 1 / 2 = 0.5
+Recall@2 = 2 / 2 = 1.0
+MRR      = (1 + 1/2) / 2 = 0.75
+```
+
+Recall@K 只关心是否进入前 K，MRR 还会奖励更靠前的排名。指标实现在
+[retrieval-metrics.ts](../langchain-commerce-rag-lab/src/evaluation/retrieval-metrics.ts)。
+
+### 3. A/B：向量化什么内容
+
+本课只改变商品文档内容，模型、查询和 cosine 排序都保持一致：
+
+```text
+A：只索引商品名
+
+B：商品名
+   + 类别与品牌
+   + 描述
+   + 适用场景
+   + 关键规格
+```
+
+所有 A 文档、B 文档和查询在同一次 API 调用中生成向量。两个版本共用相同的
+查询向量，避免把模型调用差异误认为模板效果。
+
+### 4. 真实评估结果
+
+运行：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:09
+```
+
+本次豆包 Embedding 结果：
+
+| 内容模板 | Recall@1 | Recall@3 | MRR |
+| --- | ---: | ---: | ---: |
+| 只索引商品名 | 0.250 | 1.000 | 0.563 |
+| 丰富商品内容 | 0.750 | 1.000 | 0.875 |
+
+丰富内容修复了四类查询：
+
+```text
+方便出差携带
+轻度图片处理
+移动办公
+3.2K 120Hz
+```
+
+结论不是“文本越长越好”，而是查询中出现的用途、属性和规格也应出现在被索引
+内容中。无关字段和重复文字反而可能制造噪声。
+
+这里的 Recall@3 没有区分度，因为当前一共只有 3 个商品。数据增多后，应继续
+观察 Recall@3、Recall@5 等更有意义的候选召回指标。
+
+### 5. 丰富内容也不能解决一切
+
+本次仍有两条查询没有排到 Top 1：
+
+```text
+“用于在线会议的设备”
+“售价6999元的笔记本电脑”
+```
+
+它们需要不同策略：
+
+| 问题 | 更合适的后续方案 |
+| --- | --- |
+| 商品内容没有覆盖“在线会议”的表达 | 补充真实业务描述、查询改写或 reranker |
+| 精确价格、库存、品牌等结构化条件 | 使用 metadata filter，再做向量排序 |
+
+Embedding 擅长语义相似，但不适合可靠地执行 `price = 6999` 这样的精确判断。
+因此价格仍只保存在 metadata 中，没有为了通过测试而塞进向量文本。
+
+### 6. 为什么本课不访问 Chroma
+
+这次实验只比较内容模板，所以将生成的文档向量保存在内存中并手算 cosine
+排名。这样可以隔离变量，也不会污染 Cloud Collection。
+
+```text
+本次用量：591 tokens
+Chroma 读写：0
+```
+
+入口见
+[09-improve-retrieval-accuracy.ts](../langchain-commerce-rag-lab/src/examples/09-improve-retrieval-accuracy.ts)，
+指标测试见
+[retrieval-metrics.test.ts](../langchain-commerce-rag-lab/tests/retrieval-metrics.test.ts)。
+
+### 7. 一个可重复的优化循环
+
+```text
+收集失败查询
+  -> 写入固定评估集
+  -> 判断是语义问题还是结构化条件
+  -> 每次只修改一个变量
+  -> 比较 Recall@K 与 MRR
+  -> 检查是否产生回归
+```
+
+不要先调一个看似漂亮的 distance 阈值。阈值、TopK 和内容模板都应由真实查询
+上的评估结果决定。
+
+### 8. 本课验收
+
+- [x] 将评估集扩充为 8 条固定查询。
+- [x] 实现 Recall@1、Recall@K 和 MRR。
+- [x] 公平比较两种商品内容模板。
+- [x] Recall@1 从 0.250 提升到 0.750。
+- [x] 识别语义优化与 metadata filter 的职责边界。
+- [x] Chroma 读写数为 0。
+- [x] 类型检查与 33 个测试通过。
+
+### 9. 检查理解
+
+1. 为什么不能只用一条查询判断优化是否有效？
+2. Recall@3 都是 1.0，是否说明两个模板一样好？
+3. 为什么“售价 6999 元”更适合 metadata filter？
+
+答案：
+
+1. 单个例子可能偶然变好，同时让其他查询退步；固定评估集可以发现回归。
+2. 不是；当前只有 3 个商品，进入前三没有区分度，Recall@1 和 MRR 已显示差异。
+3. 价格是精确结构化条件，而向量相似度只能近似表达语义关系。
+
+### 10. 下一课
+
+第 10 课会在同一评估集上比较距离策略，理解为什么改变 cosine、L2 或 inner
+product 也可能改变排名，以及为什么距离策略必须和索引配置保持一致。
+
+## 09 官方参考
+
+- [LangSmith Evaluation](https://docs.langchain.com/langsmith/evaluation)
+- [LangSmith Evaluation concepts](https://docs.langchain.com/langsmith/evaluation-concepts)
+- [LangSmith RAG evaluation tutorial](https://docs.langchain.com/langsmith/evaluate-rag-tutorial)
+
+---
+
+## 11 ChromaDB 中的查询操作符
+
+### 1. `where` 与 `whereDocument`
+
+Chroma 有两类常用过滤条件：
+
+| 参数 | 检查对象 | 例子 |
+| --- | --- | --- |
+| `where` | metadata | 价格、品牌、类别、库存 |
+| `whereDocument` | document 正文 | 是否包含“移动办公” |
+
+```ts
+// metadata 精确匹配
+where: { category: "laptop" }
+
+// document 正文包含指定文字
+whereDocument: { $contains: "移动办公" }
+```
+
+`whereDocument` 是全文包含或正则过滤，不是向量语义搜索。全文匹配区分大小写。
+
+### 2. metadata 操作符
+
+| 操作符 | 含义 | 示例 |
+| --- | --- | --- |
+| `$eq` | 等于 | `{ price: { $eq: 6999 } }` |
+| `$ne` | 不等于 | `{ category: { $ne: "stationery" } }` |
+| `$gt` / `$gte` | 大于 / 大于等于 | `{ price: { $gte: 6000 } }` |
+| `$lt` / `$lte` | 小于 / 小于等于 | `{ price: { $lte: 8000 } }` |
+| `$in` | 在给定列表中 | `{ brand: { $in: ["Northstar"] } }` |
+| `$nin` | 不在给定列表中 | `{ brand: { $nin: ["Paperwork"] } }` |
+| `$and` | 所有条件都成立 | 价格区间并且有库存 |
+| `$or` | 任一条件成立 | 低于 100 或高于 9000 |
+
+直接写 `{ category: "laptop" }` 是 `$eq` 的简写。
+
+一个过滤对象只放一个字段或一个逻辑操作符。价格区间不能把 `$gte` 和 `$lte`
+并排塞进同一个字段，应使用 `$and`：
+
+```ts
+where: {
+  $and: [
+    { price: { $gte: 6000 } },
+    { price: { $lte: 8000 } },
+    { inStock: true }
+  ]
+}
+```
+
+### 3. 过滤与向量查询可以组合
+
+第 09 课中，这条查询没有得到正确的 Top 1：
+
+```text
+售价 6999 元的笔记本电脑
+```
+
+原因是 Embedding 不擅长精确数字比较。正确流程是：
+
+```text
+where: price = 6999
+  -> 得到满足价格条件的候选集
+  -> 在候选集中按向量 distance 排名
+```
+
+对应代码：
+
+```ts
+await searchChromaProducts(
+  collection,
+  embeddings,
+  "售价 6999 元的笔记本电脑",
+  3,
+  { where: { price: { $eq: 6999 } } }
+);
+```
+
+### 4. 真实 Cloud 结果
+
+运行：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:11
+```
+
+结果：
+
+```text
+category = laptop:
+  laptop-air-14, laptop-studio-16
+
+6000 <= price <= 8000 且有货:
+  laptop-air-14
+
+price < 100 或 price > 9000:
+  laptop-studio-16, notebook-paper-a5
+
+document contains 移动办公:
+  laptop-air-14
+
+向量查询 + price = 6999:
+  laptop-air-14, distance=0.587460
+```
+
+Distance 并没有因为精确价格而变小；过滤器只是排除了不满足条件的记录。这再次
+说明 distance 代表向量关系，不代表价格条件的正确率。
+
+入口见
+[11-chroma-query-operators.ts](../langchain-commerce-rag-lab/src/examples/11-chroma-query-operators.ts)。
+本次使用 `30 tokens`，Chroma 写入数为 0。
+
+### 5. 本课验收
+
+- [x] 使用 metadata 等值、范围和列表过滤。
+- [x] 使用 `$and` 与 `$or` 组合条件。
+- [x] 使用 `whereDocument` 过滤正文。
+- [x] 组合向量检索与精确价格过滤。
+- [x] 修复第 09 课的 `6999 元`查询。
+- [x] 没有修改 Cloud 中的商品记录。
+
+### 6. 检查理解
+
+1. `whereDocument: { $contains: "移动办公" }` 是语义搜索吗？
+2. 为什么精确价格应该放在 metadata 中？
+3. `where` 和向量查询组合时各自负责什么？
+
+答案：
+
+1. 不是，它检查正文是否包含指定文字。
+2. 价格需要精确比较，而 Embedding 只提供近似语义关系。
+3. `where` 筛选合法候选，向量 distance 再对候选进行语义排序。
+
+## 11 官方参考
+
+- [Chroma Metadata Filtering](https://docs.trychroma.com/docs/querying-collections/metadata-filtering)
+- [Chroma Full Text Search](https://docs.trychroma.com/docs/querying-collections/full-text-search)
+- [Chroma Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+
+---
+
+## 12 ChromaDB 查询、删除操作
+
+### 1. `get` 和 `query` 不是一回事
+
+| 方法 | 是否需要查询向量 | 是否返回 distance | 适用场景 |
+| --- | --- | --- | --- |
+| `get` | 否 | 否 | 按 ID、metadata、正文精确取记录 |
+| `query` | 是 | 是 | 按向量相似度排序 |
+
+```ts
+// 精确获取，不计算相似度
+await collection.get({
+  ids: ["lesson12:product:air"]
+});
+
+// 向量查询，返回按 distance 排序的结果
+await collection.query({
+  queryEmbeddings: [[1, 0]],
+  nResults: 2
+});
+```
+
+`get` 还可以使用 `limit`、`offset` 做分页；`query` 可以和第 11 课的过滤器组合。
+
+### 2. 删除记录与删除 Collection
+
+```ts
+// 按稳定 ID 删除记录
+await collection.delete({ ids: ["record-id"] });
+
+// 按 metadata 删除匹配的记录
+await collection.delete({
+  where: { status: "temporary" }
+});
+
+// 删除整个 Collection：影响范围完全不同
+await client.deleteCollection({ name: "collection-name" });
+```
+
+本课只删除一条教学记录，不执行 `deleteCollection`。记录删除会同时移除对应的
+向量、document 和 metadata，而且不可撤销。
+
+### 3. 安全删除流程
+
+不能把未经检查的用户条件直接交给 `delete`。本课实现：
+
+```text
+准备稳定 ID 与明确的 where
+  -> 用相同 where 执行 get
+  -> 实际命中 ID 必须与预期完全一致
+  -> 执行 delete
+  -> 再按 ID 查询，确认已经不存在
+```
+
+如果预览多命中或少命中任何记录，程序都会停止，不发送删除请求。实现见
+[delete-records-safely.ts](../langchain-commerce-rag-lab/src/maintenance/delete-records-safely.ts)。
+
+### 4. 为什么使用独立沙盒
+
+第 12 课使用：
+
+```text
+course_lesson12_crud_v1
+```
+
+其中只有三个二维教学向量，不会操作 `commerce_products_text_v1`。删除目标还
+必须同时满足：
+
+```text
+lesson = 12
+status = temporary
+```
+
+实验结束前会用稳定 ID 恢复临时记录，使课程命令可以重复运行。
+
+### 5. 真实 Cloud 结果
+
+运行：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:12
+```
+
+首次结果：
+
+```text
+初始化记录数: 0 -> 3
+get(ids): lesson12:product:air
+
+query([1, 0]):
+1. lesson12:product:air     distance=0.000000
+2. lesson12:product:studio  distance=0.029858
+
+服务端报告删除数: 1
+删除后记录数: 2
+恢复后记录数: 3
+恢复验证: true
+```
+
+本课使用预先定义的二维向量，因此豆包调用和 token 消耗均为 0。入口见
+[12-chroma-query-delete.ts](../langchain-commerce-rag-lab/src/examples/12-chroma-query-delete.ts)。
+
+### 6. 本课验收
+
+- [x] 区分 `get` 与 `query`。
+- [x] 按稳定 ID 获取记录。
+- [x] 向量查询返回 distance 排名。
+- [x] 删除前预览，并校验精确 ID 集合。
+- [x] 真实删除一条沙盒记录并验证。
+- [x] 恢复教学记录，最终记录数仍为 3。
+- [x] 商品 Collection 未被修改。
+- [x] 完整类型检查与 38 个测试通过。
+
+### 7. 检查理解
+
+1. 已知 record ID 时，为什么优先使用 `get` 而不是 `query`？
+2. 为什么删除前不仅要看数量，还要比较具体 ID？
+3. `delete` 与 `deleteCollection` 的影响范围有什么区别？
+
+答案：
+
+1. `get` 是精确读取，不需要生成向量，也不会产生无意义的 distance。
+2. 数量相同也可能命中了错误记录；只有 ID 集合一致才能确认目标。
+3. `delete` 删除匹配记录；`deleteCollection` 删除整个 Collection 及其中全部数据。
+
+### 8. 下一课
+
+第 13 课开始处理长文本：把商品说明书切成可追溯的 chunk，生成向量后写入独立
+Collection，再观察切片大小和 overlap 如何影响召回。
+
+## 12 官方参考
+
+- [Chroma Delete Data](https://docs.trychroma.com/docs/collections/delete-data?lang=typescript)
+- [Chroma TypeScript Collection API](https://docs.trychroma.com/reference/typescript/collection)
+- [Chroma Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)

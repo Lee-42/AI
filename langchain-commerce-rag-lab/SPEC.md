@@ -661,6 +661,18 @@ Phase 1 使用 Chroma Cloud 和官方 `CloudClient`，避免本地容器依赖�
 Collection 混用。沙盒使用稳定 ID 和 `upsert`，可重复运行并保留在 Cloud
 控制台中供观察。
 
+### ADR-011 检索优化必须先通过固定评估集
+
+内容模板、Embedding 模型、distance、TopK 或查询策略变更，必须复用相同查询
+及期望 SKU，至少比较 Recall@1、Recall@K 和 MRR。精确价格等结构化条件不依赖
+Embedding 猜测，留给 metadata filter。
+
+### ADR-012 删除操作必须先预览并验证
+
+按 metadata 删除记录前，先使用相同 `where` 读取目标，并要求实际 ID 集合与
+预期完全一致；删除后再次按稳定 ID 验证。教学中的真实删除只允许发生在独立
+沙盒 Collection，不删除商品 Collection 或整个 Collection。
+
 ## 22. 待决定事项
 
 以下内容在对应阶段开始前确认：

@@ -1,13 +1,23 @@
-import type { Collection } from "chromadb";
+import type {
+  Collection,
+  Where,
+  WhereDocument
+} from "chromadb";
 import type { SearchHit } from "../domain/search-result.js";
 import type { TextEmbeddingProvider } from "../embeddings/contracts.js";
 import { requireSearchHitFields } from "./normalize-search-metadata.js";
+
+export type ChromaProductSearchFilters = {
+  where?: Where;
+  whereDocument?: WhereDocument;
+};
 
 export async function searchChromaProducts(
   collection: Collection,
   embeddings: TextEmbeddingProvider,
   query: string,
-  k = 3
+  k = 3,
+  filters: ChromaProductSearchFilters = {}
 ): Promise<SearchHit[]> {
   if (query.trim().length === 0) {
     throw new Error("Search query must not be empty");
@@ -29,6 +39,7 @@ export async function searchChromaProducts(
   const result = await collection.query({
     queryEmbeddings: [queryVector],
     nResults: k,
+    ...filters,
     include: ["documents", "metadatas", "distances"]
   });
 

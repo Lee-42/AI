@@ -26,6 +26,10 @@ pnpm lesson:04 # 区分模型推理与向量索引
 pnpm lesson:05 # 将商品向量写入 Chroma 并查询
 pnpm lesson:06 # 用二维向量观察 Chroma 最小 API
 pnpm lesson:07 # 手算并核对三种向量距离
+pnpm lesson:08 # 诊断“笔记本”歧义和否定表达
+pnpm lesson:09 # 用固定评估集比较内容模板
+pnpm lesson:11 # 练习 metadata 与正文查询操作符
+pnpm lesson:12 # 在独立沙盒中查询和安全删除
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
@@ -128,3 +132,48 @@ pnpm lesson:06
 ```bash
 pnpm lesson:07
 ```
+
+## 08 “笔记本屏幕不错”和“笔记本”相关吗
+
+本课批量比较含义不完整、增加上下文、正反评价和纸质笔记本查询，观察短语向量
+距离、商品 Top 2 以及排名间隔：
+
+```bash
+pnpm lesson:08
+```
+
+示例只查询现有商品 Collection，不写入数据。
+
+## 09 如何提升向量数据库的检索精度
+
+本课使用固定查询和期望 SKU，对“只索引商品名”与“名称、描述、用途、规格”
+两个内容模板进行 A/B，计算 Recall@1、Recall@3 和 MRR：
+
+```bash
+pnpm lesson:09
+```
+
+评估在内存中使用同一批查询向量完成，不读写 Chroma。
+
+## 11 ChromaDB 中的查询操作符
+
+本课对商品 Collection 使用 `where`、`whereDocument`、`$and`、`$or`、范围和
+集合操作符。最后组合向量检索与 `price = 6999` 精确过滤：
+
+```bash
+pnpm lesson:11
+```
+
+示例只读取 Chroma，并调用一次短文本 Embedding，不写入记录。
+
+## 12 ChromaDB 查询、删除操作
+
+本课对比 `get` 与 `query`，并在独立的 `course_lesson12_crud_v1` 二维沙盒中
+演示删除：
+
+```bash
+pnpm lesson:12
+```
+
+命令会先预览删除目标，只有命中 ID 与预期完全一致时才删除。删除验证完成后会
+恢复临时记录，重复运行不会影响商品 Collection。
