@@ -11,7 +11,8 @@ RAG 导购助手。完整规格见
 - [x] 03 ChromaDB 向量数据库
 - [x] 04 向量数据库的“训练”过程
 - [x] 05 向量数据库的存储和查询过程
-- [ ] 06～08 Chroma 与向量检索基线
+- [x] 06 ChromaDB 最简案例
+- [ ] 07～08 Chroma 与向量检索基线
 - [ ] 09～12 检索精度与数据维护
 - [ ] 13～18 长文本、RAG 与 ID 设计
 - [ ] 19～22 多模态检索
@@ -911,3 +912,147 @@ Collection 记录数: 3 -> 3
 - [Chroma TypeScript Collection](https://docs.trychroma.com/reference/typescript/collection)
 - [Chroma Upsert](https://docs.trychroma.com/reference/chroma-api/record/upsert-records)
 - [Chroma Query](https://docs.trychroma.com/reference/chroma-api/record/query-collection)
+
+---
+
+## 06 ChromaDB 最简案例
+
+### 1. 为什么还需要最简案例
+
+第 05 课包含商品加载、豆包 Embedding、数据校验和结果转换。本课去掉这些业务
+代码，只保留 Chroma 的三个核心 API：
+
+```text
+getOrCreateCollection -> upsert -> query
+```
+
+代码集中在
+[06-chroma-minimal.ts](../langchain-commerce-rag-lab/src/examples/06-chroma-minimal.ts)。
+
+### 2. 独立的二维 Collection
+
+本课使用：
+
+```text
+course_lesson06_minimal_v1
+```
+
+其中只有三个手写二维向量：
+
+| ID | 文档 | 向量 |
+| --- | --- | --- |
+| `east` | 正东方向 | `[1, 0]` |
+| `northeast` | 东北方向 | `[1, 1]` |
+| `north` | 正北方向 | `[0, 1]` |
+
+它不能写入 `commerce_products_text_v1`，因为商品向量是 2048 维。一个 Collection
+中的向量必须属于同一维度和同一向量空间。
+
+### 3. 最小代码流程
+
+创建或获取 Collection：
+
+```ts
+const collection = await client.getOrCreateCollection({
+  name: "course_lesson06_minimal_v1",
+  embeddingFunction: null,
+  configuration: { spann: { space: "cosine" } }
+});
+```
+
+写入预计算向量：
+
+```ts
+await collection.upsert({
+  ids: ["east", "northeast", "north"],
+  embeddings: [[1, 0], [1, 1], [0, 1]],
+  documents: ["正东方向", "东北方向", "正北方向"]
+});
+```
+
+用“正东”向量查询：
+
+```ts
+const result = await collection.query({
+  queryEmbeddings: [[1, 0]],
+  nResults: 3,
+  include: ["documents", "distances"]
+});
+```
+
+没有 Embedding Function 时，写入和查询都必须提供向量。
+
+### 4. 如何理解查询结果
+
+查询向量 `[1, 0]` 指向正东：
+
+```text
+正东      方向完全相同
+东北      方向有一定夹角
+正北      方向垂直
+```
+
+因此 cosine distance 从小到大应为：
+
+```text
+正东 < 东北 < 正北
+```
+
+本课先观察排序，第 07 课再计算 distance。
+
+### 5. 运行与真实输出
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:06
+```
+
+第一次运行：
+
+```text
+记录数: 0 -> 3
+1. 正东方向  distance=0.000000
+2. 东北方向  distance=0.292893
+3. 正北方向  distance=1.000000
+```
+
+第二次运行：
+
+```text
+记录数: 3 -> 3
+```
+
+这个案例不调用豆包，因此没有 Embedding token 用量。沙盒 Collection 会保留在
+Chroma Cloud 中，方便在控制台查看。
+
+### 6. 本课验收
+
+- [x] 使用原生 Chroma TypeScript API。
+- [x] 三个二维向量写入独立 Collection。
+- [x] 查询返回顺序符合二维方向关系。
+- [x] 重复运行记录数保持为 3。
+- [x] 商品 Collection 未被修改。
+- [x] 类型检查与 25 个测试通过。
+
+### 7. 检查理解
+
+1. 为什么二维向量不能写入商品 Collection？
+2. 为什么本课不需要豆包 API？
+3. 为什么 `[1, 0]` 查询首先返回 `[1, 0]`？
+
+答案：
+
+1. 商品 Collection 已使用 2048 维向量，维度和向量空间不兼容。
+2. 本课直接提供了手写的预计算向量。
+3. 两个向量方向完全相同，cosine distance 为 0。
+
+### 8. 下一课
+
+第 07 课将解释向量数据库中的距离表示，并手算本课三个结果为什么分别约为
+`0`、`0.292893` 和 `1`。
+
+## 06 官方参考
+
+- [Chroma 添加预计算向量](https://docs.trychroma.com/docs/collections/add-data)
+- [Chroma 查询 Collection](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+- [Chroma Collection 配置](https://docs.trychroma.com/docs/collections/configure)

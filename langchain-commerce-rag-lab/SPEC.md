@@ -655,6 +655,12 @@ Phase 1 使用 Chroma Cloud 和官方 `CloudClient`，避免本地容器依赖�
 向量并维护 SPANN 或 HNSW 检索索引；课程中口语化的“训练向量数据库”统一表述
 为“生成向量并构建索引”。
 
+### ADR-010 最简案例使用独立沙盒 Collection
+
+第 06 课的二维教学向量写入 `course_lesson06_minimal_v1`，不与三个业务
+Collection 混用。沙盒使用稳定 ID 和 `upsert`，可重复运行并保留在 Cloud
+控制台中供观察。
+
 ## 22. 待决定事项
 
 以下内容在对应阶段开始前确认：
