@@ -590,7 +590,12 @@ pnpm dev 无 API Key 也能运行
 环境变量：
 
 ```text
+CHROMA_MODE
 CHROMA_URL
+CHROMA_API_KEY
+CHROMA_TENANT
+CHROMA_DATABASE
+CHROMA_HOST
 ARK_API_KEY
 ARK_BASE_URL
 ARK_TEXT_EMBEDDING_MODEL
@@ -638,6 +643,12 @@ TypeScript 调用火山方舟图文向量化 API，Chroma 只接收预计算向�
 
 不预设“distance 小于某值就一定相关”。阈值、TopK 和切片参数必须通过固定评估集选择。
 
+### ADR-008 Chroma Cloud 作为主学习环境
+
+Phase 1 使用 Chroma Cloud 和官方 `CloudClient`，避免本地容器依赖。项目保留
+`CHROMA_MODE=local` 与 `CHROMA_URL` 作为本地兼容路径。课程 Collection 使用
+独立、带版本的名称，不读取、修改或删除同一 Database 中的其他 Collection。
+
 ## 22. 待决定事项
 
 以下内容在对应阶段开始前确认：
@@ -645,7 +656,7 @@ TypeScript 调用火山方舟图文向量化 API，Chroma 只接收预计算向�
 | 项目 | 最晚决定阶段 |
 | --- | --- |
 | 当前可用的豆包文本模型或 Endpoint ID | Phase 1 |
-| 本地 Chroma 使用 CLI、容器还是已有服务 | Phase 1 |
+| Chroma 运行环境 | 已决定：Phase 1 使用 Chroma Cloud |
 | Chat Model 供应商 | Phase 3 |
 | 商品图片的稳定公网 URL 或对象存储 | Phase 4 |
 | 多模态模型版本及向量维度 | Phase 4 |

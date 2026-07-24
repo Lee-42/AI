@@ -29,8 +29,18 @@ const textEmbeddingApiMode = z.preprocess(
   z.enum(["text", "multimodal"]).default("multimodal")
 );
 
+const chromaMode = z.preprocess(
+  emptyToUndefined,
+  z.enum(["local", "cloud"]).default("local")
+);
+
 const EnvSchema = z.object({
+  CHROMA_MODE: chromaMode,
   CHROMA_URL: urlWithDefault("http://localhost:8000"),
+  CHROMA_API_KEY: optionalString,
+  CHROMA_TENANT: optionalString,
+  CHROMA_DATABASE: optionalString,
+  CHROMA_HOST: optionalString,
   ARK_API_KEY: optionalString,
   ARK_BASE_URL: urlWithDefault(
     "https://ark.cn-beijing.volces.com/api/v3"
@@ -53,7 +63,12 @@ const env = parsed.data;
 
 export const config = {
   chroma: {
-    url: env.CHROMA_URL
+    mode: env.CHROMA_MODE,
+    url: env.CHROMA_URL,
+    apiKey: env.CHROMA_API_KEY,
+    tenant: env.CHROMA_TENANT,
+    database: env.CHROMA_DATABASE,
+    host: env.CHROMA_HOST
   },
   ark: {
     apiKey: env.ARK_API_KEY,
@@ -71,7 +86,13 @@ export const config = {
 
 export function getSetupStatus() {
   return {
+    chromaMode: config.chroma.mode,
     chromaUrl: config.chroma.url,
+    chromaCloud: Boolean(
+      config.chroma.apiKey &&
+        config.chroma.tenant &&
+        config.chroma.database
+    ),
     arkApiKey: Boolean(config.ark.apiKey),
     textEmbeddingModel: Boolean(config.ark.textEmbeddingModel),
     multimodalEmbeddingModel: Boolean(

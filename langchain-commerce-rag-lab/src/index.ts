@@ -10,7 +10,9 @@ const status = getSetupStatus();
 console.log("LangChain Commerce RAG Lab");
 console.log("");
 console.log(`Node.js: ${process.version}`);
+console.log(`Chroma mode: ${status.chromaMode}`);
 console.log(`Chroma URL: ${status.chromaUrl}`);
+console.log(`Chroma Cloud: ${yesOrNo(status.chromaCloud)}`);
 console.log(`Ark API key: ${yesOrNo(status.arkApiKey)}`);
 console.log(`Text embedding model: ${yesOrNo(status.textEmbeddingModel)}`);
 console.log(

@@ -21,6 +21,7 @@ pnpm dev
 pnpm dev     # 查看项目与环境配置状态
 pnpm lesson:01 # 调用豆包文本 Embedding API
 pnpm lesson:02 # 使用内存 Store 做商品语义搜索
+pnpm lesson:03 # 连接 Chroma 并创建课程 Collection
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
@@ -60,3 +61,22 @@ pnpm lesson:02 -- "适合剪视频和做三维设计的电脑"
 
 内存 Store 会在进程退出后清空，只用于观察
 `Document -> Embedding -> Store -> Similarity Search` 链路。
+
+## 03 ChromaDB 向量数据库
+
+第 03 课验证 Chroma 连接，并使用 `getOrCreate` 创建空的商品文本
+Collection。Cloud 配置示例：
+
+```dotenv
+CHROMA_MODE=cloud
+CHROMA_API_KEY=你的ChromaCloudKey
+CHROMA_TENANT=你的Tenant
+CHROMA_DATABASE=你的Database
+```
+
+```bash
+pnpm lesson:03
+```
+
+本课只创建独立命名的 `commerce_products_text_v1`，不会写入商品记录，也不会
+列出、修改或删除其他 Collection。

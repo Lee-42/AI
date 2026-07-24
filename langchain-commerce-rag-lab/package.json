@@ -11,6 +11,7 @@
     "dev": "node --import tsx src/index.ts",
     "lesson:01": "node --import tsx src/examples/01-doubao-embedding-api.ts",
     "lesson:02": "node --import tsx src/examples/02-doubao-memory-store-search.ts",
+    "lesson:03": "node --import tsx src/examples/03-chroma-collection.ts",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "verify": "pnpm check && pnpm test"

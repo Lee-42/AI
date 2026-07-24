@@ -8,7 +8,8 @@ RAG 导购助手。完整规格见
 
 - [x] 01 跑通豆包 Embedding 模型 API
 - [x] 02 利用豆包进行 Store 向量化模糊搜索
-- [ ] 03～08 Chroma 与向量检索基线
+- [x] 03 ChromaDB 向量数据库
+- [ ] 04～08 Chroma 与向量检索基线
 - [ ] 09～12 检索精度与数据维护
 - [ ] 13～18 长文本、RAG 与 ID 设计
 - [ ] 19～22 多模态检索
@@ -452,3 +453,157 @@ Studio 16 排到第一，说明查询意图改变后，排序也会改变。分�
 
 - [LangChain MemoryVectorStore](https://docs.langchain.com/oss/javascript/integrations/vectorstores/memory)
 - [LangChain Vector Store 接口](https://docs.langchain.com/oss/javascript/integrations/vectorstores/index)
+
+---
+
+## 03 ChromaDB 向量数据库
+
+### 1. 本课目标
+
+第 02 课的 `MemoryVectorStore` 随进程退出而消失。本课改用 Chroma Cloud，
+先建立数据库连接和空 Collection：
+
+```text
+TypeScript CloudClient
+  -> Chroma Database
+  -> commerce_products_text_v1
+  -> Record（本课暂不写入）
+```
+
+本课重点是理解 Database、Collection 和 Record 的层级，不做商品查询。
+
+### 2. Database、Collection 与 Record
+
+```text
+Database
+└── Collection: commerce_products_text_v1
+    ├── Record: product:laptop-air-14:profile
+    ├── Record: product:laptop-studio-16:profile
+    └── Record: product:notebook-paper-a5:profile
+```
+
+- `Database`：一组 Collection 的逻辑容器。
+- `Collection`：使用相同向量空间和距离策略的一组记录。
+- `Record`：一条 ID、向量、文档和 metadata。
+
+本课只创建 Collection，所以它的记录数仍是 0。
+
+### 3. Cloud 配置
+
+```dotenv
+CHROMA_MODE=cloud
+CHROMA_API_KEY=你的CloudKey
+CHROMA_TENANT=你的Tenant
+CHROMA_DATABASE=你的Database
+```
+
+如果 Connect 面板提供 `CHROMA_HOST`，也应原样配置。Cloud Key 只保存在
+`.env`，不写进源码或日志。
+
+[chroma-client.ts](../langchain-commerce-rag-lab/src/vectorstores/chroma-client.ts)
+根据 `CHROMA_MODE` 创建客户端：
+
+- `cloud`：使用 `CloudClient`。
+- `local`：使用连接本地 HTTP 服务的 `ChromaClient`。
+
+只有真正创建客户端时才要求 Cloud 凭据，普通单元测试不需要外部服务。
+
+### 4. Collection 配置
+
+商品文本 Collection：
+
+```text
+名称：commerce_products_text_v1
+索引：SPANN（Cloud）
+距离：cosine
+Embedding：外部预计算
+```
+
+Cloud 使用 SPANN，本地单节点使用 HNSW。它们是不同的向量索引实现，但本项目
+都固定使用 cosine 空间。
+
+代码显式设置：
+
+```ts
+embeddingFunction: null
+```
+
+原因是向量由豆包生成，Chroma 只负责存储和检索，不能再调用自己的默认
+Embedding 模型。
+
+配置见
+[product-text-collection.ts](../langchain-commerce-rag-lab/src/vectorstores/product-text-collection.ts)。
+
+### 5. 为什么使用 getOrCreate
+
+示例使用 `getOrCreateCollection`：
+
+```text
+不存在 -> 创建
+已存在 -> 获取
+```
+
+真实运行结果：
+
+```text
+第一次：Collection 数量 1 -> 2
+第二次：Collection 数量 2 -> 2
+```
+
+第二次没有创建重复 Collection，这就是本课的幂等性。
+
+### 6. 运行
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:03
+```
+
+真实输出：
+
+```text
+连接模式: cloud
+服务版本: 1.0.0
+Heartbeat: ok
+Collection: commerce_products_text_v1
+索引类型: spann
+距离策略: cosine
+当前记录数: 0
+Collection 数量: 2 -> 2
+```
+
+入口见
+[03-chroma-collection.ts](../langchain-commerce-rag-lab/src/examples/03-chroma-collection.ts)。
+
+### 7. 本课验收
+
+- [x] Chroma Cloud heartbeat 成功。
+- [x] Cloud Key、Tenant 和 Database 不进入日志。
+- [x] 只操作独立命名的课程 Collection。
+- [x] Collection 使用 cosine 和外部 Embedding。
+- [x] 读取并校验 Cloud 实际返回的 SPANN 配置。
+- [x] 重复运行不会创建重复 Collection。
+- [x] Collection 当前记录数为 0。
+- [x] 类型检查与 18 个测试通过。
+
+### 8. 检查理解
+
+1. 为什么图片向量不能直接写入商品文本 Collection？
+2. 为什么必须设置 `embeddingFunction: null`？
+3. `getOrCreate` 的幂等性是否等于“重复写入不计费”？
+
+答案：
+
+1. 不同模型或维度可能属于不同向量空间。
+2. 本项目由豆包生成向量，避免 Chroma 再次向量化。
+3. 不是；它只避免重复创建 Collection，后续重复 upsert 仍是写请求。
+
+### 9. 下一课
+
+第 04 课讨论“向量数据库的训练过程”：Embedding 模型负责形成向量空间，
+Chroma 负责建立索引，不会训练 Embedding 模型。
+
+## 03 官方参考
+
+- [Chroma Cloud Client](https://docs.trychroma.com/docs/run-chroma/clients)
+- [Chroma TypeScript Client](https://docs.trychroma.com/reference/js/client)
