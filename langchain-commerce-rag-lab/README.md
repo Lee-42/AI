@@ -20,6 +20,7 @@ pnpm dev
 ```bash
 pnpm dev     # 查看项目与环境配置状态
 pnpm lesson:01 # 调用豆包文本 Embedding API
+pnpm lesson:02 # 使用内存 Store 做商品语义搜索
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
@@ -46,3 +47,16 @@ pnpm lesson:01
 但需要调用 `/embeddings/multimodal`，所以 API 模式使用 `multimodal`。命令会
 向量化“电脑笔记本”和“纸质笔记本”两段文本，并输出实际模型、向量数量、
 维度、前 8 个数值和本次 token 用量。完整向量不会写入日志。
+
+## 02 利用豆包进行 Store 向量化模糊搜索
+
+第 02 课把三个样例商品转换为 LangChain `Document`，使用
+`MemoryVectorStore` 临时存储向量，再用 cosine similarity 返回 Top 3：
+
+```bash
+pnpm lesson:02
+pnpm lesson:02 -- "适合剪视频和做三维设计的电脑"
+```
+
+内存 Store 会在进程退出后清空，只用于观察
+`Document -> Embedding -> Store -> Similarity Search` 链路。

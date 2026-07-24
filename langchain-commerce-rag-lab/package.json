@@ -10,11 +10,13 @@
   "scripts": {
     "dev": "node --import tsx src/index.ts",
     "lesson:01": "node --import tsx src/examples/01-doubao-embedding-api.ts",
+    "lesson:02": "node --import tsx src/examples/02-doubao-memory-store-search.ts",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "verify": "pnpm check && pnpm test"
   },
   "dependencies": {
+    "@langchain/classic": "^1.0.40",
     "@langchain/core": "^1.2.3",
     "@langchain/openai": "^1.5.5",
     "@langchain/textsplitters": "^1.0.1",

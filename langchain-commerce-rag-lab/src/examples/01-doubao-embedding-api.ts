@@ -1,22 +1,8 @@
 import { config } from "../config.js";
 import {
-  DoubaoTextEmbeddings,
   type EmbeddingRequestMetrics
 } from "../embeddings/doubao-text-embeddings.js";
-
-function requireConfig(
-  value: string | undefined,
-  environmentVariable: string
-): string {
-  if (!value) {
-    throw new Error(
-      `${environmentVariable} is required. Configure it in .env before ` +
-        "running pnpm lesson:01."
-    );
-  }
-
-  return value;
-}
+import { createTextEmbeddings } from "../embeddings/create-text-embeddings.js";
 
 function preview(vector: number[], length = 8): string {
   return vector
@@ -28,14 +14,7 @@ function preview(vector: number[], length = 8): string {
 async function main(): Promise<void> {
   // 指标只用于教学观察，不改变 Provider 对外返回 number[][] 的契约。
   const metrics: EmbeddingRequestMetrics[] = [];
-  const embeddings = new DoubaoTextEmbeddings({
-    apiKey: requireConfig(config.ark.apiKey, "ARK_API_KEY"),
-    baseURL: config.ark.baseURL,
-    model: requireConfig(
-      config.ark.textEmbeddingModel,
-      "ARK_TEXT_EMBEDDING_MODEL"
-    ),
-    apiMode: config.ark.textEmbeddingApiMode,
+  const embeddings = createTextEmbeddings({
     onRequestComplete: (requestMetrics) => {
       metrics.push(requestMetrics);
     }
