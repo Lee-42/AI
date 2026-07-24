@@ -59,7 +59,7 @@ export function prepareProductIndexBatch(
     }
   });
 
-  // 这里只组装待写入数据；真正 upsert 留到下一课。
+  // 这里只组装并校验列式数据，调用方再决定何时 upsert。
   return {
     records: {
       ids,

@@ -23,6 +23,7 @@ pnpm lesson:01 # 调用豆包文本 Embedding API
 pnpm lesson:02 # 使用内存 Store 做商品语义搜索
 pnpm lesson:03 # 连接 Chroma 并创建课程 Collection
 pnpm lesson:04 # 区分模型推理与向量索引
+pnpm lesson:05 # 将商品向量写入 Chroma 并查询
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
@@ -93,3 +94,14 @@ pnpm lesson:04
 
 运行前后 Collection 记录数应保持不变。这个实验用于区分模型训练、Embedding
 推理和向量索引构建。
+
+## 05 向量数据库的存储和查询过程
+
+本课使用稳定商品 ID 执行 `upsert`，再把用户问题转换为查询向量并返回 Top 3：
+
+```bash
+pnpm lesson:05
+pnpm lesson:05 -- "适合剪视频和三维设计的电脑"
+```
+
+第一次运行会写入三个商品；以后重复运行只更新相同 ID，记录数不会继续增长。

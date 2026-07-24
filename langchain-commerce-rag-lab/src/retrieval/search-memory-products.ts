@@ -1,28 +1,9 @@
 import type { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
-import type {
-  SearchHit,
-  SearchMetadata
-} from "../domain/search-result.js";
-
-function normalizeMetadata(
-  metadata: Record<string, unknown>
-): SearchMetadata {
-  const normalized: SearchMetadata = {};
-
-  for (const [key, value] of Object.entries(metadata)) {
-    if (
-      typeof value !== "string" &&
-      typeof value !== "number" &&
-      typeof value !== "boolean"
-    ) {
-      throw new Error(`Search metadata "${key}" must be a scalar value`);
-    }
-
-    normalized[key] = value;
-  }
-
-  return normalized;
-}
+import type { SearchHit } from "../domain/search-result.js";
+import {
+  cosineDistanceToRelevance,
+  normalizeSearchMetadata
+} from "./normalize-search-metadata.js";
 
 export async function searchMemoryProducts(
   store: MemoryVectorStore,
@@ -53,8 +34,8 @@ export async function searchMemoryProducts(
       id: document.id,
       content: document.pageContent,
       distance: 1 - similarity,
-      relevanceScore: similarity,
-      metadata: normalizeMetadata(document.metadata)
+      relevanceScore: cosineDistanceToRelevance(1 - similarity),
+      metadata: normalizeSearchMetadata(document.metadata)
     };
   });
 }

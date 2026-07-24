@@ -10,7 +10,8 @@ RAG 导购助手。完整规格见
 - [x] 02 利用豆包进行 Store 向量化模糊搜索
 - [x] 03 ChromaDB 向量数据库
 - [x] 04 向量数据库的“训练”过程
-- [ ] 05～08 Chroma 与向量检索基线
+- [x] 05 向量数据库的存储和查询过程
+- [ ] 06～08 Chroma 与向量检索基线
 - [ ] 09～12 检索精度与数据维护
 - [ ] 13～18 长文本、RAG 与 ID 设计
 - [ ] 19～22 多模态检索
@@ -746,3 +747,167 @@ Collection 记录数: 0 -> 0
 - [Chroma 添加数据](https://docs.trychroma.com/docs/collections/add-data)
 - [Chroma Embedding Functions](https://docs.trychroma.com/docs/embeddings/embedding-functions)
 - [Chroma 索引配置](https://docs.trychroma.com/docs/collections/configure)
+
+---
+
+## 05 向量数据库的存储和查询过程
+
+### 1. 本课目标
+
+第 04 课只准备了待入库数据，本课真正完成：
+
+```text
+商品文档 -> 商品向量 -> Chroma upsert -> SPANN 索引
+用户问题 -> 查询向量 -> Chroma query -> Top K
+```
+
+### 2. 存储过程
+
+每条 Chroma Record 由同一位置的四列组成：
+
+```text
+ids[0]        = product:laptop-air-14:profile
+embeddings[0] = 2048 维商品向量
+documents[0]  = Aurora Air 14 的 pageContent
+metadatas[0]  = sku、category、brand、price...
+```
+
+数组下标必须对齐，否则 ID、向量和商品内容会错配。
+
+[index-products-in-chroma.ts](../langchain-commerce-rag-lab/src/indexing/index-products-in-chroma.ts)
+执行：
+
+```ts
+const vectors = await embeddings.embedDocuments(pageContents);
+const batch = prepareProductIndexBatch(documents, vectors);
+await collection.upsert(batch.records);
+```
+
+这里使用 `upsert` 而不是 `add`：
+
+```text
+ID 不存在 -> 插入
+ID 已存在 -> 更新
+```
+
+商品 ID 稳定，所以两次运行的记录数是：
+
+```text
+第一次：0 -> 3
+第二次：3 -> 3
+```
+
+这说明重复索引没有生成副本。
+
+### 3. 查询过程
+
+Collection 没有内置 Embedding Function，因此必须先在应用层生成查询向量：
+
+```ts
+const queryVector = await embeddings.embedQuery(query);
+const result = await collection.query({
+  queryEmbeddings: [queryVector],
+  nResults: 3,
+  include: ["documents", "metadatas", "distances"]
+});
+```
+
+流程如下：
+
+```text
+查询文本
+  -> 豆包生成 2048 维查询向量
+  -> SPANN 找到候选商品向量
+  -> cosine distance 从小到大排序
+  -> 返回 ID、document、metadata、distance
+```
+
+Chroma 支持一次提交多个查询向量，因此原始结果是二维数组。本项目使用
+`result.rows()[0]` 取出第一个查询的结果，再转换成统一的 `SearchHit`。
+
+查询代码见
+[search-chroma-products.ts](../langchain-commerce-rag-lab/src/retrieval/search-chroma-products.ts)。
+
+### 4. distance 与 relevance
+
+当前 Collection 使用 cosine：
+
+```text
+distance 越小 -> 越相似
+relevance = 1 - distance
+relevance 越大 -> 越相似
+```
+
+`relevance` 是本项目为了方便阅读计算的字段，不是 Chroma 原始返回字段。
+
+### 5. 运行与真实结果
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:05
+pnpm lesson:05 -- "适合剪视频和三维设计的电脑"
+```
+
+默认查询：
+
+```text
+屏幕不错并且方便出差携带的笔记本
+```
+
+结果：
+
+```text
+Collection 记录数: 0 -> 3
+1. Aurora Air 14       distance: 0.462823
+2. Aurora Studio 16    distance: 0.492785
+3. A5 方格笔记本        distance: 0.677971
+```
+
+创作型查询：
+
+```text
+适合剪视频和三维设计的电脑
+```
+
+结果：
+
+```text
+Collection 记录数: 3 -> 3
+1. Aurora Studio 16    distance: 0.418444
+2. Aurora Air 14       distance: 0.639108
+3. A5 方格笔记本        distance: 0.787632
+```
+
+两个查询的第一名都符合预期，纸质笔记本均排在最后。
+
+### 6. 本课验收
+
+- [x] 三个商品及其 2048 维向量写入 Chroma Cloud。
+- [x] 重复 `upsert` 后记录数保持为 3。
+- [x] 查询传入豆包生成的预计算向量。
+- [x] 返回稳定 ID、document、metadata 和 distance。
+- [x] 两组查询的第一名符合预期。
+- [x] 类型检查与 25 个测试通过。
+
+### 7. 检查理解
+
+1. 为什么 `ids`、`embeddings`、`documents`、`metadatas` 必须等长？
+2. 为什么重复运行使用 `upsert` 不会增加记录数？
+3. 为什么不能把用户的原始文本直接传给当前 Collection 查询？
+
+答案：
+
+1. 相同下标共同组成一条 Record。
+2. 相同稳定 ID 会更新原记录。
+3. Collection 设置了 `embeddingFunction: null`，应用必须提供查询向量。
+
+### 8. 下一课
+
+第 06 课会用最少量代码单独观察 Chroma 的 `upsert` 和 `query` API，去掉业务
+封装后理解最简案例。
+
+## 05 官方参考
+
+- [Chroma TypeScript Collection](https://docs.trychroma.com/reference/typescript/collection)
+- [Chroma Upsert](https://docs.trychroma.com/reference/chroma-api/record/upsert-records)
+- [Chroma Query](https://docs.trychroma.com/reference/chroma-api/record/query-collection)

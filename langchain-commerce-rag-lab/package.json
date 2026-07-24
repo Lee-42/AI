@@ -13,6 +13,7 @@
     "lesson:02": "node --import tsx src/examples/02-doubao-memory-store-search.ts",
     "lesson:03": "node --import tsx src/examples/03-chroma-collection.ts",
     "lesson:04": "node --import tsx src/examples/04-vector-index-training-process.ts",
+    "lesson:05": "node --import tsx src/examples/05-vector-storage-and-query.ts",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "verify": "pnpm check && pnpm test"
