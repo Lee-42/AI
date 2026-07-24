@@ -314,6 +314,12 @@ embedQuery(text: string): Promise<number[]>
 
 实现需要支持批处理、超时、有限重试和响应向量校验。
 
+> 2026-07 兼容性说明：火山方舟控制台中的旧版
+> `Doubao-embedding` 纯文本模型已进入下线流程。Phase 1 改用当前
+> `Doubao-embedding-vision`，以纯文本 input 调用
+> `/embeddings/multimodal`。该适配仍实现 `TextEmbeddingProvider`
+> 契约，并只向上层返回 `number[]`；旧 `/embeddings` 协议保留为可选模式。
+
 ### 12.2 多模态 Embedding
 
 `MultimodalEmbeddingProvider` 提供：
