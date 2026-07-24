@@ -20,6 +20,8 @@
     "lesson:09": "node --import tsx src/examples/09-improve-retrieval-accuracy.ts",
     "lesson:11": "node --import tsx src/examples/11-chroma-query-operators.ts",
     "lesson:12": "node --import tsx src/examples/12-chroma-query-delete.ts",
+    "lesson:13": "node --import tsx src/examples/13-long-text-chunk-storage-query.ts",
+    "lesson:14": "node --import tsx src/examples/14-why-original-text-not-found.ts",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "verify": "pnpm check && pnpm test"

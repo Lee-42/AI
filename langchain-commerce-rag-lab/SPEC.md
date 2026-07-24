@@ -673,6 +673,19 @@ Embedding 猜测，留给 metadata filter。
 预期完全一致；删除后再次按稳定 ID 验证。教学中的真实删除只允许发生在独立
 沙盒 Collection，不删除商品 Collection 或整个 Collection。
 
+### ADR-013 说明书切片必须可追溯
+
+说明书使用 Markdown 递归字符切片，基线为 `chunkSize=600`、
+`chunkOverlap=100`。每个 chunk 使用可重复生成的序号 ID，并保存 SKU、源文件、
+起始字符位置、Embedding 模型和内容版本。商品与说明书使用不同 Collection，
+避免文档粒度混合。
+
+### ADR-014 精确读取与语义查询分开
+
+已知 ID 时使用 `get`，精确短文本包含使用 `whereDocument`，语义检索使用
+`queryEmbeddings`。预计算向量 Collection 不混用 Chroma 默认 Embedding；
+查询必须复用入库模型。完整源文件由 source 定位，不假设任一 chunk 保存全文。
+
 ## 22. 待决定事项
 
 以下内容在对应阶段开始前确认：

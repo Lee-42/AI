@@ -30,6 +30,8 @@ pnpm lesson:08 # 诊断“笔记本”歧义和否定表达
 pnpm lesson:09 # 用固定评估集比较内容模板
 pnpm lesson:11 # 练习 metadata 与正文查询操作符
 pnpm lesson:12 # 在独立沙盒中查询和安全删除
+pnpm lesson:13 # 切分说明书并执行向量查询
+pnpm lesson:14 # 诊断“原文查不到”的原因
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
@@ -177,3 +179,28 @@ pnpm lesson:12
 
 命令会先预览删除目标，只有命中 ID 与预期完全一致时才删除。删除验证完成后会
 恢复临时记录，重复运行不会影响商品 Collection。
+
+## 13 长文本切片存储与向量查询
+
+本课使用 `MarkdownTextSplitter` 将两份说明书按 `chunkSize=600`、
+`chunkOverlap=100` 切成可追溯的 LangChain `Document`，生成豆包向量后写入
+独立 Collection：
+
+```bash
+pnpm lesson:13
+```
+
+每个 chunk 都保存稳定 ID、SKU、源文件、序号和起始位置。查询 Studio 16
+说明书时会先用 SKU 过滤，再对对应 chunk 进行 cosine 排序。
+
+## 14 为什么我用 ChromaDB 查询原文都查不到？
+
+本课对比按 ID 精确读取、`whereDocument` 全文包含和向量近邻查询，并观察完整
+原文、chunk 内原句与跨 chunk 原文的不同结果：
+
+```bash
+pnpm lesson:14
+```
+
+商品说明书 Collection 没有内置 Embedding，因此不能直接传 `queryTexts`。
+示例使用与入库相同的豆包模型生成 `queryEmbeddings`，全程不写入 Chroma。

@@ -18,7 +18,9 @@ RAG 导购助手。完整规格见
 - [ ] 10 改成 cosine 方式优化文本检索精度
 - [x] 11 ChromaDB 中的查询操作符
 - [x] 12 ChromaDB 查询、删除操作
-- [ ] 13～18 长文本、RAG 与 ID 设计
+- [x] 13 长文本切片存储与向量查询
+- [x] 14 为什么用 ChromaDB 查询原文也可能查不到
+- [ ] 15～18 中文检索、RAG 与 ID 设计
 - [ ] 19～22 多模态检索
 
 ---
@@ -1840,3 +1842,434 @@ Collection，再观察切片大小和 overlap 如何影响召回。
 - [Chroma Delete Data](https://docs.trychroma.com/docs/collections/delete-data?lang=typescript)
 - [Chroma TypeScript Collection API](https://docs.trychroma.com/reference/typescript/collection)
 - [Chroma Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+
+---
+
+## 13 长文本切片存储与向量查询
+
+### 1. 为什么要切片
+
+如果把整份说明书只生成一个向量：
+
+```text
+安装 + 屏幕 + 性能模式 + 存储 + 散热 + 故障处理
+                         -> 一个向量
+```
+
+用户只问“剪视频用什么模式”时，具体答案可能被大量无关内容稀释。切片后可以让
+每个片段独立参与召回：
+
+```text
+说明书
+  -> chunk 1：启动与创作模式
+  -> chunk 2：屏幕与存储
+  -> chunk 3：散热与故障
+```
+
+### 2. 本课切片策略
+
+本课把两份教学说明书扩充为带 Markdown 标题的长文本，使用：
+
+```ts
+new MarkdownTextSplitter({
+  chunkSize: 600,
+  chunkOverlap: 100,
+  keepSeparator: true
+});
+```
+
+- `chunkSize`：chunk 的最大字符数，不是 token 数。
+- `chunkOverlap`：希望相邻 chunk 重复保留的字符数。
+- `keepSeparator`：保留 Markdown 标题，使 chunk 自带章节语境。
+
+切片器优先保留标题和段落，只有内容仍然过长时才继续向更小的分隔符递归。
+
+`chunkOverlap=100` 是目标值，不保证每两个 chunk 都恰好重复 100 字。本次段落
+边界较完整，重复整个段落又会超过目标，因此实际结果没有强行复制一段文字。这
+比为了凑 overlap 而切碎语义完整的段落更合理。
+
+### 3. 每个 chunk 必须可追溯
+
+本次生成的 ID：
+
+```text
+manual:laptop-air-14:chunk:0001
+manual:laptop-air-14:chunk:0002
+manual:laptop-studio-16:chunk:0001
+manual:laptop-studio-16:chunk:0002
+manual:laptop-studio-16:chunk:0003
+```
+
+每条 metadata 包含：
+
+```text
+recordType
+sku
+source
+chunkIndex
+startIndex
+embeddingModel
+contentVersion
+```
+
+例如 `startIndex=532` 表示该 chunk 从源文件第 532 个字符开始。代码可以利用
+`source + startIndex` 回到原始说明书，而不是只保存一段失去出处的文本。
+
+实现见
+[manual-chunks.ts](../langchain-commerce-rag-lab/src/indexing/manual-chunks.ts)。
+
+### 4. 切片、存储与查询链路
+
+```text
+products.json
+  -> 找到 manualPath
+  -> 读取 Markdown
+  -> 切成 LangChain Document[]
+  -> 批量生成 2048 维向量
+  -> 用稳定 ID upsert 到 Chroma
+  -> 生成问题向量
+  -> SKU filter
+  -> cosine Top K
+```
+
+说明书存入独立的：
+
+```text
+commerce_manual_chunks_v1
+```
+
+商品简介和说明书 chunk 粒度不同，因此不混入
+`commerce_products_text_v1`。Collection 继续使用 SPANN/cosine，并接收豆包
+生成的预计算向量。
+
+### 5. 为什么查询时先过滤 SKU
+
+本课问题已经明确包含 `Aurora Studio 16`：
+
+```text
+Aurora Studio 16 剪视频时应该选择哪个性能模式？
+```
+
+因此查询使用：
+
+```ts
+where: {
+  $and: [
+    { recordType: "manual-chunk" },
+    { sku: "laptop-studio-16" }
+  ]
+}
+```
+
+先确定商品，再搜索该商品说明书，可以避免其他商品中相似的“性能、模式、视频”
+文字干扰。实际系统中，SKU 可以来自用户选择、URL、上一步商品检索或实体解析。
+
+### 6. 真实 Cloud 结果
+
+运行：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:13
+```
+
+索引结果：
+
+```text
+索引: spann/cosine
+说明书数量: 2
+chunk 数量: 5
+chunk 长度: 428, 594, 530, 468, 202
+向量维度: 2048
+Collection 记录数: 0 -> 5
+```
+
+查询 Top 3：
+
+| 排名 | Chunk | Distance | 关键内容 |
+| ---: | --- | ---: | --- |
+| 1 | `manual:laptop-studio-16:chunk:0001` | 0.350250 | 视频剪辑和三维渲染建议使用创作模式 |
+| 2 | `manual:laptop-studio-16:chunk:0002` | 0.601221 | 3.2K 屏幕、外接显示器和项目存储 |
+| 3 | `manual:laptop-studio-16:chunk:0003` | 0.745098 | 散热、清洁和故障处理 |
+
+正确答案所在 chunk 排在第一，并且结果同时返回：
+
+```text
+source=data/manuals/laptop-studio-16.md
+chunkIndex=1
+startIndex=0
+```
+
+本次 5 个文档 chunk 加 1 个查询共使用 `1455 tokens`。
+
+入口见
+[13-long-text-chunk-storage-query.ts](../langchain-commerce-rag-lab/src/examples/13-long-text-chunk-storage-query.ts)，
+索引实现见
+[index-manual-chunks-in-chroma.ts](../langchain-commerce-rag-lab/src/indexing/index-manual-chunks-in-chroma.ts)。
+
+### 7. 稳定 ID 与重复运行
+
+Chunk ID 由 `SKU + 1-based chunkIndex` 生成，不使用随机 UUID。重复运行使用
+`upsert` 更新相同 ID，因此不会不断增加重复记录。
+
+如果以后更换 Embedding 模型、向量维度或不兼容的切片策略，应升级 Collection
+或 `contentVersion` 并完整重建，不能把不同向量空间混在一起。
+
+### 8. 本课验收
+
+- [x] 两份 Markdown 说明书被切成 5 个 chunk。
+- [x] 所有 chunk 长度不超过 600 个字符。
+- [x] ID、SKU、source、chunkIndex 和 startIndex 可追溯。
+- [x] 5 个 2048 维向量写入独立 Chroma Collection。
+- [x] 使用稳定 ID 与 `upsert`，重复索引不增长。
+- [x] 查询使用 SKU metadata filter。
+- [x] “剪视频用什么模式”正确召回创作模式片段。
+- [x] 类型检查与 48 个测试通过。
+
+### 9. 检查理解
+
+1. 为什么说明书不直接和商品简介放进同一个 Collection？
+2. `chunkOverlap=100` 是否保证每两个 chunk 一定重复 100 字？
+3. 为什么 chunk 需要保存 `source` 和 `startIndex`？
+
+答案：
+
+1. 两类文档粒度和检索目的不同，混合后容易让结果相互竞争。
+2. 不保证；它是切片器在尊重分隔符和大小限制时尽量达到的目标。
+3. 为了从检索结果定位回原文，支持引用、调试和数据更新。
+
+### 10. 下一课
+
+第 14 课会分析“用 ChromaDB 查询原文为什么也可能查不到”，区分精确文本匹配、
+Embedding 相似度、TopK 和 chunk 边界。
+
+## 13 官方参考
+
+- [LangChain Recursive text splitter](https://docs.langchain.com/oss/javascript/integrations/splitters/recursive_text_splitter)
+- [LangChain Semantic search tutorial](https://docs.langchain.com/oss/javascript/langchain/knowledge-base)
+- [Chroma Update and Upsert Data](https://docs.trychroma.com/docs/collections/update-data)
+
+---
+
+## 14 为什么我用 ChromaDB 查询原文都查不到？
+
+### 1. 先问清楚“查询”是哪一种
+
+Chroma 中常见的三个动作并不等价：
+
+| 目标 | 方法 | 是否计算向量 |
+| --- | --- | --- |
+| 已知 ID，取出记录 | `get({ ids })` | 否 |
+| 判断 document 是否包含短字符串 | `get({ whereDocument })` | 否 |
+| 查找语义最接近的记录 | `query({ queryEmbeddings })` | 是 |
+
+`query` 是向量近邻搜索，不是 SQL 的字符串等值查询。因此“原文查不到”之前，
+必须先确认自己想做精确查找还是语义查找。
+
+### 2. 完整原文没有被存进任何一条记录
+
+第 13 课存储的是：
+
+```text
+完整 Studio 说明书
+  -> chunk:0001
+  -> chunk:0002
+  -> chunk:0003
+```
+
+Chroma 中没有一条 document 等于整份说明书。真实检查：
+
+```text
+get(id=manual:laptop-studio-16:chunk:0001): 找到
+完整说明书被某个 chunk 包含: 0
+```
+
+完整源文件应通过 metadata 中的
+`source=data/manuals/laptop-studio-16.md` 回到文件系统读取，不能假设一个
+chunk 保存了全文。
+
+当前 Chroma Cloud 还限制 `whereDocument` 值的长度，整份说明书超过了本环境的
+130 配额。示例捕获该错误后，改为读取该 SKU 的 chunks 并逐条精确检查，不输出
+错误中的租户信息。
+
+### 3. 原文句子存在，但 distance 不会是 0
+
+测试句子：
+
+```text
+视频剪辑和三维渲染时建议使用创作模式。
+```
+
+精确包含结果：
+
+```text
+manual:laptop-studio-16:chunk:0001
+```
+
+语义查询也把它排在第一，但真实 distance 是：
+
+```text
+0.439688
+```
+
+原因是比较的两边并不相同：
+
+```text
+查询向量 = 一句话的向量
+存储向量 = 530 字完整 chunk 的向量
+```
+
+一句话虽然原样出现在 chunk 中，但两段文本的整体向量不会完全相同。
+
+### 4. 什么时候 distance 才接近 0
+
+本课重新读取 `chunk:0001` 的完整 document，用相同豆包模型再次生成向量后查询：
+
+```text
+1. chunk:0001  distance=-0.000003
+2. chunk:0002  distance= 0.425225
+3. chunk:0003  distance= 0.463225
+```
+
+`-0.000003` 是浮点计算和近似索引带来的微小误差，可以视为 0。它说明只有在
+查询内容与已存 chunk 完全相同、模型也相同时，distance 才应该非常接近 0。
+
+不要编写下面这种脆弱判断：
+
+```ts
+distance === 0
+```
+
+需要比较数值时应允许很小的误差，但业务相关性仍然要通过评估集判断。
+
+### 5. 原文可能跨越 chunk 边界
+
+本课从 `chunk:0001` 末尾和 `chunk:0002` 开头各取一小段，组成真正存在于源文件
+中的连续原文：
+
+```text
+chunk:0001 末尾 + Markdown 间隔 + chunk:0002 开头
+```
+
+因为没有任何单个 Chroma record 保存整段跨界文字：
+
+```text
+whereDocument 精确命中数: 0
+```
+
+它的语义查询排名是：
+
+```text
+1. chunk:0002  distance=0.472101
+2. chunk:0003  distance=0.515923
+3. chunk:0001  distance=0.545940
+```
+
+边界两侧的相关内容分别位于第 1 和第 3。如果只设置 `TopK=1`，就拿不到完整
+上下文。后续可以评估：
+
+- 增加合适的 overlap。
+- 提高 TopK。
+- 命中后按 `chunkIndex` 扩展相邻 chunk。
+- 使用 reranker 再排序。
+
+### 6. 为什么直接 `queryTexts` 报错
+
+本项目创建 Collection 时明确设置：
+
+```ts
+embeddingFunction: null
+```
+
+因此下面的调用会失败：
+
+```ts
+collection.query({
+  queryTexts: ["视频剪辑时使用什么模式？"]
+});
+```
+
+真实错误的核心是：
+
+```text
+No embedding function found for collection
+```
+
+这是有意设计，不是去安装一个默认模型就能正确解决。入库向量由豆包生成，查询
+也必须使用同一豆包模型：
+
+```text
+query text
+  -> 豆包 Embedding
+  -> queryEmbeddings
+  -> Chroma cosine query
+```
+
+如果换成 Chroma 默认模型，查询向量和存储向量不在同一空间，即使维度碰巧相同
+也没有比较意义。
+
+### 7. 推荐排错顺序
+
+```text
+1. collection.count()：Collection 中是否有数据
+2. get(ids)：目标 record 是否存在
+3. 检查 document：入库的是全文还是 chunk
+4. 检查 source/startIndex：原句是否跨边界
+5. 检查 embeddingModel 和维度是否一致
+6. 使用 queryEmbeddings，而不是误用 queryTexts
+7. 增大 TopK，观察目标的真实排名
+```
+
+### 8. 运行与真实用量
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:14
+```
+
+示例批量向量化：
+
+```text
+完整已存 chunk
+chunk 内原文句子
+跨 chunk 原文
+```
+
+本次使用 `402 tokens`，Chroma 写入数为 0。入口见
+[14-why-original-text-not-found.ts](../langchain-commerce-rag-lab/src/examples/14-why-original-text-not-found.ts)，
+诊断逻辑见
+[manual-original-text-diagnostics.ts](../langchain-commerce-rag-lab/src/evaluation/manual-original-text-diagnostics.ts)。
+
+### 9. 本课验收
+
+- [x] 使用 `get(ids)` 证明目标记录存在。
+- [x] 使用 `whereDocument` 找到 chunk 内原句。
+- [x] 证明完整说明书没有存入单个 chunk。
+- [x] 复现跨 chunk 原文精确命中为 0。
+- [x] 复现预计算向量 Collection 的 `queryTexts` 错误。
+- [x] 使用同一豆包模型的 `queryEmbeddings` 完成三组查询。
+- [x] 对 Embedding 模型不一致进行提前拦截。
+- [x] 类型检查与 51 个测试通过。
+
+### 10. 检查理解
+
+1. 原句出现在 chunk 中，为什么 cosine distance 仍可能是 0.4？
+2. 为什么整份源文件不适合直接作为 `whereDocument` 条件？
+3. 跨边界原文精确命中为 0，能否说明原文没有入库？
+
+答案：
+
+1. 查询是一句话，存储向量对应整个 chunk，两段文本并不完全相同。
+2. 数据库只保存 chunks，而且 Cloud 对过滤值长度有配额；应通过 source 读取全文。
+3. 不能；原文可能分别位于相邻 chunks 中，需要检查切片边界。
+
+### 11. 下一课
+
+第 15 课会继续解决中文检索不精准问题，对比默认分隔符与加入中文标点后的切片
+效果，并使用固定查询验证召回变化。
+
+## 14 官方参考
+
+- [Chroma Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+- [Chroma Full Text Search](https://docs.trychroma.com/docs/querying-collections/full-text-search?lang=typescript)
+- [LangChain Semantic search tutorial](https://docs.langchain.com/oss/javascript/langchain/knowledge-base)
