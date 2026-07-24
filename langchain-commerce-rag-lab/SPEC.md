@@ -649,6 +649,12 @@ Phase 1 使用 Chroma Cloud 和官方 `CloudClient`，避免本地容器依赖�
 `CHROMA_MODE=local` 与 `CHROMA_URL` 作为本地兼容路径。课程 Collection 使用
 独立、带版本的名称，不读取、修改或删除同一 Database 中的其他 Collection。
 
+### ADR-009 区分模型训练、Embedding 推理与索引构建
+
+本项目调用已经训练好的豆包模型生成向量，不更新模型权重。Chroma 接收预计算
+向量并维护 SPANN 或 HNSW 检索索引；课程中口语化的“训练向量数据库”统一表述
+为“生成向量并构建索引”。
+
 ## 22. 待决定事项
 
 以下内容在对应阶段开始前确认：

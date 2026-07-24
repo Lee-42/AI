@@ -9,7 +9,8 @@ RAG 导购助手。完整规格见
 - [x] 01 跑通豆包 Embedding 模型 API
 - [x] 02 利用豆包进行 Store 向量化模糊搜索
 - [x] 03 ChromaDB 向量数据库
-- [ ] 04～08 Chroma 与向量检索基线
+- [x] 04 向量数据库的“训练”过程
+- [ ] 05～08 Chroma 与向量检索基线
 - [ ] 09～12 检索精度与数据维护
 - [ ] 13～18 长文本、RAG 与 ID 设计
 - [ ] 19～22 多模态检索
@@ -607,3 +608,141 @@ Chroma 负责建立索引，不会训练 Embedding 模型。
 
 - [Chroma Cloud Client](https://docs.trychroma.com/docs/run-chroma/clients)
 - [Chroma TypeScript Client](https://docs.trychroma.com/reference/js/client)
+
+---
+
+## 04 向量数据库的“训练”过程
+
+### 1. 本课目标
+
+“训练向量数据库”是容易引起误解的口语。本项目实际执行的是：
+
+```text
+已经训练好的豆包模型进行推理
+  -> 生成商品向量
+  -> 把向量写入 Chroma
+  -> Chroma 建立或更新检索索引
+```
+
+豆包模型的参数没有在这个过程中被修改，Chroma 也不会训练豆包模型。
+
+### 2. 三个过程不要混淆
+
+| 过程 | 输入 | 结果 | 是否更新模型权重 |
+| --- | --- | --- | --- |
+| 模型训练 | 训练数据、损失函数 | 新的模型参数 | 是 |
+| Embedding 推理 | 商品文本 | 2048 维向量 | 否 |
+| Chroma 索引构建 | 向量、ID、metadata | SPANN/HNSW 索引 | 否 |
+
+Embedding 模型决定语义如何映射到向量空间；Chroma 索引决定如何快速找到附近
+向量。SPANN、HNSW 都是检索数据结构，不是机器学习模型。
+
+### 3. 本课实验
+
+本课执行到“准备待入库记录”为止：
+
+```text
+products.json
+  -> 3 个 LangChain Document
+  -> 豆包 Embedding API
+  -> 3 个 2048 维向量
+  -> 对齐 ID、document、metadata、embedding
+  -> 不执行 Chroma upsert
+```
+
+[prepare-product-index-batch.ts](../langchain-commerce-rag-lab/src/indexing/prepare-product-index-batch.ts)
+负责保证：
+
+- 文档数与向量数相同。
+- 每个文档都有稳定且唯一的 ID。
+- 所有向量维度一致。
+- 向量中不存在 `NaN` 或无限值。
+
+完成这些检查后，得到下一课可以直接写入 Chroma 的列式数据：
+
+```ts
+{
+  ids,
+  embeddings,
+  documents,
+  metadatas
+}
+```
+
+### 4. 为什么本课不写入
+
+示例故意没有下面这行：
+
+```ts
+await collection.upsert(batch.records);
+```
+
+因此可以验证两件事：
+
+```text
+调用 Embedding API != 训练模型
+准备索引数据 != 已经写入数据库
+```
+
+真正执行 `upsert` 后，Chroma 才会保存记录并维护向量索引。官方文档说明，传入
+预计算 `embeddings` 时，Chroma 会按原样保存，不会再次对文档做 Embedding。
+
+### 5. 运行与真实结果
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:04
+```
+
+本次真实输出：
+
+```text
+文档数量: 3
+实际模型: doubao-embedding-vision-251215
+API 请求数: 3
+向量数量: 3
+向量维度: 2048
+本次用量: 307 tokens
+模型权重更新: 否
+Chroma upsert: 未执行
+Collection 记录数: 0 -> 0
+```
+
+`307 tokens` 是本次运行的观察值，后续可能随文本和供应商计量方式变化。
+
+入口见
+[04-vector-index-training-process.ts](../langchain-commerce-rag-lab/src/examples/04-vector-index-training-process.ts)。
+
+### 6. 本课验收
+
+- [x] 真实调用豆包生成 3 个向量。
+- [x] 向量数量、维度和有限数值通过校验。
+- [x] 没有执行 Chroma `add` 或 `upsert`。
+- [x] Collection 记录数保持 `0 -> 0`。
+- [x] 类型检查与 22 个测试通过。
+
+### 7. 检查理解
+
+1. 调用 Embedding API 为什么不是训练？
+2. Chroma 建立 SPANN 索引时，是否会改变豆包模型？
+3. 为什么必须保证同一个 Collection 中的向量维度一致？
+
+答案：
+
+1. API 只使用固定模型参数完成前向推理，没有反向传播和参数更新。
+2. 不会；Chroma 只组织已经生成的向量。
+3. 只有同一维度、同一向量空间中的向量才能计算有意义的距离。
+
+### 8. 下一课
+
+第 05 课将真正执行：
+
+```text
+待入库记录 -> Chroma upsert -> 索引更新 -> 查询向量 -> 相似度检索
+```
+
+## 04 官方参考
+
+- [Chroma 添加数据](https://docs.trychroma.com/docs/collections/add-data)
+- [Chroma Embedding Functions](https://docs.trychroma.com/docs/embeddings/embedding-functions)
+- [Chroma 索引配置](https://docs.trychroma.com/docs/collections/configure)
