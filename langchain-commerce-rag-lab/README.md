@@ -6,6 +6,8 @@
 
 ## 初始化
 
+环境要求：Node.js 20 或更高版本。
+
 ```bash
 pnpm install
 cp .env.example .env
@@ -32,6 +34,9 @@ pnpm lesson:11 # 练习 metadata 与正文查询操作符
 pnpm lesson:12 # 在独立沙盒中查询和安全删除
 pnpm lesson:13 # 切分说明书并执行向量查询
 pnpm lesson:14 # 诊断“原文查不到”的原因
+pnpm lesson:15 # 对比默认与中文标点切片的召回
+pnpm lesson:15:offline # 只比较本地切片，不调用外部服务
+pnpm lesson:17 # 把检索结果组装成受控的 LLM messages
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
@@ -204,3 +209,48 @@ pnpm lesson:14
 
 商品说明书 Collection 没有内置 Embedding，因此不能直接传 `queryTexts`。
 示例使用与入库相同的豆包模型生成 `queryEmbeddings`，全程不写入 Chroma。
+
+## 15 解决 ChromaDB 查询中文不精准问题
+
+本课保持说明书、`chunkSize`、`chunkOverlap`、Embedding、cosine 索引和查询
+完全相同，对比两种切片策略。中文策略不仅加入中文标点边界，还把标点保留在
+前一句末尾：
+
+```text
+default:             Markdown 标题/段落 -> 换行 -> 空格 -> 单字符
+chinese-punctuation: Markdown 标题/段落 -> 。！？；，、 -> 换行 -> 空格 -> 单字符
+```
+
+示例先计算全语料句子覆盖率，再以“Top K 是否包含带完整答案的 chunk”计算
+答案片段 Recall@1、Recall@3 和 MRR。两组 chunk 写入独立课程 Collection：
+
+```bash
+pnpm lesson:15:offline
+pnpm lesson:15
+```
+
+第一条命令只做确定性切片检查，不调用 Embedding 或 Chroma；第二条才会使用
+`.env` 中配置的外部服务。
+
+## 17 ChromaDB 查询之后给到什么数据 LLM？
+
+本课把数据边界拆成三层：
+
+```text
+Chroma QueryResult
+  -> retrieval 层的 SearchHit[]
+  -> 受控 context + SystemMessage + HumanMessage
+  -> Chat Model
+```
+
+`distance`、`relevanceScore`、Embedding、Chroma 对象和内部 metadata 只留在应用
+后端。发给模型的是用户问题、入选 chunk 正文，以及 `source / sku /
+chunkIndex` 等可引用字段。上下文保持检索层的排序，按字符预算保留完整 source
+block，并明确把召回正文当作不可信数据。
+
+```bash
+pnpm lesson:17
+```
+
+这个示例读取本地说明书并回放第 13 课已记录的三个命中，不连接 Chroma，也不
+调用 Chat Model；它会打印真正可传给模型的两个 LangChain message。

@@ -22,6 +22,9 @@
     "lesson:12": "node --import tsx src/examples/12-chroma-query-delete.ts",
     "lesson:13": "node --import tsx src/examples/13-long-text-chunk-storage-query.ts",
     "lesson:14": "node --import tsx src/examples/14-why-original-text-not-found.ts",
+    "lesson:15": "node --import tsx src/examples/15-chinese-retrieval-precision.ts",
+    "lesson:15:offline": "node --import tsx src/examples/15-chinese-retrieval-precision.ts --offline",
+    "lesson:17": "node --import tsx src/examples/17-chroma-results-to-llm-context.ts",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "verify": "pnpm check && pnpm test"
