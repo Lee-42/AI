@@ -5,6 +5,7 @@ import {
   ProductSchema,
   type Product
 } from "../domain/product.js";
+import { buildProductRecordId } from "../domain/vector-record-id.js";
 
 export type ProductDocumentMetadata = {
   recordType: "product";
@@ -40,7 +41,7 @@ export function productToDocument(
   product: Product
 ): Document<ProductDocumentMetadata> {
   return new Document({
-    id: `product:${product.sku}:profile`,
+    id: buildProductRecordId(product.sku),
     pageContent: productToPageContent(product),
     metadata: {
       recordType: "product",

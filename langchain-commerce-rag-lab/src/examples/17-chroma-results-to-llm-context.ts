@@ -1,5 +1,6 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import type { SearchHit } from "../domain/search-result.js";
+import { buildManualChunkRecordId } from "../domain/vector-record-id.js";
 import { loadManualChunkDocuments } from "../indexing/manual-chunks.js";
 import { buildGroundedRagMessages } from "../rag/grounded-messages.js";
 import { buildRagContext } from "../rag/rag-context.js";
@@ -8,15 +9,15 @@ const QUESTION = "Aurora Studio 16 剪视频时应该选择哪个性能模式？
 
 const RECORDED_RESULTS = [
   {
-    id: "manual:laptop-studio-16:chunk:0001",
+    id: buildManualChunkRecordId("laptop-studio-16", 1),
     distance: 0.35025
   },
   {
-    id: "manual:laptop-studio-16:chunk:0002",
+    id: buildManualChunkRecordId("laptop-studio-16", 2),
     distance: 0.601221
   },
   {
-    id: "manual:laptop-studio-16:chunk:0003",
+    id: buildManualChunkRecordId("laptop-studio-16", 3),
     distance: 0.745098
   }
 ] as const;

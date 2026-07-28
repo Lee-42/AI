@@ -37,6 +37,11 @@ pnpm lesson:14 # 诊断“原文查不到”的原因
 pnpm lesson:15 # 对比默认与中文标点切片的召回
 pnpm lesson:15:offline # 只比较本地切片，不调用外部服务
 pnpm lesson:17 # 把检索结果组装成受控的 LLM messages
+pnpm lesson:18 # 生成并审计稳定、可追溯的向量记录 ID
+pnpm lesson:19 # 用豆包多模态向量和 Chroma 实现文搜图
+pnpm lesson:20 # 离线观察张量的 shape、rank、axis 和 flatten
+pnpm lesson:21 # 用查询图片在 Chroma 中检索相似图片
+pnpm lesson:22 # 读取 Chroma 图片向量并分析逻辑存储大小
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
@@ -254,3 +259,71 @@ pnpm lesson:17
 
 这个示例读取本地说明书并回放第 13 课已记录的三个命中，不连接 Chroma，也不
 调用 Chat Model；它会打印真正可传给模型的两个 LangChain message。
+
+## 18 向量存储的 ID 设计
+
+本课把商品、说明书切片和未来图片记录的 ID 统一为：
+
+```text
+product:{sku}:profile
+manual:{sku}:chunk:{四位补零序号}
+image:{sku}:{imageRole}
+```
+
+```bash
+pnpm lesson:18
+```
+
+示例会本地演示稳定 ID 与随机 UUID 的差别，并只读审计现有商品和说明书
+Collection。它不调用豆包，也不写入 Chroma。
+
+## 19 ChromaDB 实现文搜图
+
+本课用同一个豆包多模态模型分别生成图片向量和文字查询向量，再在独立图片
+Collection 中执行 cosine 查询：
+
+```bash
+pnpm lesson:19
+pnpm lesson:19 -- "白色方格纸线圈记事本"
+```
+
+首次运行会向量化三张教学图片并写入 `commerce_product_images_v1`。Chroma
+保存预计算向量、稳定 ID、metadata 和图片 URI，不保存图片二进制。
+
+## 20 如何理解机器学习中的张量？
+
+本课使用一个 `2 × 3` 的 RGB 微型图片，逐步观察标量、向量、矩阵、图片张量
+和 batch：
+
+```bash
+pnpm lesson:20
+```
+
+示例完全离线，重点区分 `rank`、`shape`、元素数量和 Embedding dimension，并
+说明图片像素直接 flatten 与模型生成语义向量不是同一件事。
+
+## 21 ChromaDB 实现图搜图
+
+本课复用第 19 课建立的图片 Collection。应用先下载查询图，使用同一个豆包
+多模态模型生成查询向量，再把预计算向量交给 Chroma：
+
+```bash
+pnpm lesson:21
+pnpm lesson:21 -- "https://example.com/query.jpg"
+```
+
+默认查询图就是索引中的第一张教学图片，因此第一名通常是它自己，distance
+接近 `0`。本课只生成一条查询向量，不会重复向量化并写入三张教学图片。
+
+## 22 观察图片处理后实际存储到向量数据库中的大小
+
+本课使用 `get(include: ["embeddings", ...])` 读取第 19 课已经写入的图片记录，
+观察向量维度、Float32 载荷下界、JSON 表示大小和其余可见字段：
+
+```bash
+pnpm lesson:22
+```
+
+课程只读取 Chroma，不下载原图、不调用豆包，也不写入 Collection。输出中的
+逻辑载荷不是 Cloud 账单或真实磁盘占用，因为 SPANN/HNSW 索引、WAL、数据库页、
+冗余和压缩无法从单条记录响应中精确推导。

@@ -1,4 +1,5 @@
 import { config } from "../config.js";
+import { buildManualChunkRecordId } from "../domain/vector-record-id.js";
 import { createTextEmbeddings } from "../embeddings/create-text-embeddings.js";
 import {
   buildBoundaryText,
@@ -11,7 +12,7 @@ import {
 import { createChromaClient } from "../vectorstores/chroma-client.js";
 import { getOrCreateManualChunkCollection } from "../vectorstores/manual-chunk-collection.js";
 
-const TARGET_ID = "manual:laptop-studio-16:chunk:0001";
+const TARGET_ID = buildManualChunkRecordId("laptop-studio-16", 1);
 const EXACT_SENTENCE = "视频剪辑和三维渲染时建议使用创作模式。";
 
 function printRanking(

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { MarkdownTextSplitter } from "@langchain/textsplitters";
 import { z } from "zod";
 import { ProductSchema } from "../domain/product.js";
+import { buildManualChunkRecordId } from "../domain/vector-record-id.js";
 
 export const MANUAL_CHUNK_SIZE = 600;
 export const MANUAL_CHUNK_OVERLAP = 100;
@@ -23,10 +24,6 @@ export type ManualChunkMetadata = {
   embeddingModel: string;
   contentVersion: number;
 };
-
-function manualChunkId(sku: string, chunkIndex: number): string {
-  return `manual:${sku}:chunk:${String(chunkIndex).padStart(4, "0")}`;
-}
 
 export async function loadManualSources(): Promise<ManualSource[]> {
   const projectRoot = new URL("../../", import.meta.url);
@@ -84,7 +81,7 @@ export async function splitManualSource(
     const chunkIndex = index + 1;
 
     return new Document({
-      id: manualChunkId(source.sku, chunkIndex),
+      id: buildManualChunkRecordId(source.sku, chunkIndex),
       pageContent,
       metadata: {
         recordType: "manual-chunk",

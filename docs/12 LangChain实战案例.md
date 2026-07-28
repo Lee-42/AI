@@ -23,8 +23,11 @@ RAG 导购助手。完整规格见
 - [ ] 15 解决 ChromaDB 查询中文不精准问题（本地验收完成，外部 A/B 待授权）
 - [ ] 16 为什么 distance 最小的结果反而不准？
 - [x] 17 ChromaDB 查询之后给到什么数据 LLM？
-- [ ] 18 向量存储的 ID 设计
-- [ ] 19～22 多模态检索
+- [x] 18 向量存储的 ID 设计
+- [x] 19 ChromaDB 实现文搜图
+- [x] 20 如何理解机器学习中的张量？
+- [x] 21 ChromaDB 实现图搜图
+- [x] 22 观察图片处理后实际存储到向量数据库中的大小
 
 ---
 
@@ -2846,7 +2849,7 @@ Embedding 或生成模型用量。它验证的是“如果下一步调用模型�
 - [x] 转义结构边界，并声明检索正文是不可信数据。
 - [x] 离线示例不连接外部服务。
 - [x] TypeScript 类型检查通过。
-- [x] 全部 60 个测试通过。
+- [x] 本课相关测试与全量回归通过。
 
 ### 11. 检查理解
 
@@ -2874,3 +2877,1245 @@ Embedding 或生成模型用量。它验证的是“如果下一步调用模型�
 - [LangChain Retrieval](https://docs.langchain.com/oss/javascript/langchain/retrieval)
 - [Chroma Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)
 - [OWASP LLM01: Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
+
+---
+
+## 18 向量存储的 ID 设计
+
+### 1. 本课目标
+
+本课解决一个容易被忽略的问题：
+
+```text
+同一条业务记录，重复索引时怎样仍被识别为“同一条”？
+```
+
+完成后应当能够：
+
+1. 区分向量、document、metadata 和 ID 的职责。
+2. 用领域字段确定性生成商品、说明书切片和图片 ID。
+3. 解释为什么随机 UUID 容易让重复索引变成重复数据。
+4. 判断内容更新、切片策略变更和删除时应怎样处理 ID。
+5. 审计已有 Chroma 数据是否符合 ID 约定。
+
+本课不调用豆包，不生成新向量，也不写入 Chroma。
+
+### 2. ID 到底标识什么？
+
+一条向量记录可以简化为：
+
+```text
+ID         -> 我是谁
+document   -> 我表达什么
+embedding  -> 我在向量空间中的位置
+metadata   -> 我有哪些可过滤、可维护的属性
+```
+
+例如商品价格会变化，但商品仍是同一个商品。因此价格应该放在 metadata，
+不应该写进 ID：
+
+```text
+稳定身份：SKU = laptop-air-14
+可变属性：price = 5999
+记录 ID：product:laptop-air-14:profile
+```
+
+一个实用的向量记录 ID 应满足：
+
+- 稳定：相同逻辑记录每次生成相同 ID。
+- 唯一：一个 Collection 内不标识两条不同记录。
+- 可追溯：看到 ID 能定位到 SKU、切片或图片角色。
+- 可解析：程序能检查格式并还原必要的身份字段。
+
+### 3. 本项目的三种 ID
+
+```text
+product:{sku}:profile
+manual:{sku}:chunk:{chunkIndex四位补零}
+image:{sku}:{imageRole}
+```
+
+示例：
+
+```text
+product:laptop-air-14:profile
+manual:laptop-air-14:chunk:0001
+image:laptop-studio-16:front
+```
+
+各部分的含义：
+
+| 部分 | 作用 |
+| --- | --- |
+| `product/manual/image` | 记录命名空间，日志和引用更容易辨认 |
+| `sku` | 稳定的商品领域身份 |
+| `profile/chunk/front` | 记录在该商品下的角色 |
+| `0001` | 说明书中的确定性切片序号 |
+
+Chroma 只要求记录 ID 是 Collection 内唯一的字符串。即使三类记录当前存放在
+不同 Collection，本项目仍保留类型前缀，方便排查日志、跨路召回融合和引用。
+
+切片序号最少补到四位，是为了让控制台按字符串排序时：
+
+```text
+0001, 0002, 0010
+```
+
+仍接近自然数字顺序。`10000` 也不会被截断。
+
+### 4. 为什么不直接使用随机 UUID？
+
+假设同一商品被索引两次。
+
+稳定 ID：
+
+```text
+第 1 次：product:laptop-air-14:profile
+第 2 次：product:laptop-air-14:profile
+唯一 ID 数：1
+```
+
+随机 UUID：
+
+```text
+第 1 次：550e8400-...
+第 2 次：6ba7b810-...
+唯一 ID 数：2
+```
+
+Chroma 的 `upsert` 语义是：
+
+```text
+ID 已存在   -> 更新这条记录
+ID 不存在   -> 新增一条记录
+```
+
+所以随机 UUID 会把重复索引伪装成两条新记录。稳定 ID 则让索引过程具备
+幂等性：同一份输入执行多次，最终仍只有一条逻辑记录。
+
+UUID 并非永远错误。若数据没有稳定业务键，而且每次事件本来就必须永久保留，
+UUID 很合适；本项目的商品、切片和图片都有明确的领域身份，因此无需随机 ID。
+
+### 5. 为什么不把正文哈希直接当 ID？
+
+正文哈希擅长判断“内容是否完全相同”，但不一定适合表示“业务身份”：
+
+```text
+说明书修正一个错别字
+-> 正文哈希改变
+-> 旧记录不会被同 ID 的 upsert 更新
+-> 可能残留两条逻辑上相同的记录
+```
+
+若需要检测内容是否变化，可以把 checksum 单独存入 metadata。ID 仍表示稳定
+身份，checksum 表示当前内容版本，两者职责更清楚。
+
+### 6. 集中生成，不要到处拼字符串
+
+实现集中在
+[vector-record-id.ts](../langchain-commerce-rag-lab/src/domain/vector-record-id.ts)：
+
+```ts
+buildProductRecordId("laptop-air-14");
+// product:laptop-air-14:profile
+
+buildManualChunkRecordId("laptop-air-14", 1);
+// manual:laptop-air-14:chunk:0001
+
+buildImageRecordId("laptop-air-14", "front");
+// image:laptop-air-14:front
+```
+
+商品索引、说明书切片、第 14 课的精确目标和第 17 课的引用回放都已复用这些
+函数。这样修改规则时只有一个事实来源，也不会出现 `chunk:1`、`chunk:0001`
+两种写法同时存在。
+
+解析函数只接受构建函数能重新生成的规范格式：
+
+```ts
+parseVectorRecordId("manual:laptop-air-14:chunk:0007");
+// {
+//   kind: "manual",
+//   sku: "laptop-air-14",
+//   role: "chunk",
+//   chunkIndex: 7
+// }
+```
+
+大写 SKU、下划线、`chunk:0000` 和非规范补零都会被拒绝，问题会在写入
+数据库前暴露。
+
+课程沙盒中的 `lesson06:*`、`lesson12:*` 和 `lesson15:*` ID 是为了隔离单课
+实验，不属于上述生产 ID 解析规则。
+
+### 7. 内容更新、重新切片和删除
+
+根据“逻辑身份是否改变”选择操作：
+
+| 场景 | ID 处理 |
+| --- | --- |
+| 商品价格、库存或描述变化 | 保持商品 ID，重新生成向量并 `upsert` |
+| 说明书同一切片内容小幅修订 | 保持 ID，更新 document、metadata 和向量 |
+| SKU 改变 | 视为身份迁移：写入新 ID，并安全删除旧 ID |
+| 图片内容更新但仍是 `front` | 保持图片 ID并 `upsert` |
+| 图片角色从 `front` 变成 `detail` | 使用新 ID，并删除旧角色记录 |
+| 切片规则发生不兼容变化 | 提升 Collection 或 content version，重建并清理旧索引 |
+| 源记录被删除 | 先按已知 ID 或 metadata 预览，再删除 |
+
+切片序号 ID 有一个前提：相同版本的切片算法、参数和源文档必须确定性运行。
+如果调整 `chunkSize`、`chunkOverlap` 或分隔符，`chunk:0002` 可能已经不再指向
+原来的内容。此时不能悄悄复用旧含义，应升级索引版本并重建。
+
+### 8. 运行实验
+
+入口：
+
+[18-vector-record-id-design.ts](../langchain-commerce-rag-lab/src/examples/18-vector-record-id-design.ts)
+
+运行：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:18
+```
+
+本次实际结果：
+
+```text
+稳定 ID 重复两次后的唯一记录数: 1
+随机 UUID 重复两次后的唯一记录数: 2
+
+commerce_products_text_v1:
+  total=3 valid=3 expectedMatch=true
+commerce_manual_chunks_v1:
+  total=5 valid=5 expectedMatch=true
+重复 ID: 0
+非法 ID: 0
+
+连接模式: cloud
+豆包调用: 0
+Chroma 写入: 0
+```
+
+`expectedMatch=true` 不只表示数量相同，还表示 Cloud 中的 ID 集合与本地源数据
+按统一函数生成的期望 ID 集合完全相同。
+
+### 9. 本课验收
+
+- [x] 三类生产 ID 都有集中维护的构建函数。
+- [x] 商品与说明书索引复用统一构建函数，原有 ID 保持不变。
+- [x] 可以解析规范 ID，并拒绝非法或非规范格式。
+- [x] 可以审计数量、类型、重复 ID 和非法 ID。
+- [x] Chroma Cloud 现有 8 条业务记录全部通过只读审计。
+- [x] 示例未调用豆包，也未写入 Chroma。
+- [x] TypeScript 类型检查通过。
+- [x] 本课相关测试与全量回归通过。
+
+### 10. 检查理解
+
+1. 为什么商品价格不适合进入商品 ID？
+2. 相同商品重复索引时，随机 UUID 为什么会产生重复记录？
+3. 正文哈希和领域 ID 分别回答什么问题？
+4. 为什么切片参数变化后不能默认继续复用原 Collection？
+5. 已知一条记录的 ID 时，为什么应优先精确 `get` 而不是向量 `query`？
+
+答案：
+
+1. 价格会变化，但商品的逻辑身份没有变化；它属于 metadata。
+2. 两次生成的 UUID 不同，`upsert` 会把第二次识别为新记录。
+3. 哈希回答“内容是否完全相同”，领域 ID 回答“这条业务记录是谁”。
+4. 同一序号可能已经对应不同正文，旧引用和新内容会发生语义冲突。
+5. `get` 表达精确身份查找；`query` 表达向量空间中的近似相似查找。
+
+### 11. 下一课
+
+第 19 课开始多模态检索：使用文本查询商品图片，并把图片 URI、稳定图片 ID 和
+多模态向量安全地存入独立 Collection。
+
+## 18 官方参考
+
+- [Chroma Adding Data](https://docs.trychroma.com/docs/collections/add-data?lang=typescript)
+- [Chroma Updating Data](https://docs.trychroma.com/docs/collections/update-data)
+- [Chroma Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+- [Chroma Deleting Data](https://docs.trychroma.com/docs/collections/delete-data?lang=typescript)
+
+---
+
+## 19 ChromaDB 实现文搜图
+
+### 1. 本课目标
+
+本课跑通第一条跨模态检索链路：
+
+```text
+商品图片 -> 图片向量 ┐
+                    ├-> Chroma cosine 检索 -> 图片 URI
+用户文字 -> 文字向量 ┘
+```
+
+完成后应当能够：
+
+1. 解释为什么文字可以搜索图片。
+2. 用同一个多模态模型处理图片和文字。
+3. 把图片向量、稳定 ID 和 URI 写入 Chroma。
+4. 理解 Chroma 存储的不是图片文件。
+5. 观察宽泛文字描述为什么仍可能排错。
+
+### 2. 文搜图为什么可行？
+
+普通文本 Embedding 只负责：
+
+```text
+文字 -> 文本向量空间
+```
+
+多模态 Embedding 会把图片和文字投影到同一个向量空间：
+
+```text
+图片“银色轻薄本” -> [0.12, -0.08, ...]
+文字“银色轻薄本” -> [0.10, -0.05, ...]
+```
+
+两个向量的方向接近，cosine distance 就较小。Chroma 不需要理解哪个向量来自
+图片、哪个来自文字，只负责寻找最近向量。
+
+最重要的不变量是：
+
+```text
+图片入库模型 = 文字查询模型
+```
+
+如果图片使用多模态模型 A，查询却使用文本模型 B，即使维度碰巧相同，两个
+坐标系也没有可比较的含义。本课会把多模态 Endpoint 写入 Collection metadata，
+复用同名 Collection 时先检查模型是否一致。
+
+### 3. 教学图片数据
+
+数据清单位于
+[images.json](../langchain-commerce-rag-lab/data/images.json)，包含三张视觉差异
+明显的教学替代图：
+
+| SKU | 可见特征 | 来源与许可 |
+| --- | --- | --- |
+| `laptop-air-14` | 银色、轻薄、打开、木桌 | [Wikimedia Commons，CC0](https://commons.wikimedia.org/wiki/File:MacBook_Air_(13-inch,_M4,_Silver).jpg) |
+| `laptop-studio-16` | 深灰色、机身较厚、接口明显 | [Wikimedia Commons，CC0](https://commons.wikimedia.org/wiki/File:HP_Victus_15_gaming_laptop_side_view.jpg) |
+| `notebook-paper-a5` | 白色方格纸、线圈装订 | [Wikimedia Commons，CC BY 3.0](https://commons.wikimedia.org/wiki/File:Notebook.png) |
+
+这些图片只用来代表样例商品的视觉类别，并不是虚构 Aurora 商品的官方产品图。
+`sourcePage`、作者和 license 都保留在 metadata 中。
+
+### 4. 图片是怎样进入模型的？
+
+入口接口仍然很简单：
+
+```ts
+interface MultimodalEmbeddingProvider {
+  embedText(text: string): Promise<number[]>;
+  embedImage(imageUrl: string): Promise<number[]>;
+}
+```
+
+本课的图片处理流程是：
+
+```text
+受控图片 URI
+-> 应用下载图片
+-> 检查 HTTP 状态、MIME 和 10 MiB 上限
+-> 在本次豆包请求内转换为 Base64 data URL
+-> 得到 number[2048]
+```
+
+之所以由应用先下载，是因为真实实验中豆包服务下载 Wikimedia URI 超时，而
+本机可以正常访问。应用端转换后成功得到 2048 维图片向量。
+
+Base64 只存在于内存和本次 API 请求中：
+
+```text
+不会写入 Chroma
+不会写入日志
+不会提交到 Git
+```
+
+生产系统还应对允许下载的域名做白名单、阻止内网地址和限制重定向，避免把任意
+用户 URL 直接交给后端下载。本课的 URL 来自版本控制中的受控清单。
+
+实现见
+[doubao-multimodal-embeddings.ts](../langchain-commerce-rag-lab/src/embeddings/doubao-multimodal-embeddings.ts)。
+
+### 5. Chroma 中实际保存什么？
+
+每张图片写入一条记录：
+
+```text
+id:
+  image:laptop-air-14:front
+
+embedding:
+  2048 个浮点数
+
+uri:
+  https://upload.wikimedia.org/...
+
+document:
+  银色轻薄窄边框笔记本电脑，打开摆放在木桌上
+
+metadata:
+  sku、imageRole、sourcePage、author、license
+  embeddingModel、vectorDimension、contentVersion
+```
+
+这里的 `document` 用于控制台和查询结果展示。入库向量来自真实图片，不是这段
+人工描述。Chroma 也不会下载或永久保存 URI 指向的图片。
+
+图片 Collection 独立使用：
+
+```text
+commerce_product_images_v1
+```
+
+不能把图片向量写入 `commerce_products_text_v1`。两个 Collection 即使都是
+2048 维，也可能来自不同模型空间，并承担不同粒度的记录职责。
+
+### 6. 入库与查询代码
+
+图片入库：
+
+```ts
+const vectors = await Promise.all(
+  records.map((record) => embeddings.embedImage(record.uri))
+);
+
+await collection.upsert({
+  ids,
+  embeddings: vectors,
+  documents,
+  metadatas,
+  uris
+});
+```
+
+文字查询：
+
+```ts
+const queryVector = await embeddings.embedText(query);
+
+const result = await collection.query({
+  queryEmbeddings: [queryVector],
+  nResults: 3,
+  include: ["documents", "metadatas", "distances", "uris"]
+});
+```
+
+注意没有使用 `queryTexts`。向量由豆包预计算，Chroma Collection 没有配置内置
+Embedding，因此查询必须显式传入 `queryEmbeddings`。
+
+### 7. 运行实验
+
+入口：
+
+[19-chroma-text-to-image.ts](../langchain-commerce-rag-lab/src/examples/19-chroma-text-to-image.ts)
+
+运行：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:19
+```
+
+也可以传入自己的视觉描述：
+
+```bash
+pnpm lesson:19 -- "白色方格纸线圈记事本"
+```
+
+最终实际运行结果：
+
+```text
+图片记录: 3 -> 3
+本次 upsert: 3
+向量维度: 2048
+查询文字:
+  银白色超薄笔记本电脑，打开摆在木桌上，黑色键盘和大触控板
+Embedding API 请求数: 4
+本次用量: 2024 tokens
+实际模型: doubao-embedding-vision-251215
+
+1. laptop-air-14       distance=0.504388
+2. laptop-studio-16    distance=0.653691
+3. notebook-paper-a5   distance=0.864188
+```
+
+`3 -> 3` 表示第二次运行用稳定 ID 更新原记录，没有继续增长。4 次 API 请求来自
+3 张图片和 1 条文字查询。
+
+### 8. 为什么第一次宽泛查询没有排对？
+
+第一次使用：
+
+```text
+银色、轻薄、窄边框的办公笔记本
+```
+
+实际前两名是：
+
+```text
+1. 深色高性能本  0.593905
+2. 银色轻薄本    0.617754
+```
+
+多模态模型不是逐字检查“银色=true、轻薄=true”。它会综合整幅图和整句话的
+语义；两张图片都强烈表达“笔记本电脑”，宽泛类别信号可能盖过颜色和摆放特征。
+
+把查询改成图片中可直接观察的细节后：
+
+```text
+银白色超薄笔记本电脑，打开摆在木桌上，黑色键盘和大触控板
+```
+
+银色轻薄本就回到第一名。另两条诊断查询也得到正确 Top 1：
+
+```text
+深灰色厚重高性能笔记本电脑，侧面有多个接口
+-> laptop-studio-16
+
+白色方格纸线圈记事本
+-> notebook-paper-a5
+```
+
+这说明文搜图应优先描述可见属性。价格、库存、内存大小等不可见条件应使用
+metadata filter，而不是期待图片向量猜出来。
+
+### 9. 本课验收
+
+- [x] 图片和文字使用同一个豆包多模态 Endpoint。
+- [x] 图片下载过程校验协议、MIME、大小和响应状态。
+- [x] 图片记录使用稳定 `image:{sku}:{role}` ID。
+- [x] Chroma 保存预计算向量和 URI，不保存图片二进制。
+- [x] 图片 Collection 固定使用 cosine，并校验模型身份。
+- [x] 第二次运行记录数保持 3，upsert 幂等。
+- [x] 三组视觉查询都能返回预期 Top 1。
+- [x] TypeScript 类型检查通过。
+- [x] 本课相关测试与全量回归通过。
+
+### 10. 检查理解
+
+1. 为什么文本专用模型生成的查询向量不能搜索图片向量？
+2. Chroma 中的 `uri` 和 `embedding` 分别表示什么？
+3. 为什么不把 Base64 图片直接存入 Chroma metadata？
+4. 为什么“16GB 内存、价格 6999”不适合作为纯文搜图条件？
+5. 为什么本课显式使用 `queryEmbeddings`，而不是 `queryTexts`？
+
+答案：
+
+1. 两类向量不一定属于同一坐标系；数值和维度相同也不代表可比较。
+2. URI 定位原图，embedding 用于相似度计算。
+3. 二进制体积大、更新和传输成本高，向量数据库只需向量与引用。
+4. 这些通常不是图片中的可靠可见属性，应交给 metadata filter。
+5. Collection 没有内置 Embedding，查询向量必须由同一个豆包模型预计算。
+
+### 11. 下一课
+
+第 20 课学习怎样理解机器学习中的张量，并从标量、向量、矩阵逐步看懂图片数据
+为什么通常表示成 `height × width × channels`。
+
+## 19 官方参考
+
+- [火山方舟图文向量化 API](https://api.volcengine.com/api-docs/view?action=EmbeddingsMultimodal&serviceCode=ark&version=2024-01-01)
+- [Chroma TypeScript Collection](https://docs.trychroma.com/reference/typescript/collection)
+- [Chroma Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+
+---
+
+## 20 如何理解机器学习中的张量？
+
+### 1. 先用一句话理解
+
+张量可以先理解为：
+
+```text
+有规则形状的多维数字数组。
+```
+
+“有规则”表示同一轴上的每一项必须具有相同 shape。下面不是规则矩阵：
+
+```ts
+[
+  [1, 2],
+  [3]
+]
+```
+
+第二行少一个元素，这种结构通常称为 jagged array，无法得到唯一的
+`[行数 × 列数]` shape。
+
+### 2. 标量、向量、矩阵都是张量
+
+| 名称 | 示例 | shape | rank |
+| --- | --- | --- | ---: |
+| 标量 | `36.5` | `[]` | 0 |
+| 向量 | `[0.2, -0.1, 0.8]` | `[3]` | 1 |
+| 矩阵 | `[[1,2,3],[4,5,6]]` | `[2 × 3]` | 2 |
+| RGB 图片 | `2行 × 3列 × 3通道` | `[2 × 3 × 3]` | 3 |
+| 两张 RGB 图片 | batch × 高 × 宽 × 通道 | `[2 × 2 × 3 × 3]` | 4 |
+
+因此“张量”不是与向量、矩阵并列的第四种东西。机器学习语境通常把它们统一
+看成不同 rank 的张量。
+
+### 3. 四个必须分清的词
+
+以 shape 为 `[2 × 3 × 3]` 的 RGB 图片为例：
+
+```text
+rank / ndim = 3
+shape       = [2 × 3 × 3]
+axis 0      = 高度，长度 2
+axis 1      = 宽度，长度 3
+axis 2      = RGB 通道，长度 3
+元素数量    = 2 × 3 × 3 = 18
+```
+
+- `rank`：有多少个轴。
+- `shape`：每个轴有多长。
+- `axis`：具体讨论哪一个轴。
+- `element count`：整个张量共有多少个标量。
+
+这里的 tensor rank 也不是线性代数里的“矩阵秩”。本课说 rank 时，始终表示
+轴的数量。
+
+### 4. 一张 RGB 图片怎样变成数字？
+
+本课构造了一个只有六个像素的图片：
+
+```text
+第 0 行：红  绿  蓝
+第 1 行：白  黑  黄
+```
+
+TypeScript 数据：
+
+```ts
+const image = [
+  [
+    [255, 0, 0],
+    [0, 255, 0],
+    [0, 0, 255]
+  ],
+  [
+    [255, 255, 255],
+    [0, 0, 0],
+    [255, 255, 0]
+  ]
+];
+```
+
+访问绿色像素需要三个索引：
+
+```text
+image[0][1][0] = 0    // R
+image[0][1][1] = 255  // G
+image[0][1][2] = 0    // B
+```
+
+所以像素 `[0,1]` 是 `[0,255,0]`。
+
+本课使用 HWC：
+
+```text
+Height × Width × Channels
+```
+
+不同框架还可能使用 CHW、NHWC 或 NCHW。shape 数字相同不代表轴含义相同，
+传递张量时必须同时确认 axis order。
+
+### 5. batch 轴是什么？
+
+模型通常不会只处理一张图片。把两张相同图片组合起来：
+
+```ts
+const batch = [image, image];
+```
+
+shape 从：
+
+```text
+[2 × 3 × 3]      HWC
+```
+
+变成：
+
+```text
+[2 × 2 × 3 × 3]  NHWC
+ ↑
+ batch size
+```
+
+第一个 `2` 表示两张图片，后面的 `2 × 3 × 3` 才是单张图片的 shape。
+
+### 6. flatten 不等于 Embedding
+
+把图片直接展平：
+
+```text
+[2 × 3 × 3] -> [18]
+```
+
+只是改变数字的排列结构，18 个 RGB 通道值仍然原样存在。它没有学会：
+
+```text
+这是笔记本电脑
+它是银色还是深灰色
+它与“办公轻薄本”是否语义相近
+```
+
+Embedding 则是模型学习到的变换：
+
+```text
+图片像素张量
+-> resize / normalize 等预处理
+-> 多层神经网络
+-> 语义向量 [2048]
+```
+
+输出的 2048 个数通常不能逐项解释成某个像素。它们共同表示模型学习到的语义
+位置。
+
+### 7. 与第 19 课怎样对应？
+
+第 19 课的完整数据形状可以这样理解：
+
+```text
+单张原图
+  解码后：大致是 [H × W × C] 的图片张量
+        ↓ 多模态 Embedding 模型
+  输出：[2048] 的 rank-1 语义向量
+
+三张图片写入 Chroma：
+  embeddings: [3 × 2048]
+
+一条文字查询：
+  queryEmbeddings: [1 × 2048]
+```
+
+`[3 × 2048]` 在 API 参数层面是 rank-2 结构，但含义是三条独立记录，每条记录
+各有一个 2048 维向量。Chroma 保存的是模型最终输出，不是原始
+`[H × W × C]` 像素，也不是模型内部每一层的中间张量。
+
+这里最容易混淆的是：
+
+```text
+图片张量 rank = 3
+Embedding 张量 rank = 1
+Embedding dimension = 2048
+```
+
+“2048 维”表示向量有 2048 个分量，不表示它是 rank-2048 张量。
+
+### 8. TypeScript 数组是不是机器学习 Tensor？
+
+本课使用嵌套数组，是为了把 shape 和索引规则看清楚：
+
+```ts
+number[][][]
+```
+
+它不具备 PyTorch 或 TensorFlow Tensor 的 GPU、dtype、自动微分和高性能算子。
+真正的框架 Tensor 通常还携带：
+
+```text
+shape
+dtype
+device
+gradient 信息
+```
+
+但“规则多维数组、轴、shape、索引”这些基础概念相同。
+
+本课实现
+[tensor-shape.ts](../langchain-commerce-rag-lab/src/tensors/tensor-shape.ts)，
+可以：
+
+- 推导规则嵌套数组的 shape。
+- 计算 rank 和元素数量。
+- 按每个轴的索引读取标量。
+- flatten 并保持元素顺序。
+- 拒绝 jagged、空轴、非数值和非有限数值。
+
+### 9. 运行实验
+
+入口：
+
+[20-understanding-tensors.ts](../langchain-commerce-rag-lab/src/examples/20-understanding-tensors.ts)
+
+运行：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:20
+```
+
+实际输出：
+
+```text
+标量       shape=[]            rank=0 elements=1
+向量       shape=[3]           rank=1 elements=3
+矩阵       shape=[2 × 3]       rank=2 elements=6
+RGB图片    shape=[2 × 3 × 3]   rank=3 elements=18
+
+2 张图片: shape=[2 × 2 × 3 × 3] rank=4
+直接 flatten: shape=[18]，只改变排列方式
+多模态模型: 图片张量 -> 经过学习的语义向量 [2048]
+Chroma 3 条图片记录: shape=[3 × 2048]
+文字 queryEmbeddings: shape=[1 × 2048]
+外部调用: 0
+```
+
+### 10. 本课验收
+
+- [x] 能从标量依次解释到 rank-4 图片 batch。
+- [x] 能区分 rank、shape、axis、元素数量和 Embedding dimension。
+- [x] 能通过三个索引读取 HWC 图片中的一个通道值。
+- [x] 能解释 flatten 为什么不是语义 Embedding。
+- [x] 能解释第 19 课的 `[3 × 2048]` 和 `[1 × 2048]`。
+- [x] 示例完全离线，不调用豆包或 Chroma。
+- [x] TypeScript 类型检查通过。
+- [x] 全部 84 个测试通过。
+
+### 11. 检查理解
+
+1. shape 为 `[5 × 4 × 3]` 的张量，rank 和元素数量分别是多少？
+2. 为什么 `[2 × 3 × 3]` 不能只看数字就断定一定是 HWC 图片？
+3. 图片展平为 `[18]` 后，为什么还不能用于可靠的语义搜索？
+4. `[3 × 2048]` 在第 19 课中分别代表什么？
+5. “2048 维向量”为什么不是 rank-2048 张量？
+
+答案：
+
+1. rank 是 3，元素数量是 `5 × 4 × 3 = 60`。
+2. 轴顺序需要额外约定，也可能是 CHW 或其他业务结构。
+3. flatten 只重新排列像素，没有经过学习到的语义变换。
+4. 3 条图片记录，每条记录有一个 2048 维 Embedding。
+5. 它只有一个轴，因此 rank 为 1；这个轴的长度是 2048。
+
+### 12. 下一课
+
+第 21 课复用同一个图片 Collection 和多模态模型实现图搜图：
+
+```text
+查询图片 -> [2048] -> Chroma -> 相似图片 URI
+```
+
+## 20 官方参考
+
+- [TensorFlow：Introduction to Tensors](https://www.tensorflow.org/guide/tensor)
+- [NumPy：The N-dimensional array](https://numpy.org/doc/stable/reference/arrays.ndarray.html)
+- [PyTorch：torch](https://docs.pytorch.org/docs/stable/torch)
+
+---
+
+## 21 ChromaDB 实现图搜图
+
+### 1. 本课目标
+
+第 19 课是：
+
+```text
+文字 -> 多模态 Embedding -> Chroma -> 图片
+```
+
+本课只替换查询输入：
+
+```text
+查询图片 URL
+-> 下载图片
+-> 同一个多模态模型
+-> 查询向量 [2048]
+-> Chroma cosine 查询
+-> 相似图片 URI
+```
+
+索引中的三张图片不需要重新向量化。第 21 课只产生一条查询向量，因此运行前
+需要先完成一次第 19 课的图片索引。
+
+### 2. 为什么可以用图片查询图片？
+
+图片入库和图片查询都经过同一个多模态模型：
+
+```text
+入库图片 A -> vector A ┐
+入库图片 B -> vector B ├─ 同一个向量空间
+查询图片 Q -> vector Q ┘
+```
+
+Chroma 比较 `vector Q` 与各入库向量的 cosine distance，距离越小表示在当前
+模型的向量空间中越相近。Chroma 不会再次观察图片像素；它只计算已经生成的
+向量。
+
+这里仍然不能混用 Endpoint。即使两个模型都输出 2048 个数，也不代表它们共享
+同一个坐标系。
+
+### 3. 与文搜图只有一行本质区别
+
+第 19 课：
+
+```ts
+const queryVector = await embeddings.embedText(query);
+```
+
+第 21 课：
+
+```ts
+const queryVector = await embeddings.embedImage(imageUrl);
+```
+
+后面的 Chroma 查询相同：
+
+```ts
+await collection.query({
+  queryEmbeddings: [queryVector],
+  nResults: 3,
+  include: ["documents", "metadatas", "distances", "uris"]
+});
+```
+
+我们使用 `queryEmbeddings`，因为向量由豆包在应用端生成，Collection 没有配置
+Chroma 内置的图片 Embedding 函数。
+
+### 4. 为什么第一名可能是查询图自己？
+
+默认查询图片取自 `data/images.json`，它已经存在于 Collection：
+
+```text
+同一张图片 -> 同一个模型 -> 几乎相同的向量
+```
+
+所以它通常排第一，distance 接近 `0`。这是确认索引和查询链路一致的有效
+基线，不是搜索失败。
+
+两种常见产品需求应分开处理：
+
+- 找到原图或重复图：保留 self-match。
+- 推荐其他相似商品：查询后按稳定 ID 或 URI 排除自身，再取 TopK。
+
+本课保留 self-match，便于直接观察正确性。
+
+### 5. 代码导读
+
+查询函数：
+
+[search-chroma-images-by-image.ts](../langchain-commerce-rag-lab/src/retrieval/search-chroma-images-by-image.ts)
+
+它依次完成：
+
+1. 校验 URL 必须使用 HTTP(S)。
+2. 调用 `embedImage`，而不是 `embedText`。
+3. 校验查询向量非空且全部为有限数值。
+4. 调用 Chroma 的 `queryEmbeddings`。
+5. 返回稳定 ID、distance、metadata 和原图 URI。
+
+课程入口：
+
+[21-chroma-image-to-image.ts](../langchain-commerce-rag-lab/src/examples/21-chroma-image-to-image.ts)
+
+入口会检查图片 Collection 是否已有记录。若为空，它会提示先运行第 19 课，
+不会在一次普通查询中悄悄重建索引。
+
+### 6. 运行
+
+先确保第 19 课至少成功运行一次：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:19
+```
+
+使用默认教学图片查询：
+
+```bash
+pnpm lesson:21
+```
+
+也可以传入公开可下载的 JPEG、PNG 或 WebP URL：
+
+```bash
+pnpm lesson:21 -- "https://example.com/query.jpg"
+```
+
+图片必须小于 10 MiB，并由服务器返回正确的图片 MIME 类型。Base64 只存在于
+发给豆包的单次请求中，不会写入 Chroma 或控制台日志。
+
+预期观察：
+
+```text
+21 ChromaDB 实现图搜图
+
+Collection: commerce_product_images_v1
+Collection 图片记录: 3
+查询图片: https://...
+Embedding API 请求数: 1
+
+1. 银色轻薄窄边框笔记本电脑，打开摆放在木桌上
+   distance: 接近 0
+   说明: 查询图就是这条记录，因此它是合理的第一名
+```
+
+实际 distance 会受模型版本影响，不应把文档中的示意数值写成固定断言。
+
+### 7. 成本与调用次数
+
+第 19 课首次索引三张图并执行一次文字查询，通常产生四次 Embedding 请求。
+第 21 课复用索引，只为查询图产生一次请求：
+
+```text
+已有图片索引：0 次重新写入
+查询图片向量：1 次 Embedding API 请求
+Chroma 查询：1 次
+```
+
+生产系统也应把“索引构建”和“在线查询”分开，避免每次搜索都重复支付索引
+成本。
+
+### 8. 本课验收
+
+- [x] 图片 URL 通过 `embedImage` 生成查询向量。
+- [x] 查询使用 `queryEmbeddings`，不依赖 Chroma 内置 OpenCLIP。
+- [x] 结果包含稳定 ID、SKU、distance 和 URI。
+- [x] 查询不会重复向量化或写入已有教学图片。
+- [x] 能解释 self-match 为什么合理。
+- [x] URL、向量和缺失 URI 都有失败校验。
+- [x] TypeScript 类型检查与全量测试通过。
+
+### 9. 检查理解
+
+1. 图搜图和文搜图在代码中的核心差异是什么？
+2. 为什么查询图和入库图必须使用同一个模型 Endpoint？
+3. 为什么默认结果第一名很可能是查询图自己？
+4. 推荐相似商品时应该怎样处理 self-match？
+5. 为什么第 21 课不应该每次都重新运行图片索引？
+
+答案：
+
+1. 一个调用 `embedImage`，另一个调用 `embedText`；后续 Chroma 查询相同。
+2. 只有同一个模型输出的向量才可保证处于同一语义坐标系。
+3. 同一张图片生成的向量几乎相同，所以 cosine distance 接近 0。
+4. 查询后按稳定 ID 或 URI 排除自身，再返回其他候选。
+5. 索引未变化，重复向量化只会增加延迟、API 成本和无意义写入。
+
+### 10. 下一课
+
+第 22 课观察图片经过模型处理后，Chroma 实际保存的向量大小，并比较原图、
+Base64 与 Embedding 的存储量。
+
+## 21 官方参考
+
+- [火山方舟图文向量化 API](https://api.volcengine.com/api-docs/view?action=EmbeddingsMultimodal&serviceCode=ark&version=2024-01-01)
+- [Chroma JavaScript/TypeScript Collection](https://docs.trychroma.com/reference/js-collection)
+- [Chroma Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+
+---
+
+## 22 观察图片处理后实际存储到向量数据库中的大小
+
+### 1. 先说结论
+
+Chroma 中没有保存原图，也没有保存发送豆包时临时产生的 Base64。我们的图片
+记录保存的是：
+
+```text
+稳定 ID
+Embedding 向量
+短文本描述
+metadata
+原图 URI
+```
+
+如果向量是 2048 维，Float32 稠密向量的载荷下界是：
+
+```text
+2048 × 4 bytes = 8192 bytes = 8 KiB
+```
+
+但 `8 KiB` 不是一条记录的真实磁盘占用，也不是 Chroma Cloud 账单。
+
+### 2. 三种“大小”不能混为一谈
+
+| 名称 | 本课能否测量 | 含义 |
+| --- | --- | --- |
+| 原图大小 | 不下载，因此不测量 | JPEG、PNG 或 WebP 文件字节 |
+| 逻辑记录大小 | 可以估算 | 向量、ID、描述、metadata、URI |
+| Chroma 物理占用 | 无法从记录 API 精确测量 | 索引、WAL、数据库页、冗余、压缩等 |
+
+原图可能有几百 KiB 或数 MiB，但它仍由 Wikimedia 或对象存储保存。Chroma 只
+保留 URI，所以图片分辨率变大并不直接让现有 Embedding 记录等比例变大。
+
+### 3. 为什么一个数通常按 4 bytes 估算？
+
+Chroma 的单机 HNSW 资源估算以 32-bit float 作为每个向量分量的载荷：
+
+```text
+vector payload bytes = record count × dimension × 4
+```
+
+因此三条 2048 维图片向量的下界为：
+
+```text
+3 × 2048 × 4 = 24576 bytes = 24 KiB
+```
+
+本项目使用 Chroma Cloud 时索引是 SPANN，内部存储、压缩和冗余可能不同，所以
+这里只把公式作为稠密向量载荷下界，不声称测得了 Cloud 物理磁盘。
+
+### 4. 为什么 JSON 看起来大很多？
+
+一条向量通过 TypeScript 客户端返回时类似：
+
+```json
+[0.012345, -0.081234, 0.004321]
+```
+
+Float32 二进制中每个分量理论上只需 4 bytes；JSON 还包含负号、小数点、数字
+字符、逗号和括号。因此：
+
+```text
+Float32 载荷大小 != JSON 表示大小 != JavaScript 对象内存
+```
+
+本课同时打印 JSON 表示大小，只是为了观察 API 表示的膨胀，不能把它当作
+Chroma 内部的物理存储格式。
+
+Base64 也有类似现象：它通常比原始二进制更大，但在本项目中只存在于发往豆包
+的单次请求，不会进入 Chroma。
+
+### 5. 本课怎样读取实际记录？
+
+课程显式要求 Chroma 返回 Embedding：
+
+```ts
+const result = await collection.get({
+  include: ["embeddings", "documents", "metadatas", "uris"]
+});
+```
+
+然后对每条记录测量：
+
+```text
+dimension
+dimension × 4
+JSON.stringify(embedding) 的 UTF-8 bytes
+ID、document、metadata、URI 的 UTF-8 bytes
+```
+
+分析工具：
+
+[image-vector-storage-size.ts](../langchain-commerce-rag-lab/src/storage/image-vector-storage-size.ts)
+
+课程入口：
+
+[22-observe-image-vector-storage-size.ts](../langchain-commerce-rag-lab/src/examples/22-observe-image-vector-storage-size.ts)
+
+### 6. 运行
+
+需要第 19 课已经建立图片 Collection：
+
+```bash
+cd langchain-commerce-rag-lab
+pnpm lesson:22
+```
+
+本课的外部行为只有一次 Chroma 读取：
+
+```text
+豆包 Embedding API：0 次
+图片下载：0 次
+Chroma 写入：0 次
+Chroma 读取：1 次
+```
+
+本次 Chroma Cloud 只读实测：
+
+```text
+22 观察图片处理后实际存储到向量数据库中的大小
+
+Collection: commerce_product_images_v1
+索引类型: SPANN
+记录数: 3
+每条向量维度: 2048
+Embedding API 请求数: 0
+
+1. image:laptop-air-14:front
+   Float32 向量载荷下界: 8.00 KiB
+   向量 JSON 表示: 25.19 KiB
+   ID + 文档 + metadata + URI: 622 B
+   逻辑载荷估算: 8.61 KiB
+
+2. image:laptop-studio-16:front
+   Float32 向量载荷下界: 8.00 KiB
+   向量 JSON 表示: 25.25 KiB
+   ID + 文档 + metadata + URI: 595 B
+   逻辑载荷估算: 8.58 KiB
+
+3. image:notebook-paper-a5:front
+   Float32 向量载荷下界: 8.00 KiB
+   向量 JSON 表示: 25.16 KiB
+   ID + 文档 + metadata + URI: 478 B
+   逻辑载荷估算: 8.47 KiB
+
+合计
+Float32 向量载荷下界: 24.00 KiB
+向量 JSON 表示: 75.60 KiB
+逻辑载荷估算: 25.66 KiB
+```
+
+其中 JSON 合计约为 Float32 载荷下界的 3.15 倍，主要来自十进制字符表示。模型
+版本或向量数值变化后，JSON 字节数也可能变化，应以重新运行的输出为准。
+
+### 7. 哪些开销没有计算？
+
+逻辑载荷估算没有包含：
+
+- SPANN 或 HNSW 的搜索索引结构。
+- 节点连接、聚类中心或 posting list。
+- SQLite/系统数据库页和内部记录头。
+- WAL 和尚未压缩的数据。
+- 全文索引、缓存、副本和对象存储冗余。
+- HTTP 协议、响应字段与 JavaScript 对象开销。
+
+所以准确表达应是：
+
+> 三条 2048 维向量的 Float32 载荷下界是 24 KiB。
+
+而不是：
+
+> Chroma 只占 24 KiB。
+
+### 8. 本课验收
+
+- [x] 直接从 Chroma 读取已存 Embedding，不重新调用豆包。
+- [x] 能计算 `记录数 × dimension × 4`。
+- [x] 能区分 Float32 载荷、JSON 表示和物理存储。
+- [x] 能解释为什么原图与 Base64 不在 Chroma 中。
+- [x] 报告明确列出未计算的索引和数据库开销。
+- [x] 异常向量、缺失字段和维度不一致会快速失败。
+- [x] TypeScript 类型检查与全量测试通过。
+
+### 9. 检查理解
+
+1. 2048 维 Float32 向量的载荷下界是多少？
+2. 为什么向量 JSON 通常比 Float32 二进制大？
+3. 图片从 1 MiB 变为 5 MiB，Chroma 中的 2048 维向量会变成五倍大吗？
+4. 为什么逻辑载荷不能代表 Cloud 账单？
+5. 本课为什么不需要调用豆包？
+
+答案：
+
+1. `2048 × 4 = 8192 bytes = 8 KiB`。
+2. JSON 使用数字字符、符号、小数点、逗号和括号表示数值。
+3. 不会；模型输出维度不变时，向量分量数量仍是 2048。
+4. 它没有包含索引、WAL、数据库页、冗余、缓存和压缩策略。
+5. Embedding 已在第 19 课写入，本课直接通过 Chroma `get` 读取。
+
+## 22 官方参考
+
+- [Chroma：Look at Your Data](https://docs.trychroma.com/guides/build/look-at-your-data)
+- [Chroma：Query and Get](https://docs.trychroma.com/docs/querying-collections/query-and-get)
+- [Chroma Cookbook：Resource Requirements](https://cookbook.chromadb.dev/core/resources/)
+- [Chroma Cookbook：Storage Layout](https://cookbook.chromadb.dev/core/storage-layout/)

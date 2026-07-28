@@ -686,6 +686,40 @@ Embedding 猜测，留给 metadata filter。
 `queryEmbeddings`。预计算向量 Collection 不混用 Chroma 默认 Embedding；
 查询必须复用入库模型。完整源文件由 source 定位，不假设任一 chunk 保存全文。
 
+### ADR-015 向量记录 ID 由领域身份确定生成
+
+商品、说明书切片和图片分别使用集中维护的 ID 构建函数。相同逻辑记录始终生成
+相同 ID，并通过 `upsert` 更新；价格、库存、正文摘要等可变内容只进入 document
+或 metadata，不进入 ID。切片规则发生不兼容变化时提升 collection 或 content
+version 并重建，不让旧 ID 悄悄指向含义不同的切片。
+
+### ADR-016 图片二进制不写入 Chroma
+
+图片索引从受控清单读取 HTTP(S) URI。应用端下载图片后校验 MIME 类型和
+10 MiB 上限，再仅在豆包请求内转换为 Base64 data URL；Chroma 只保存预计算
+向量、短 URI、稳定 ID 和可追溯 metadata。图片与文字查询必须使用同一多模态
+Endpoint，模型不匹配时拒绝复用已有图片 Collection。
+
+### ADR-017 统一张量术语
+
+项目文档使用 `rank/ndim` 表示轴的数量，使用 `shape` 表示每个轴的长度，使用
+`element count` 表示所有轴长度的乘积。`Embedding dimension` 专指一条向量的
+分量数，不与张量 rank 混用。图片示例显式标注 HWC 或 NHWC 轴顺序。
+
+### ADR-018 图搜图复用已构建的图片索引
+
+图搜图入口只为查询图片生成一条多模态向量，不在每次查询前重复向量化和写入
+教学图片。查询图与入库图必须使用同一个 Endpoint；应用显式传递
+`queryEmbeddings`，Chroma 返回 URI、metadata 和 distance。查询图本身已入库
+时保留 self-match，调用方需要推荐候选时再按稳定 ID 或 URI 排除自身。
+
+### ADR-019 存储大小报告区分测量值与估算值
+
+图片向量大小报告从 Chroma 读取实际 dimension 和可见记录字段。文本字段按
+UTF-8 字节测量，JSON 大小只表示客户端序列化形式，`dimension × 4` 只作为
+Float32 稠密向量载荷下界。报告不得将这些数值称为 Cloud 账单或真实磁盘占用，
+因为 SPANN/HNSW 索引、WAL、数据库页、冗余和压缩不在单条记录 API 中暴露。
+
 ## 22. 待决定事项
 
 以下内容在对应阶段开始前确认：
@@ -695,8 +729,8 @@ Embedding 猜测，留给 metadata filter。
 | 当前可用的豆包文本模型或 Endpoint ID | Phase 1 |
 | Chroma 运行环境 | 已决定：Phase 1 使用 Chroma Cloud |
 | Chat Model 供应商 | Phase 3 |
-| 商品图片的稳定公网 URL 或对象存储 | Phase 4 |
-| 多模态模型版本及向量维度 | Phase 4 |
+| 商品图片的稳定公网 URL 或对象存储 | 教学使用 Wikimedia URI；生产对象存储待定 |
+| 多模态模型版本及向量维度 | 已验证：`doubao-embedding-vision-251215`，2048 维 |
 
 ## 23. 初始化完成定义
 
