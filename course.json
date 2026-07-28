@@ -1758,132 +1758,73 @@
         ]
     },
     {
-        "title": "14 项目1：Ai实时语音对话-智能客服",
+        "title": "14 项目1：AI实时语音对话-智能客服",
         "children": [
             {
-                "title": "01 项目规划.mp4",
-                "size": 76474720,
-                "duration": "07:36"
+                "title": "01 产品目标、用户旅程与验收指标"
             },
             {
-                "title": "02 项目架构设计与梳理.mp4",
-                "size": 43666213,
-                "duration": "04:04"
+                "title": "02 WebRTC、WebSocket与实时语音架构选型"
             },
             {
-                "title": "03 Ai应用开发前端、后台、Ai是如何配合工作的？.mp4",
-                "size": 60407803,
-                "duration": "06:36"
+                "title": "03 对话轮次、事件协议与会话状态机"
             },
             {
-                "title": "04 复杂的Ai应用开发到底应该做什么？.mp4",
-                "size": 67993171,
-                "duration": "09:23"
+                "title": "04 Monorepo、配置、契约与密钥边界"
             },
             {
-                "title": "05 我们的项目结构设计.mp4",
-                "size": 20194145,
-                "duration": "01:33"
+                "title": "05 Web、API与Mock Voice Provider纵向切片"
             },
             {
-                "title": "06 环境安装，运行前端、后台项目.mp4",
-                "size": 57272455,
-                "duration": "08:31"
+                "title": "06 火山资源、最小权限与费用保护"
             },
             {
-                "title": "07 项目底座介绍.mp4",
-                "size": 186059773,
-                "duration": "09:01"
+                "title": "07 创建会话与服务端RTC Token"
             },
             {
-                "title": "08 使用Trae和Cursor改写Nodejs服务为Python版本.mp4",
-                "size": 219854586,
-                "duration": "12:03"
+                "title": "08 浏览器设备管理与加入RTC房间"
             },
             {
-                "title": "09 使用Gemini3 Por生成Python版本服务.mp4",
-                "size": 120284869,
-                "duration": "08:28"
+                "title": "09 启动、停止和回收AI Agent"
             },
             {
-                "title": "10 优化Gemini3生成版本.mp4",
-                "size": 74426978,
-                "duration": "06:08"
+                "title": "10 RTC消息、字幕和事件排序"
             },
             {
-                "title": "11 api密钥与服务开通.mp4",
-                "size": 307109824,
-                "duration": "18:58"
+                "title": "11 客服对话UI与可访问性"
             },
             {
-                "title": "12 逐行解读python main流程1.mp4",
-                "size": 356113147,
-                "duration": "15:56"
+                "title": "12 VAD、判停与对话轮次"
             },
             {
-                "title": "13 逐行解读python main流程2.mp4",
-                "size": 96979198,
-                "duration": "04:42"
+                "title": "13 插话打断、取消与竞态处理"
             },
             {
-                "title": "14 RTC业务逻辑梳理1.mp4",
-                "size": 214668542,
-                "duration": "14:28"
+                "title": "14 弱网重连、超时、重试与幂等"
             },
             {
-                "title": "15 Rtc业务架构设计2.mp4",
-                "size": 151344038,
-                "duration": "12:26"
+                "title": "15 音频设备切换、降噪和权限异常"
             },
             {
-                "title": "16 RTC业务流程梳理3.mp4",
-                "size": 167801283,
-                "duration": "11:05"
+                "title": "16 客服角色、话术、边界与安全回复"
             },
             {
-                "title": "17 RTC业务流程梳理4.mp4",
-                "size": 127035442,
-                "duration": "07:19"
+                "title": "17 订单工具、鉴权和防重复执行"
             },
             {
-                "title": "18 RTC业务流程梳理5.mp4",
-                "size": 189312257,
-                "duration": "13:14"
+                "title": "18 会话记录、摘要、隐私与转人工"
             },
             {
-                "title": "19 RTC业务梳理6.mp4",
-                "size": 55590919,
-                "duration": "05:03"
+                "title": "19 日志、指标、Trace与实时语音SLO"
             },
             {
-                "title": "20 RTC业务流程梳理7.mp4",
-                "size": 54335374,
-                "duration": "06:09"
+                "title": "20 单测、契约测试、E2E与故障注入"
             },
             {
-                "title": "21 RTC业务流程梳理8.mp4",
-                "size": 142927028,
-                "duration": "07:58"
+                "title": "21 安全、隐私、成本与上线检查"
             },
             {
-                "title": "22 RTC业务流程梳理9.mp4",
-                "size": 72815327,
-                "duration": "05:54"
-            },
-            {
-                "title": "23 RTC业务流程梳理10-1.mp4",
-                "size": 308062473,
-                "duration": "15:39"
-            },
-            {
-                "title": "23 RTC业务流程梳理10-2.mp4",
-                "size": 47746706,
-                "duration": "01:56"
-            },
-            {
-                "title": "24 RTC业务流程梳理11.mp4",
-                "size": 53356728,
-                "duration": "04:34"
+                "title": "22 压测、灰度、Runbook与最终验收"
             }
         ]
     },

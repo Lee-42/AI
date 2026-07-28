@@ -1,0 +1,20 @@
+{
+  "name": "voice-customer-service-lab",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "build": "pnpm --filter @voice/contracts build && pnpm --filter @voice/api build && pnpm --filter @voice/web build",
+    "check": "pnpm contract:generate && pnpm typecheck && pnpm test && pnpm lint",
+    "contract:check": "pnpm contract:generate && git diff --exit-code -- packages/contracts/openapi packages/contracts/src/api.generated.ts",
+    "contract:generate": "pnpm --filter @voice/contracts build && pnpm --filter @voice/api contract:export && pnpm --filter @voice/contracts generate && pnpm --filter @voice/contracts build",
+    "dev:api": "pnpm --filter @voice/contracts build && pnpm --filter @voice/api dev",
+    "dev:web": "pnpm --filter @voice/web dev",
+    "format": "biome check --write .",
+    "lint": "biome check .",
+    "test": "pnpm --recursive --if-present test",
+    "typecheck": "pnpm --recursive typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.5"
+  }
+}
