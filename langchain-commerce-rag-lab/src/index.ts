@@ -19,6 +19,12 @@ console.log(
   `Multimodal embedding model: ${yesOrNo(status.multimodalEmbeddingModel)}`
 );
 console.log(`Chat model: ${yesOrNo(status.chatModel)}`);
+console.log(
+  `LangSmith tracing: ${status.langsmithTracing ? "enabled" : "disabled"}`
+);
+console.log(
+  `LangSmith credentials: ${yesOrNo(status.langsmithConfigured)}`
+);
 console.log("");
 console.log("Planned collections:");
 

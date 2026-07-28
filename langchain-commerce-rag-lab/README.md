@@ -42,10 +42,14 @@ pnpm lesson:19 # 用豆包多模态向量和 Chroma 实现文搜图
 pnpm lesson:20 # 离线观察张量的 shape、rank、axis 和 flatten
 pnpm lesson:21 # 用查询图片在 Chroma 中检索相似图片
 pnpm lesson:22 # 读取 Chroma 图片向量并分析逻辑存储大小
+pnpm langsmith:02 # 用 LangSmith 追踪一次豆包 Embedding 调用
+pnpm langsmith:04 # 离线演示 traceable 的 7 种 run_type
 pnpm check   # TypeScript 类型检查
 pnpm test    # 运行基础契约和样例数据测试
 pnpm verify  # check + test
 ```
+
+LangSmith 课程使用独立命令前缀，避免与前一章已有的 `lesson:02` 冲突。
 
 ## 01 跑通豆包 Embedding 模型 API
 

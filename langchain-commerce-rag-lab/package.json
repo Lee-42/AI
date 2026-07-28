@@ -30,6 +30,8 @@
     "lesson:20": "node --import tsx src/examples/20-understanding-tensors.ts",
     "lesson:21": "node --import tsx src/examples/21-chroma-image-to-image.ts",
     "lesson:22": "node --import tsx src/examples/22-observe-image-vector-storage-size.ts",
+    "langsmith:02": "node --import tsx src/examples/langsmith/02-monitor-volcengine-embedding.ts",
+    "langsmith:04": "node --import tsx src/examples/langsmith/04-traceable-run-types.ts",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "verify": "pnpm check && pnpm test"
@@ -42,6 +44,7 @@
     "chromadb": "^3.5.0",
     "dotenv": "^17.4.2",
     "langchain": "^1.5.3",
+    "langsmith": "^0.8.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {

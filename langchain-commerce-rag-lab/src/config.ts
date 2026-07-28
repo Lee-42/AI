@@ -23,6 +23,15 @@ const optionalUrl = z.preprocess(
 const urlWithDefault = (fallback: string) =>
   z.preprocess(emptyToUndefined, z.string().url().default(fallback));
 
+const booleanWithDefault = (fallback: "true" | "false") =>
+  z.preprocess(
+    emptyToUndefined,
+    z
+      .enum(["true", "false"])
+      .default(fallback)
+      .transform((value) => value === "true")
+  );
+
 const textEmbeddingApiMode = z.preprocess(
   emptyToUndefined,
   // 当前 Doubao-embedding-vision 使用多模态端点处理纯文本。
@@ -50,7 +59,17 @@ const EnvSchema = z.object({
   ARK_MULTIMODAL_EMBEDDING_MODEL: optionalString,
   CHAT_API_KEY: optionalString,
   CHAT_BASE_URL: optionalUrl,
-  CHAT_MODEL: optionalString
+  CHAT_MODEL: optionalString,
+  LANGSMITH_TRACING: booleanWithDefault("false"),
+  LANGSMITH_API_KEY: optionalString,
+  LANGSMITH_ENDPOINT: urlWithDefault(
+    "https://api.smith.langchain.com"
+  ),
+  LANGSMITH_PROJECT: z.preprocess(
+    emptyToUndefined,
+    z.string().min(1).default("langsmith-volcengine-lab")
+  ),
+  LANGSMITH_WORKSPACE_ID: optionalString
 });
 
 const parsed = EnvSchema.safeParse(process.env);
@@ -81,6 +100,13 @@ export const config = {
     apiKey: env.CHAT_API_KEY,
     baseURL: env.CHAT_BASE_URL,
     model: env.CHAT_MODEL
+  },
+  langsmith: {
+    tracing: env.LANGSMITH_TRACING,
+    apiKey: env.LANGSMITH_API_KEY,
+    endpoint: env.LANGSMITH_ENDPOINT,
+    project: env.LANGSMITH_PROJECT,
+    workspaceId: env.LANGSMITH_WORKSPACE_ID
   }
 } as const;
 
@@ -98,6 +124,10 @@ export function getSetupStatus() {
     multimodalEmbeddingModel: Boolean(
       config.ark.multimodalEmbeddingModel
     ),
-    chatModel: Boolean(config.chat.apiKey && config.chat.model)
+    chatModel: Boolean(config.chat.apiKey && config.chat.model),
+    langsmithTracing: config.langsmith.tracing,
+    langsmithConfigured: Boolean(
+      config.langsmith.apiKey && config.langsmith.project
+    )
   };
 }
