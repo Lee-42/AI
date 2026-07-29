@@ -270,5 +270,6 @@ TTS 还是网络。
 - [W3C WebRTC 规范](https://www.w3.org/TR/webrtc/)
 - [IETF RFC 6455：WebSocket](https://www.rfc-editor.org/rfc/rfc6455)
 - [火山引擎 Web RTC 接入](https://www.volcengine.com/docs/6348/106914)
-- [火山引擎实时对话式 AI](https://www.volcengine.com/docs/82379/1393085)
-- [火山引擎 StartVoiceChat](https://api.volcengine.com/api-docs/view?action=StartVoiceChat&serviceCode=rtc&version=2024-06-01)
+- [火山引擎 AI 音视频互动方案集成](https://www.volcengine.com/docs/6348/2137641)
+- [火山引擎 StartVoiceChat 2025-06-01](https://www.volcengine.com/docs/6348/2123348)
+- [火山引擎 StopVoiceChat 2025-06-01](https://www.volcengine.com/docs/6348/2123349)
