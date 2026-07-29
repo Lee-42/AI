@@ -20,6 +20,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createVoiceSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["endVoiceSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/agent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["startVoiceAgent"];
+        delete: operations["stopVoiceAgent"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/mock-turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submitMockVoiceTurn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -39,7 +103,392 @@ export interface paths {
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        /** AgentState */
+        "def-0": "starting" | "dispatched" | "active" | "stopping" | "stopped" | "failed" | "orphaned";
+        /** AgentSnapshot */
+        "def-1": {
+            bot_user_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            deadline_at: string;
+            provider: "mock" | "volcengine";
+            provider_request_id: string | null;
+            revision: number;
+            state: components["schemas"]["def-0"];
+            stopped_at: string | null;
+            task_id: string;
+        };
+        /** ConversationEvent */
+        "def-10": {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "session.created";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                /** Format: date-time */
+                expires_at: string;
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: null;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "rtc.join.succeeded";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: Record<string, never>;
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: null;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "agent.start.succeeded";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: Record<string, never>;
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: null;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "session.ready";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                ready_components: ("rtc" | "agent")[];
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: null;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "turn.user.speech.started";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                /** @enum {string} */
+                round_origin: "user";
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "turn.user.transcript.partial";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                revision: number;
+                text: string;
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "turn.user.speech.ended";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: Record<string, never>;
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "turn.user.transcript.final";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                /** @enum {string} */
+                language: "zh-CN";
+                text: string;
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "turn.ai.response.started";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                model_route: string;
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: string;
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "turn.ai.transcript.delta";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                index: number;
+                text_delta: string;
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: string;
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "turn.ai.audio.started";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: Record<string, never>;
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: string;
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "turn.ai.response.completed";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                /** @enum {string} */
+                finish_reason: "stop";
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: string;
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "session.end.requested";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                /** @enum {string} */
+                reason: "user_request";
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: null;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "cleanup.finished";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                resource_results: {
+                    resource: "rtc" | "agent";
+                    /** @enum {string} */
+                    status: "released";
+                }[];
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: null;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        } | {
+            correlation_id: string;
+            event_id: string;
+            /** @enum {string} */
+            event_type: "session.ended";
+            /** Format: date-time */
+            occurred_at: string;
+            payload: {
+                /** @enum {string} */
+                reason: "user_request";
+            };
+            producer: "mock_voice_provider" | "volcengine_voice_provider";
+            response_id: null;
+            round_id: null;
+            /** @enum {number} */
+            schema_version: 1;
+            sequence: number;
+            session_id: string;
+            stream_id: string;
+        };
+        /** CreateSessionRequest */
+        "def-11": {
+            /** @enum {string} */
+            locale: "zh-CN";
+        };
+        /** CreateSessionResponse */
+        "def-12": {
+            command_replayed: boolean;
+            events: components["schemas"]["def-10"][];
+            rtc_credentials: components["schemas"]["def-9"];
+            session: components["schemas"]["def-8"];
+        };
+        /** MockTurnRequest */
+        "def-13": {
+            text: string;
+        };
+        /** SessionCommandResponse */
+        "def-14": {
+            command_replayed: boolean;
+            events: components["schemas"]["def-10"][];
+            session: components["schemas"]["def-8"];
+        };
+        /** AgentCommandResponse */
+        "def-2": {
+            agent: components["schemas"]["def-1"];
+            command_replayed: boolean;
+        };
+        /** ApiErrorResponse */
+        "def-3": {
+            /** ApiErrorDetail */
+            error: {
+                code: string;
+                correlation_id: string;
+                message: string;
+                retryable: boolean;
+            };
+        };
+        /** ApiErrorDetail */
+        "def-4": {
+            code: string;
+            correlation_id: string;
+            message: string;
+            retryable: boolean;
+        };
+        /** HealthResponse */
+        "def-5": {
+            /** @enum {string} */
+            status: "ok";
+        };
+        /** PublicRuntimeConfig */
+        "def-6": {
+            /** @enum {string} */
+            api_version: "v1";
+            environment: "local" | "test" | "staging" | "production";
+            max_session_seconds: number;
+        };
+        /** SessionState */
+        "def-7": "new" | "creating" | "connecting" | "active" | "reconnecting" | "ending" | "ended" | "failed";
+        /** SessionSnapshot */
+        "def-8": {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            provider: "mock" | "volcengine";
+            revision: number;
+            room_id: string;
+            rtc_user_id: string;
+            session_id: string;
+            state: components["schemas"]["def-7"];
+        };
+        /** RtcCredentials */
+        "def-9": {
+            app_id: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @enum {string} */
+            kind: "mock";
+            room_id: string;
+            token: string;
+            user_id: string;
+        } | {
+            app_id: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @enum {string} */
+            kind: "volcengine";
+            room_id: string;
+            token: string;
+            user_id: string;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -63,12 +512,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        api_version: "v1";
-                        environment: "local" | "test" | "staging" | "production";
-                        max_session_seconds: number;
-                    };
+                    "application/json": components["schemas"]["def-6"];
                 };
             };
             /** @description Default Response */
@@ -77,15 +521,327 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** ApiErrorDetail */
-                        error: {
-                            code: string;
-                            correlation_id: string;
-                            message: string;
-                            retryable: boolean;
-                        };
-                    };
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+        };
+    };
+    createVoiceSession: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["def-11"];
+            };
+        };
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-12"];
+                };
+            };
+            /** @description Default Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-12"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+        };
+    };
+    endVoiceSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-14"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+        };
+    };
+    startVoiceAgent: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-2"];
+                };
+            };
+            /** @description Default Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-2"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+        };
+    };
+    stopVoiceAgent: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-2"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+        };
+    };
+    submitMockVoiceTurn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["def-13"];
+            };
+        };
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-14"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
                 };
             };
         };
@@ -105,10 +861,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        status: "ok";
-                    };
+                    "application/json": components["schemas"]["def-5"];
                 };
             };
         };

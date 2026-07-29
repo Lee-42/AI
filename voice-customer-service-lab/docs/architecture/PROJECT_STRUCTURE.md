@@ -56,6 +56,7 @@ Event envelope     schema_version: 1
 | 构建时公开配置 | `VITE_API_BASE_URL` | `apps/web/.env.local` | 是 |
 | 服务端普通配置 | `VOICE_PROVIDER`、超时 | 根目录 `.env` / 平台环境变量 | 否 |
 | 服务端长期密钥 | AppKey、AccessKey、SecretKey | Secret Store / 本地 `.env` | 否 |
+| Voice Provider 配置 | ASR/LLM/TTS `Config` | Secret Store / 忽略的本地 JSON | 否 |
 | 会话短期凭证 | RTC Token | API 运行时签发 | 仅绑定会话后返回 |
 
 Vite 会把 `VITE_*` 写入浏览器产物，所以这个前缀应理解为 `PUBLIC_*`，不能理解
@@ -65,16 +66,32 @@ Vite 会把 `VITE_*` 写入浏览器产物，所以这个前缀应理解为 `PUB
 
 - Mock 模式不要求任何云密钥。
 - Volcengine 模式缺少必要密钥时，API 启动立即失败。
+- Volcengine 模式还要求显式开启 `VOLCENGINE_PAID_CALLS_ENABLED`。
+- VoiceChat OpenAPI 固定为 `2025-06-01`，不自动追随最新版。
 - 最大会话时长不能超过 Session/Token TTL。
 - 配置通过 Zod 转为强类型，不在业务代码中到处读取 `process.env`。
 - 密钥包装为 `SecretValue`，JSON 和字符串序列化默认显示 `[REDACTED]`。
 - 启动日志只使用 `safeConfigSummary()` 白名单，不序列化整个 `ServerConfig`。
 
-## 6. 本节不实现什么？
+## 6. 第 09 节后的实现状态
 
-- 不创建真实 RTC Session 或 Token。
-- 不启动 Mock 对话事件流。
-- 不调用火山 Provider。
-- 不把 OpenAPI 生成类型当作领域状态机。
+- 已实现 Web、API 与 Mock Provider 纵向切片。
+- 已实现 Session 创建、模拟轮次和幂等结束契约。
+- 已实现服务端 RTC Token Broker 与 Room/User 身份绑定。
+- 已实现浏览器麦克风授权、设备选择、RTC 入房与幂等清理。
+- 已实现 AI Agent 显式启动、停止、硬截止时间和孤儿任务重试。
+- 已实现标准事件批次和 Web reducer。
+- 可选择签发真实格式 Token；真实 Agent 仍受 Provider、费用开关和本地 Config
+  三重约束。
+- OpenAPI 生成类型仍只描述 HTTP，不代替领域状态机。
 
-这些分别属于第 05、07、09 和 10 节。
+Mock 切片详见
+[`MOCK_VERTICAL_SLICE.md`](MOCK_VERTICAL_SLICE.md)。
+Token 边界详见
+[`RTC_TOKEN_BROKER.md`](../security/RTC_TOKEN_BROKER.md)。
+浏览器 RTC 边界详见
+[`BROWSER_RTC_CLIENT.md`](BROWSER_RTC_CLIENT.md)。
+Agent 生命周期详见
+[`AI_AGENT_LIFECYCLE.md`](AI_AGENT_LIFECYCLE.md)。
+
+这些分别属于第 05、07、08 和 09 节。

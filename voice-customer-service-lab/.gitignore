@@ -10,6 +10,9 @@ dist/
 coverage/
 *.tsbuildinfo
 
+# StartVoiceChat Config may contain model/provider credentials.
+config/*.local.json
+
 # Editors and operating systems
 .DS_Store
 .idea/
