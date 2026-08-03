@@ -1,17 +1,34 @@
 import type { RtcCredentials } from "@voice/contracts";
 import type { ConnectionState, IRTCEngine } from "@volcengine/rtc";
 
+import { decodeVolcengineRtcMessage, type VolcengineRtcMessage } from "./volcengine-rtc-message";
+
 type RtcSdkModule = typeof import("@volcengine/rtc");
 type RtcSdkLoader = () => Promise<RtcSdkModule>;
 
 export type RtcConnectionPhase = "idle" | "joining" | "connected" | "reconnecting" | "disconnected";
+export type AudioProcessingMode = "speech" | "unprocessed";
+
+export interface RtcMicrophoneDeviceEvent {
+  readonly deviceId: string;
+  readonly label: string;
+  readonly state: "active" | "inactive";
+}
 
 export interface JoinRtcRoomOptions {
   readonly credentials: RtcCredentials;
   readonly microphoneId: string | undefined;
+  readonly audioProcessingMode?: AudioProcessingMode;
   readonly onConnectionPhase?: (phase: RtcConnectionPhase) => void;
   readonly onTokenWillExpire?: () => void;
   readonly onFatalError?: (code: string) => void;
+  readonly onRemoteUserJoined?: (userId: string) => void;
+  readonly onRemoteUserLeft?: (userId: string) => void;
+  readonly onVoiceMessage?: (message: VolcengineRtcMessage, senderUserId: string) => void;
+  readonly onProtocolIssue?: (reason: string) => void;
+  readonly onMicrophoneLevel?: (linearVolume: number) => void;
+  readonly onMicrophoneDeviceState?: (event: RtcMicrophoneDeviceEvent) => void;
+  readonly onMicrophoneTrackEnded?: () => void;
 }
 
 export class RtcClientError extends Error {
@@ -22,7 +39,10 @@ export class RtcClientError extends Error {
       | "UNSUPPORTED_BROWSER"
       | "ALREADY_JOINED"
       | "NOT_JOINED"
+      | "AUDIO_CONFIGURATION_FAILED"
+      | "DEVICE_SWITCH_FAILED"
       | "JOIN_FAILED"
+      | "TOKEN_REFRESH_FAILED"
       | "CLEANUP_FAILED",
     message: string,
   ) {
@@ -69,6 +89,17 @@ export class VolcengineRtcRoomAdapter {
     this.#bindEvents(engine, sdk, options);
 
     try {
+      try {
+        await engine.setAudioCaptureConfig(
+          audioCaptureConfig(options.audioProcessingMode ?? "speech"),
+        );
+      } catch (error) {
+        throw new RtcClientError(
+          "AUDIO_CONFIGURATION_FAILED",
+          error instanceof Error ? error.message : "Audio configuration failed.",
+        );
+      }
+      engine.enableAudioPropertiesReport({ interval: 500, enableInBackground: false });
       await engine.joinRoom(
         options.credentials.token,
         options.credentials.room_id,
@@ -96,7 +127,25 @@ export class VolcengineRtcRoomAdapter {
     if (!this.#engine || !this.#capturing) {
       throw new RtcClientError("NOT_JOINED", "Join the RTC room before switching devices.");
     }
-    await this.#engine.setAudioCaptureDevice(deviceId);
+    try {
+      await this.#engine.setAudioCaptureDevice(deviceId);
+    } catch (error) {
+      throw new RtcClientError(
+        "DEVICE_SWITCH_FAILED",
+        error instanceof Error ? error.message : "Microphone switch failed.",
+      );
+    }
+  }
+
+  async updateToken(token: string): Promise<void> {
+    if (!this.#engine || !this.#joined) {
+      throw new RtcClientError("NOT_JOINED", "Join the RTC room before refreshing its Token.");
+    }
+    try {
+      await this.#engine.updateToken(token);
+    } catch (error) {
+      throw toRtcClientError(error, "TOKEN_REFRESH_FAILED");
+    }
   }
 
   async leave(): Promise<void> {
@@ -114,6 +163,41 @@ export class VolcengineRtcRoomAdapter {
     engine.on(sdk.default.events.onTokenWillExpire, () => options.onTokenWillExpire?.());
     engine.on(sdk.default.events.onError, ({ errorCode }) => {
       options.onFatalError?.(String(errorCode));
+    });
+    engine.on(sdk.default.events.onUserJoined, ({ userInfo }) => {
+      options.onRemoteUserJoined?.(userInfo.userId);
+    });
+    engine.on(sdk.default.events.onUserLeave, ({ userInfo }) => {
+      options.onRemoteUserLeft?.(userInfo.userId);
+    });
+    engine.on(sdk.default.events.onRoomBinaryMessageReceived, ({ userId, message }) => {
+      const result = decodeVolcengineRtcMessage(message);
+      if (result.status === "decoded") {
+        options.onVoiceMessage?.(result.message, userId);
+      } else if (result.status === "rejected") {
+        // Do not log raw transcript bytes; only expose a stable diagnostic reason.
+        options.onProtocolIssue?.(result.reason);
+      }
+    });
+    engine.on(sdk.default.events.onLocalAudioPropertiesReport, (reports) => {
+      const levels = reports.map((report) => report.audioPropertiesInfo.linearVolume);
+      if (levels.length > 0) {
+        options.onMicrophoneLevel?.(Math.max(...levels));
+      }
+    });
+    engine.on(sdk.default.events.onAudioDeviceStateChanged, ({ mediaDeviceInfo, deviceState }) => {
+      if (mediaDeviceInfo.kind === "audioinput") {
+        options.onMicrophoneDeviceState?.({
+          deviceId: mediaDeviceInfo.deviceId,
+          label: mediaDeviceInfo.label,
+          state: deviceState,
+        });
+      }
+    });
+    engine.on(sdk.default.events.onTrackEnded, ({ kind, isScreen }) => {
+      if (this.#capturing && kind === "audio" && !isScreen) {
+        options.onMicrophoneTrackEnded?.();
+      }
     });
   }
 
@@ -134,6 +218,11 @@ export class VolcengineRtcRoomAdapter {
     }
 
     let firstError: unknown;
+    try {
+      engine.enableAudioPropertiesReport({ interval: 0 });
+    } catch (error) {
+      firstError = error;
+    }
     if (wasCapturing) {
       try {
         await engine.stopAudioCapture();
@@ -178,8 +267,14 @@ export function rtcClientErrorMessage(error: unknown): string {
       return "已经创建 RTC 连接，请先退出当前房间。";
     case "NOT_JOINED":
       return "尚未加入 RTC 房间。";
+    case "AUDIO_CONFIGURATION_FAILED":
+      return "音频处理配置失败，请恢复推荐设置后重新加入房间。";
+    case "DEVICE_SWITCH_FAILED":
+      return "麦克风切换失败，已保留原设备；请检查新设备是否可用。";
     case "JOIN_FAILED":
       return "加入 RTC 房间失败，请检查 Token 是否过期以及 Room/User 是否一致。";
+    case "TOKEN_REFRESH_FAILED":
+      return "RTC Token 更新失败，请结束当前会话后重新创建。";
     case "CLEANUP_FAILED":
       return "RTC 资源清理出现异常，请刷新页面并检查控制台会话状态。";
   }
@@ -201,9 +296,21 @@ function mapConnectionState(state: ConnectionState, sdk: RtcSdkModule): RtcConne
   }
 }
 
-function toRtcClientError(error: unknown, code: "JOIN_FAILED" | "CLEANUP_FAILED"): RtcClientError {
+function toRtcClientError(
+  error: unknown,
+  code: "JOIN_FAILED" | "TOKEN_REFRESH_FAILED" | "CLEANUP_FAILED",
+): RtcClientError {
   if (error instanceof RtcClientError) {
     return error;
   }
   return new RtcClientError(code, error instanceof Error ? error.message : "RTC operation failed.");
+}
+
+function audioCaptureConfig(mode: AudioProcessingMode): MediaTrackConstraints {
+  const enabled = mode === "speech";
+  return {
+    echoCancellation: enabled,
+    noiseSuppression: enabled,
+    autoGainControl: enabled,
+  };
 }

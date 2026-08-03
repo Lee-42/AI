@@ -5,6 +5,9 @@ import {
   CreateSessionHeadersSchema,
   CreateSessionRequestSchema,
   CreateSessionResponseSchema,
+  EndSessionResponseSchema,
+  HandoffRequestSchema,
+  HandoffResponseSchema,
   MockTurnRequestSchema,
   SessionCommandResponseSchema,
   SessionParamsSchema,
@@ -12,18 +15,19 @@ import {
 } from "@voice/contracts";
 import type { FastifyInstance } from "fastify";
 
-import {
-  AgentLifecycleError,
-  type AgentLifecycleService,
-} from "../agent/agent-lifecycle-service.js";
+import type { AgentLifecycleService } from "../agent/agent-lifecycle-service.js";
 import type { VoiceAgentProvider } from "../providers/voice-agent-provider.js";
 import { supportsMockTurns, VoiceProviderError } from "../providers/voice-agent-provider.js";
 import type { RtcCredentialIssuer } from "../rtc/rtc-credential-issuer.js";
+import type { SessionClosureService } from "../session-data/session-closure-service.js";
+import type { SessionDataService } from "../session-data/session-data-service.js";
 
 export interface RegisterSessionRoutesOptions {
   readonly provider: VoiceAgentProvider;
   readonly rtcCredentialIssuer: RtcCredentialIssuer;
   readonly agentLifecycle: AgentLifecycleService;
+  readonly sessionClosure: SessionClosureService;
+  readonly sessionData: SessionDataService;
 }
 
 export async function registerSessionRoutes(
@@ -109,6 +113,7 @@ export async function registerSessionRoutes(
         idempotencyKey: request.headers["idempotency-key"],
         correlationId: request.id,
       });
+      options.sessionData.registerSession(result.session);
       const rtcCredentials = options.rtcCredentialIssuer.issue({ session: result.session });
 
       return reply
@@ -128,6 +133,7 @@ export async function registerSessionRoutes(
       schema: {
         operationId: "submitMockVoiceTurn",
         tags: ["mock-sessions"],
+        headers: CreateSessionHeadersSchema,
         params: SessionParamsSchema,
         body: schemaRef(MockTurnRequestSchema),
         response: {
@@ -149,11 +155,49 @@ export async function registerSessionRoutes(
         );
       }
 
-      return options.provider.submitMockTurn({
+      const result = await options.provider.submitMockTurn({
         sessionId: request.params.session_id,
         text: request.body.text.trim(),
+        idempotencyKey: request.headers["idempotency-key"],
         correlationId: request.id,
       });
+      options.sessionData.observeConversationEvents(result.session, result.events);
+      return result;
+    },
+  );
+
+  routes.post(
+    "/api/v1/sessions/:session_id/handoff",
+    {
+      schema: {
+        operationId: "requestHumanHandoff",
+        tags: ["session-closure"],
+        headers: CreateSessionHeadersSchema,
+        params: SessionParamsSchema,
+        body: schemaRef(HandoffRequestSchema),
+        response: {
+          200: schemaRef(HandoffResponseSchema),
+          201: schemaRef(HandoffResponseSchema),
+          400: schemaRef(ApiErrorResponseSchema),
+          404: schemaRef(ApiErrorResponseSchema),
+          409: schemaRef(ApiErrorResponseSchema),
+          500: schemaRef(ApiErrorResponseSchema),
+          502: schemaRef(ApiErrorResponseSchema),
+          504: schemaRef(ApiErrorResponseSchema),
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await options.sessionClosure.requestHandoff({
+        sessionId: request.params.session_id,
+        idempotencyKey: request.headers["idempotency-key"],
+        correlationId: request.id,
+        reason: request.body.reason,
+      });
+      return reply
+        .header("Cache-Control", "no-store")
+        .code(result.command_replayed ? 200 : 201)
+        .send(result);
     },
   );
 
@@ -163,32 +207,23 @@ export async function registerSessionRoutes(
       schema: {
         operationId: "endVoiceSession",
         tags: ["sessions"],
+        headers: CreateSessionHeadersSchema,
         params: SessionParamsSchema,
         response: {
-          200: schemaRef(SessionCommandResponseSchema),
+          200: schemaRef(EndSessionResponseSchema),
           400: schemaRef(ApiErrorResponseSchema),
           404: schemaRef(ApiErrorResponseSchema),
           500: schemaRef(ApiErrorResponseSchema),
         },
       },
     },
-    async (request) => {
-      try {
-        await options.agentLifecycle.stop({
-          sessionId: request.params.session_id,
-          idempotencyKey: `session-end:${request.id}`,
-          correlationId: request.id,
-        });
-      } catch (error) {
-        if (!(error instanceof AgentLifecycleError && error.code === "AGENT_NOT_STARTED")) {
-          throw error;
-        }
-      }
-
-      return options.provider.endSession({
+    async (request, reply) => {
+      const result = await options.sessionClosure.endSession({
         sessionId: request.params.session_id,
+        idempotencyKey: request.headers["idempotency-key"],
         correlationId: request.id,
       });
+      return reply.header("Cache-Control", "no-store").send(result);
     },
   );
 }

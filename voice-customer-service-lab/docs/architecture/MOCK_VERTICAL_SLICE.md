@@ -28,7 +28,7 @@ React 操作
 | 方法 | Path | 作用 |
 | --- | --- | --- |
 | `POST` | `/api/v1/sessions` | 幂等创建 Mock Session |
-| `POST` | `/api/v1/sessions/:session_id/mock-turns` | 触发一轮本地模拟事件 |
+| `POST` | `/api/v1/sessions/:session_id/mock-turns` | 幂等触发一轮本地模拟事件 |
 | `DELETE` | `/api/v1/sessions/:session_id` | 幂等结束并模拟资源清理 |
 
 `mock-turns` 明确带有 `mock`，避免被误认为真实语音输入接口。真实用户音频会在
@@ -50,6 +50,8 @@ Mock 实现负责：
 
 - 保存内存 Session。
 - 为同一创建幂等键返回同一个 Session。
+- 为同一 Mock Turn/End 幂等键重放原事件，不生成第二轮或重复清理。
+- 同一 Mock Turn 键搭配不同文本时拒绝请求。
 - 按固定顺序生成领域事件。
 - 使用本地规则生成回复，不调用模型。
 - 重复结束时不重复释放资源。

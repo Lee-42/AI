@@ -46,7 +46,9 @@
 RTC SDK 的 `startAudioCapture(deviceId)` 重新开始采集。
 
 设备 ID 和标签只保存在 React 内存，不进入 Session、日志或本地存储。
-`devicechange` 会刷新列表；更完整的设备掉线和输出设备策略放在第 15 节。
+`devicechange` 会刷新列表；第 15 节已补充输入设备热切换、掉线回退、基础降噪和
+权限异常策略，详见
+[`AUDIO_DEVICE_QUALITY_AND_PERMISSIONS.md`](./AUDIO_DEVICE_QUALITY_AND_PERMISSIONS.md)。
 
 ## 3. RTC Adapter 做什么？
 
@@ -140,8 +142,8 @@ connected -> leaving -> idle
 - Token 过期或 Room/User 不匹配。
 - 网络断开与自动重连。
 
-Token 过期前 SDK 会触发 `onTokenWillExpire`。当前短会话只提示结束；支持长会话
-时必须增加服务端刷新端点并调用 `updateToken`。
+Token 过期前 SDK 会触发 `onTokenWillExpire`。第 14 节已经通过原 Session 幂等键
+刷新凭证并调用 `updateToken`，不会重复加入房间。
 
 ## 7. 费用与真实性边界
 

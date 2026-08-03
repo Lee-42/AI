@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 import { z } from "zod";
 
 import { SecretValue } from "./secret-value.js";
@@ -39,9 +41,17 @@ const rawEnvironmentSchema = z
     RTC_TOKEN_PROVIDER: z.enum(["mock", "volcengine"]).default("mock"),
     SESSION_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(1200),
     MAX_SESSION_SECONDS: z.coerce.number().int().min(60).max(3600).default(900),
+    SESSION_SUMMARY_RETENTION_DAYS: z.coerce.number().int().min(1).max(30).default(7),
     AGENT_REAPER_INTERVAL_SECONDS: z.coerce.number().int().min(5).max(60).default(15),
+    OBSERVABILITY_WINDOW_SECONDS: z.coerce.number().int().min(60).max(86_400).default(3_600),
+    CUSTOMER_SERVICE_POLICY_PATH: z
+      .string()
+      .trim()
+      .default("config/customer-service-policy.v1.json"),
     VOLCENGINE_VOICE_API_VERSION: z.literal("2025-06-01").default("2025-06-01"),
     VOLCENGINE_PAID_CALLS_ENABLED: disabledByDefaultBoolean,
+    VOLCENGINE_FUNCTION_CALLING_ENABLED: disabledByDefaultBoolean,
+    VOLCENGINE_FUNCTION_CALLBACK_URL: optionalValue,
     VOLCENGINE_VOICE_CONFIG_PATH: z.string().trim().default("config/voice-agent.local.json"),
     VOLCENGINE_AGENT_IDLE_TIMEOUT_SECONDS: z.coerce.number().int().min(10).max(180).default(30),
     VOLCENGINE_RTC_APP_ID: optionalValue,
@@ -58,6 +68,18 @@ const rawEnvironmentSchema = z
         code: "custom",
         path: ["MAX_SESSION_SECONDS"],
         message: "MAX_SESSION_SECONDS must not exceed SESSION_TTL_SECONDS",
+      });
+    }
+
+    if (
+      value.OTEL_EXPORTER_OTLP_ENDPOINT &&
+      !isSafeOtlpEndpoint(value.OTEL_EXPORTER_OTLP_ENDPOINT, value.APP_ENV)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["OTEL_EXPORTER_OTLP_ENDPOINT"],
+        message:
+          "OTEL_EXPORTER_OTLP_ENDPOINT must be HTTP(S), contain no credentials/query, and use HTTPS in production",
       });
     }
 
@@ -83,6 +105,30 @@ const rawEnvironmentSchema = z
             message: `${name} is required when VOICE_PROVIDER=volcengine`,
           });
         }
+      }
+    }
+
+    if (value.VOLCENGINE_FUNCTION_CALLING_ENABLED) {
+      if (value.VOICE_PROVIDER !== "volcengine") {
+        context.addIssue({
+          code: "custom",
+          path: ["VOLCENGINE_FUNCTION_CALLING_ENABLED"],
+          message: "VOLCENGINE_FUNCTION_CALLING_ENABLED requires VOICE_PROVIDER=volcengine",
+        });
+      }
+      if (!value.VOLCENGINE_CALLBACK_SIGNING_SECRET) {
+        context.addIssue({
+          code: "custom",
+          path: ["VOLCENGINE_CALLBACK_SIGNING_SECRET"],
+          message: "VOLCENGINE_CALLBACK_SIGNING_SECRET is required for Function Calling",
+        });
+      }
+      if (!isPublicHttpsUrl(value.VOLCENGINE_FUNCTION_CALLBACK_URL)) {
+        context.addIssue({
+          code: "custom",
+          path: ["VOLCENGINE_FUNCTION_CALLBACK_URL"],
+          message: "VOLCENGINE_FUNCTION_CALLBACK_URL must be a public HTTPS URL",
+        });
       }
     }
 
@@ -123,10 +169,15 @@ export interface ServerConfig {
   readonly rtcTokenProvider: RawEnvironment["RTC_TOKEN_PROVIDER"];
   readonly sessionTtlSeconds: number;
   readonly maxSessionSeconds: number;
+  readonly sessionSummaryRetentionDays: number;
   readonly agentReaperIntervalSeconds: number;
+  readonly observabilityWindowSeconds: number;
+  readonly customerServicePolicyPath: string;
   readonly volcengine: {
     readonly voiceApiVersion: RawEnvironment["VOLCENGINE_VOICE_API_VERSION"];
     readonly paidCallsEnabled: boolean;
+    readonly functionCallingEnabled: boolean;
+    readonly functionCallbackUrl: string | undefined;
     readonly voiceConfigPath: string;
     readonly agentIdleTimeoutSeconds: number;
     readonly rtcAppId: string | undefined;
@@ -151,8 +202,12 @@ export interface SafeConfigSummary {
   readonly rtcTokenProvider: ServerConfig["rtcTokenProvider"];
   readonly sessionTtlSeconds: number;
   readonly maxSessionSeconds: number;
+  readonly sessionSummaryRetentionDays: number;
+  readonly observabilityWindowSeconds: number;
+  readonly otlpTraceExportConfigured: boolean;
   readonly volcengineVoiceApiVersion: ServerConfig["volcengine"]["voiceApiVersion"];
   readonly volcenginePaidCallsEnabled: boolean;
+  readonly volcengineFunctionCallingEnabled: boolean;
   readonly rtcTokenConfigured: boolean;
   readonly volcengineConfigured: boolean;
 }
@@ -171,10 +226,15 @@ export function loadServerConfig(
     rtcTokenProvider: raw.RTC_TOKEN_PROVIDER,
     sessionTtlSeconds: raw.SESSION_TTL_SECONDS,
     maxSessionSeconds: raw.MAX_SESSION_SECONDS,
+    sessionSummaryRetentionDays: raw.SESSION_SUMMARY_RETENTION_DAYS,
     agentReaperIntervalSeconds: raw.AGENT_REAPER_INTERVAL_SECONDS,
+    observabilityWindowSeconds: raw.OBSERVABILITY_WINDOW_SECONDS,
+    customerServicePolicyPath: raw.CUSTOMER_SERVICE_POLICY_PATH,
     volcengine: Object.freeze({
       voiceApiVersion: raw.VOLCENGINE_VOICE_API_VERSION,
       paidCallsEnabled: raw.VOLCENGINE_PAID_CALLS_ENABLED,
+      functionCallingEnabled: raw.VOLCENGINE_FUNCTION_CALLING_ENABLED,
+      functionCallbackUrl: raw.VOLCENGINE_FUNCTION_CALLBACK_URL,
       voiceConfigPath: raw.VOLCENGINE_VOICE_CONFIG_PATH,
       agentIdleTimeoutSeconds: raw.VOLCENGINE_AGENT_IDLE_TIMEOUT_SECONDS,
       rtcAppId: raw.VOLCENGINE_RTC_APP_ID,
@@ -201,8 +261,12 @@ export function safeConfigSummary(config: ServerConfig): SafeConfigSummary {
     rtcTokenProvider: config.rtcTokenProvider,
     sessionTtlSeconds: config.sessionTtlSeconds,
     maxSessionSeconds: config.maxSessionSeconds,
+    sessionSummaryRetentionDays: config.sessionSummaryRetentionDays,
+    observabilityWindowSeconds: config.observabilityWindowSeconds,
+    otlpTraceExportConfigured: Boolean(config.telemetry.otlpEndpoint),
     volcengineVoiceApiVersion: config.volcengine.voiceApiVersion,
     volcenginePaidCallsEnabled: config.volcengine.paidCallsEnabled,
+    volcengineFunctionCallingEnabled: config.volcengine.functionCallingEnabled,
     rtcTokenConfigured: Boolean(config.volcengine.rtcAppId && config.volcengine.rtcAppKey),
     volcengineConfigured: Boolean(
       config.volcengine.rtcAppId &&
@@ -215,4 +279,62 @@ export function safeConfigSummary(config: ServerConfig): SafeConfigSummary {
 
 function toSecret(value: string | undefined): SecretValue | undefined {
   return value ? new SecretValue(value) : undefined;
+}
+
+function isPublicHttpsUrl(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+    if (
+      url.protocol !== "https:" ||
+      url.username !== "" ||
+      url.password !== "" ||
+      url.search !== "" ||
+      url.hash !== ""
+    ) {
+      return false;
+    }
+    if (isIP(hostname) === 4) {
+      return isPublicIpv4(hostname);
+    }
+    if (isIP(hostname) === 6) {
+      return !/^(::|::1|f[cd]|fe[89ab])/i.test(hostname);
+    }
+    return hostname.includes(".") && hostname !== "localhost" && !hostname.endsWith(".localhost");
+  } catch {
+    return false;
+  }
+}
+
+function isPublicIpv4(hostname: string): boolean {
+  const [first = 0, second = 0] = hostname.split(".").map(Number);
+  return !(
+    first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    first >= 224
+  );
+}
+
+function isSafeOtlpEndpoint(value: string, appEnv: RawEnvironment["APP_ENV"]): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      ["http:", "https:"].includes(url.protocol) &&
+      (appEnv !== "production" || url.protocol === "https:") &&
+      url.username === "" &&
+      url.password === "" &&
+      url.search === "" &&
+      url.hash === ""
+    );
+  } catch {
+    return false;
+  }
 }

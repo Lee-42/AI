@@ -53,6 +53,69 @@ describe("BrowserMediaDeviceManager", () => {
       code: "PERMISSION_DENIED",
     });
   });
+
+  it("reads an existing browser permission without opening the microphone", async () => {
+    const getUserMedia = vi.fn();
+    const manager = new BrowserMediaDeviceManager({
+      isSecureContext: true,
+      mediaDevices: {
+        enumerateDevices: async () => [device("audioinput", "mic-1", "Desk mic")],
+        getUserMedia,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+      queryMicrophonePermission: async () => "granted",
+    });
+
+    await expect(manager.inspect()).resolves.toMatchObject({ permission: "granted" });
+    expect(getUserMedia).not.toHaveBeenCalled();
+  });
+
+  it("rejects a microphone blocked by the page Permissions Policy", async () => {
+    const manager = new BrowserMediaDeviceManager({
+      isSecureContext: true,
+      mediaDevices: {
+        enumerateDevices: async () => [],
+        getUserMedia: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      },
+      microphoneAllowed: false,
+    });
+
+    await expect(manager.inspect()).rejects.toMatchObject({
+      code: "PERMISSION_POLICY_BLOCKED",
+    });
+  });
+
+  it("forwards devicechange enumeration failures to diagnostics", async () => {
+    let deviceChange: EventListener | undefined;
+    const onError = vi.fn();
+    const manager = new BrowserMediaDeviceManager({
+      isSecureContext: true,
+      mediaDevices: {
+        enumerateDevices: async () => {
+          throw new DOMException("hardware", "NotReadableError");
+        },
+        getUserMedia: vi.fn(),
+        addEventListener: vi.fn((_type, listener) => {
+          deviceChange = listener;
+        }),
+        removeEventListener: vi.fn(),
+      },
+    });
+
+    manager.subscribe(vi.fn(), onError);
+    deviceChange?.(new Event("devicechange"));
+
+    await vi.waitFor(() =>
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: "MICROPHONE_BUSY",
+        }),
+      ),
+    );
+  });
 });
 
 function device(kind: MediaDeviceKind, deviceId: string, label: string): MediaDeviceInfo {

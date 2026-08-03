@@ -18,6 +18,11 @@ interface MockSessionRecord {
   sequence: number;
 }
 
+interface TurnReplayRecord {
+  readonly text: string;
+  readonly events: readonly ConversationEvent[];
+}
+
 type EventEnvelopeKeys =
   | "schema_version"
   | "event_id"
@@ -48,6 +53,9 @@ export class MockVoiceAgentProvider implements MockTurnCapableVoiceAgentProvider
   readonly #idFactory: (prefix: IdPrefix) => string;
   readonly #sessions = new Map<string, MockSessionRecord>();
   readonly #sessionByIdempotencyKey = new Map<string, string>();
+  readonly #createEventsByIdempotencyKey = new Map<string, readonly ConversationEvent[]>();
+  readonly #turnsByIdempotencyKey = new Map<string, TurnReplayRecord>();
+  readonly #endEventsByIdempotencyKey = new Map<string, readonly ConversationEvent[]>();
 
   constructor(options: MockVoiceAgentProviderOptions) {
     this.#sessionTtlSeconds = options.sessionTtlSeconds;
@@ -60,7 +68,11 @@ export class MockVoiceAgentProvider implements MockTurnCapableVoiceAgentProvider
     const existingSessionId = this.#sessionByIdempotencyKey.get(command.idempotencyKey);
     if (existingSessionId) {
       const existing = this.#requireSession(existingSessionId);
-      return this.#result(existing, [], true);
+      return this.#result(
+        existing,
+        this.#createEventsByIdempotencyKey.get(command.idempotencyKey) ?? [],
+        true,
+      );
     }
 
     const now = this.#clock();
@@ -111,11 +123,25 @@ export class MockVoiceAgentProvider implements MockTurnCapableVoiceAgentProvider
       }),
     ];
 
+    this.#createEventsByIdempotencyKey.set(command.idempotencyKey, events);
+
     return this.#result(record, events, false);
   }
 
   async submitMockTurn(command: SubmitMockTurnCommand): Promise<SessionCommandResponse> {
     const record = this.#requireSession(command.sessionId);
+    const scopedKey = `${command.sessionId}:${command.idempotencyKey}`;
+    const replay = this.#turnsByIdempotencyKey.get(scopedKey);
+    if (replay) {
+      if (replay.text !== command.text) {
+        throw new VoiceProviderError(
+          "IDEMPOTENCY_KEY_REUSED",
+          "The Idempotency-Key was already used with a different Mock turn.",
+          409,
+        );
+      }
+      return this.#result(record, replay.events, true);
+    }
     if (record.snapshot.state !== "active") {
       throw new VoiceProviderError("SESSION_NOT_ACTIVE", "The session is no longer active.", 409);
     }
@@ -180,6 +206,7 @@ export class MockVoiceAgentProvider implements MockTurnCapableVoiceAgentProvider
       ...record.snapshot,
       revision: record.snapshot.revision + 1,
     };
+    this.#turnsByIdempotencyKey.set(scopedKey, { text: command.text, events });
     return this.#result(record, events, false);
   }
 
@@ -189,6 +216,11 @@ export class MockVoiceAgentProvider implements MockTurnCapableVoiceAgentProvider
 
   async endSession(command: EndVoiceSessionCommand): Promise<SessionCommandResponse> {
     const record = this.#requireSession(command.sessionId);
+    const scopedKey = `${command.sessionId}:${command.idempotencyKey}`;
+    const replay = this.#endEventsByIdempotencyKey.get(scopedKey);
+    if (replay) {
+      return this.#result(record, replay, true);
+    }
     if (record.snapshot.state === "ended") {
       return this.#result(record, [], true);
     }
@@ -224,6 +256,13 @@ export class MockVoiceAgentProvider implements MockTurnCapableVoiceAgentProvider
       state: "ended",
       revision: record.snapshot.revision + 1,
     };
+    // Active-turn replay data contains transcript text; discard it as soon as the Session closes.
+    for (const key of this.#turnsByIdempotencyKey.keys()) {
+      if (key.startsWith(`${command.sessionId}:`)) {
+        this.#turnsByIdempotencyKey.delete(key);
+      }
+    }
+    this.#endEventsByIdempotencyKey.set(scopedKey, events);
     return this.#result(record, events, false);
   }
 
@@ -237,12 +276,12 @@ export class MockVoiceAgentProvider implements MockTurnCapableVoiceAgentProvider
 
   #result(
     record: MockSessionRecord,
-    events: ConversationEvent[],
+    events: readonly ConversationEvent[],
     commandReplayed: boolean,
   ): SessionCommandResponse {
     return {
       session: { ...record.snapshot },
-      events,
+      events: [...events],
       command_replayed: commandReplayed,
     };
   }

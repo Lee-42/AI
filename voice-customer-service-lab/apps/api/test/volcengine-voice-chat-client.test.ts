@@ -77,6 +77,31 @@ describe("VolcengineVoiceChatClient", () => {
     });
   });
 
+  it("returns a Function Calling result through UpdateVoiceChat", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ ResponseMetadata: { RequestId: "request-tool-001" } }));
+    const client = createClient(fetcher);
+
+    await client.submitToolResult({
+      AppId: "123456781234567812345678",
+      RoomId: "ses_000001",
+      TaskId: "tsk_000001",
+      Command: "function",
+      Message: JSON.stringify({ ToolCallID: "call_order_001", Content: '{"ok":true}' }),
+    });
+
+    const [url, init] = fetcher.mock.calls[0] ?? [];
+    expect(url).toContain("Action=UpdateVoiceChat");
+    expect(JSON.parse(String(init?.body))).toEqual({
+      AppId: "123456781234567812345678",
+      RoomId: "ses_000001",
+      TaskId: "tsk_000001",
+      Command: "function",
+      Message: '{"ToolCallID":"call_order_001","Content":"{\\"ok\\":true}"}',
+    });
+  });
+
   it("maps provider errors without exposing the provider message", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json(

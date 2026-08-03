@@ -68,6 +68,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{session_id}/handoff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["requestHumanHandoff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/mock-tool-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["invokeMockBusinessTool"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{session_id}/mock-turns": {
         parameters: {
             query?: never;
@@ -78,6 +110,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["submitMockVoiceTurn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/realtime-observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recordRealtimeSliObservation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -100,6 +148,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPrometheusMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/observability/slo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getLocalSloSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/provider-callbacks/volcengine/function-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["receiveVolcengineFunctionCalls"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -113,6 +209,7 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             deadline_at: string;
+            prompt_policy_version: string;
             provider: "mock" | "volcengine";
             provider_request_id: string | null;
             revision: number;
@@ -409,21 +506,124 @@ export interface components {
             rtc_credentials: components["schemas"]["def-9"];
             session: components["schemas"]["def-8"];
         };
-        /** MockTurnRequest */
+        /** EndSessionResponse */
         "def-13": {
-            text: string;
-        };
-        /** SessionCommandResponse */
-        "def-14": {
             command_replayed: boolean;
             events: components["schemas"]["def-10"][];
             session: components["schemas"]["def-8"];
+            summary: components["schemas"]["def-28"];
+        };
+        /** FunctionCallCallbackAck */
+        "def-14": {
+            /** @enum {boolean} */
+            accepted: true;
+            replayed_count: number;
+            tool_call_count: number;
+        };
+        /** MockBusinessToolCallRequest */
+        "def-15": {
+            arguments: {
+                order_reference: string;
+            };
+            /** @enum {string} */
+            name: "get_order_status";
+            tool_call_id: string;
+        };
+        /** MockBusinessToolCallResponse */
+        "def-16": {
+            /** @enum {string} */
+            name: "get_order_status";
+            replayed: boolean;
+            result: components["schemas"]["def-22"];
+            tool_call_id: string;
+        };
+        /** MockTurnRequest */
+        "def-17": {
+            text: string;
+        };
+        /** HandoffReason */
+        "def-18": "user_request" | "unsupported_request" | "safety_concern" | "repeated_failure";
+        /** HandoffRequest */
+        "def-19": {
+            reason: components["schemas"]["def-18"];
         };
         /** AgentCommandResponse */
         "def-2": {
             agent: components["schemas"]["def-1"];
             command_replayed: boolean;
         };
+        /** HandoffResponse */
+        "def-20": {
+            command_replayed: boolean;
+            events: components["schemas"]["def-10"][];
+            handoff: components["schemas"]["def-21"];
+            session: components["schemas"]["def-8"];
+            summary: components["schemas"]["def-28"];
+        };
+        /** HandoffTicket */
+        "def-21": {
+            /** @enum {boolean} */
+            human_connected: false;
+            /** @enum {string} */
+            message: "已记录演示转人工工单；当前没有真人坐席接入。";
+            reason: components["schemas"]["def-18"];
+            /** Format: date-time */
+            requested_at: string;
+            /** @enum {string} */
+            status: "recorded";
+            ticket_id: string;
+        };
+        /** OrderStatusToolResult */
+        "def-22": {
+            estimated_delivery_date: string | null;
+            fulfillment_status: "processing" | "shipped" | "delivered" | "cancelled";
+            latest_event: string;
+            order_reference: string;
+            status_text: string;
+        };
+        /** PrometheusMetricsResponse */
+        "def-23": string;
+        /** RealtimeSliName */
+        "def-24": "rtc_join" | "turn_first_output" | "barge_in_stop";
+        /** RealtimeSliObservationAck */
+        "def-25": {
+            /** @enum {boolean} */
+            accepted: true;
+            replayed: boolean;
+        };
+        /** RealtimeSliObservationRequest */
+        "def-26": {
+            duration_ms: number | null;
+            observation_id: string;
+            outcome: "success" | "failure";
+            sli: components["schemas"]["def-24"];
+            source: "mock" | "rtc";
+        };
+        /** SessionCommandResponse */
+        "def-27": {
+            command_replayed: boolean;
+            events: components["schemas"]["def-10"][];
+            session: components["schemas"]["def-8"];
+        };
+        /** SessionPrivacySummary */
+        "def-28": {
+            /** Format: date-time */
+            generated_at: string;
+            outcome: "completed" | "handoff_requested";
+            /** @enum {boolean} */
+            raw_audio_retained: false;
+            /** Format: date-time */
+            retention_expires_at: string;
+            sensitive_input_detected: boolean;
+            session_id: string;
+            summary_id: string;
+            topics: components["schemas"]["def-29"][];
+            /** @enum {boolean} */
+            transcript_retained: false;
+            turn_count: number;
+        };
+        /** SessionSummaryTopic */
+        "def-29": "general_support" | "order_status" | "human_handoff";
         /** ApiErrorResponse */
         "def-3": {
             /** ApiErrorDetail */
@@ -433,6 +633,43 @@ export interface components {
                 message: string;
                 retryable: boolean;
             };
+        };
+        /** SloIndicatorName */
+        "def-30": "control_plane_availability" | "rtc_join_success" | "turn_first_output" | "barge_in_stop" | "agent_cleanup";
+        /** SloIndicator */
+        "def-31": {
+            achieved_ratio: number | null;
+            eligible_events: number;
+            error_budget_events: number;
+            error_budget_remaining_events: number;
+            good_events: number;
+            measurement_quality: "authoritative" | "proxy";
+            name: components["schemas"]["def-30"];
+            objective_ratio: number;
+            status: "no_data" | "meeting" | "breached";
+            threshold_seconds: number | null;
+        };
+        /** SloSnapshot */
+        "def-32": {
+            /** Format: date-time */
+            generated_at: string;
+            indicators: components["schemas"]["def-31"][];
+            sample_warning: boolean;
+            window_seconds: number;
+        };
+        /** VolcengineFunctionCallCallbackRequest */
+        "def-33": {
+            AppId: string;
+            Message: string;
+            RoomID: string;
+            Signature: string;
+            TaskID: string;
+            /** @enum {string} */
+            TaskType: "voiceChat";
+            /** @enum {string} */
+            Type: "tool_calls";
+        } & {
+            [key: string]: unknown;
         };
         /** ApiErrorDetail */
         "def-4": {
@@ -582,7 +819,9 @@ export interface operations {
     endVoiceSession: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                "idempotency-key": string;
+            };
             path: {
                 session_id: string;
             };
@@ -596,7 +835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-14"];
+                    "application/json": components["schemas"]["def-13"];
                 };
             };
             /** @description Default Response */
@@ -775,7 +1014,98 @@ export interface operations {
             };
         };
     };
-    submitMockVoiceTurn: {
+    requestHumanHandoff: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["def-19"];
+            };
+        };
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-20"];
+                };
+            };
+            /** @description Default Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-20"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+        };
+    };
+    invokeMockBusinessTool: {
         parameters: {
             query?: never;
             header?: never;
@@ -786,7 +1116,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["def-13"];
+                "application/json": components["schemas"]["def-15"];
             };
         };
         responses: {
@@ -796,7 +1126,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-14"];
+                    "application/json": components["schemas"]["def-16"];
                 };
             };
             /** @description Default Response */
@@ -846,6 +1176,132 @@ export interface operations {
             };
         };
     };
+    submitMockVoiceTurn: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["def-17"];
+            };
+        };
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-27"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+        };
+    };
+    recordRealtimeSliObservation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["def-26"];
+            };
+        };
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-25"];
+                };
+            };
+            /** @description Default Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-25"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;
@@ -862,6 +1318,115 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["def-5"];
+                };
+            };
+        };
+    };
+    getPrometheusMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-23"];
+                };
+            };
+        };
+    };
+    getLocalSloSnapshot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-32"];
+                };
+            };
+        };
+    };
+    receiveVolcengineFunctionCalls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["def-33"];
+            };
+        };
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-14"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
                 };
             };
         };

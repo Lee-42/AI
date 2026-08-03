@@ -12,14 +12,24 @@ export interface StopAgentGatewayCommand {
   readonly correlationId: string;
 }
 
+export interface SubmitToolResultGatewayCommand {
+  readonly roomId: string;
+  readonly taskId: string;
+  readonly toolCallId: string;
+  readonly content: string;
+  readonly correlationId: string;
+}
+
 export interface AgentGatewayResult {
   readonly providerRequestId: string | null;
 }
 
 export interface AgentGateway {
   readonly name: "mock" | "volcengine";
+  readonly promptPolicyVersion: string;
   start(command: StartAgentGatewayCommand): Promise<AgentGatewayResult>;
   stop(command: StopAgentGatewayCommand): Promise<AgentGatewayResult>;
+  submitToolResult(command: SubmitToolResultGatewayCommand): Promise<AgentGatewayResult>;
 }
 
 export class AgentGatewayError extends Error {

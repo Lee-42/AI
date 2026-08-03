@@ -1,5 +1,20 @@
 export type { components, operations, paths } from "./api.generated.js";
 export type {
+  FunctionCallCallbackAck,
+  MockBusinessToolCallRequest,
+  MockBusinessToolCallResponse,
+  OrderStatusToolResult,
+  VolcengineFunctionCallCallbackRequest,
+} from "./business-tool.js";
+export {
+  FunctionCallCallbackAckSchema,
+  MockBusinessToolCallRequestSchema,
+  MockBusinessToolCallResponseSchema,
+  OrderReferenceSchema,
+  OrderStatusToolResultSchema,
+  VolcengineFunctionCallCallbackRequestSchema,
+} from "./business-tool.js";
+export type {
   ApiErrorDetail,
   ApiErrorResponse,
   HealthResponse,
@@ -11,6 +26,23 @@ export {
   HealthResponseSchema,
   PublicRuntimeConfigSchema,
 } from "./http.js";
+export type {
+  RealtimeSliName,
+  RealtimeSliObservationAck,
+  RealtimeSliObservationRequest,
+  SloIndicator,
+  SloIndicatorName,
+  SloSnapshot,
+} from "./observability.js";
+export {
+  PrometheusMetricsResponseSchema,
+  RealtimeSliNameSchema,
+  RealtimeSliObservationAckSchema,
+  RealtimeSliObservationRequestSchema,
+  SloIndicatorNameSchema,
+  SloIndicatorSchema,
+  SloSnapshotSchema,
+} from "./observability.js";
 export { schemaRef } from "./schema-ref.js";
 export type {
   AgentCommandResponse,
@@ -42,3 +74,21 @@ export {
   SessionSnapshotSchema,
   SessionStateSchema,
 } from "./session.js";
+export type {
+  EndSessionResponse,
+  HandoffReason,
+  HandoffRequest,
+  HandoffResponse,
+  HandoffTicket,
+  SessionPrivacySummary,
+  SessionSummaryTopic,
+} from "./session-closure.js";
+export {
+  EndSessionResponseSchema,
+  HandoffReasonSchema,
+  HandoffRequestSchema,
+  HandoffResponseSchema,
+  HandoffTicketSchema,
+  SessionPrivacySummarySchema,
+  SessionSummaryTopicSchema,
+} from "./session-closure.js";

@@ -12,9 +12,11 @@ export type ConversationUiState =
 
 export interface TranscriptMessage {
   readonly id: string;
+  readonly roundId: string;
   readonly role: "user" | "assistant";
   readonly text: string;
   readonly isFinal: boolean;
+  readonly isInterrupted?: boolean;
 }
 
 export interface ConversationState {
@@ -30,6 +32,8 @@ export type ConversationAction =
   | { readonly type: "command.started"; readonly command: "create" | "turn" | "end" }
   | { readonly type: "session.updated"; readonly session: SessionSnapshot }
   | { readonly type: "event.received"; readonly event: ConversationEvent }
+  | { readonly type: "round.interrupted"; readonly roundId: string }
+  | { readonly type: "response.invalidated"; readonly responseId: string }
   | { readonly type: "command.failed"; readonly message: string };
 
 export const initialConversationState: ConversationState = {
@@ -62,6 +66,21 @@ export function conversationReducer(
       return { ...state, session: action.session };
     case "command.failed":
       return { ...state, uiState: "failed", errorMessage: action.message };
+    case "round.interrupted":
+      return {
+        ...state,
+        uiState: "listening",
+        transcript: interruptAssistantMessages(state.transcript, action.roundId),
+      };
+    case "response.invalidated":
+      return {
+        ...state,
+        transcript: state.transcript.map((message) =>
+          message.role === "assistant" && message.id === action.responseId
+            ? { ...message, isFinal: true, isInterrupted: true }
+            : message,
+        ),
+      };
     case "event.received":
       return reduceEvent(state, action.event);
   }
@@ -93,7 +112,8 @@ function reduceEvent(state: ConversationState, event: ConversationEvent): Conver
       return {
         ...next,
         transcript: upsertMessage(next.transcript, {
-          id: event.round_id,
+          id: normalizedRoundId(event),
+          roundId: normalizedRoundId(event),
           role: "user",
           text: event.payload.text,
           isFinal: false,
@@ -104,7 +124,8 @@ function reduceEvent(state: ConversationState, event: ConversationEvent): Conver
         ...next,
         uiState: "thinking",
         transcript: upsertMessage(next.transcript, {
-          id: event.round_id,
+          id: normalizedRoundId(event),
+          roundId: normalizedRoundId(event),
           role: "user",
           text: event.payload.text,
           isFinal: true,
@@ -117,7 +138,8 @@ function reduceEvent(state: ConversationState, event: ConversationEvent): Conver
         ...next,
         transcript: appendAssistantDelta(
           next.transcript,
-          event.response_id,
+          normalizedResponseId(event),
+          normalizedRoundId(event),
           event.payload.text_delta,
         ),
       };
@@ -127,7 +149,7 @@ function reduceEvent(state: ConversationState, event: ConversationEvent): Conver
       return {
         ...next,
         uiState: "listening",
-        transcript: finalizeMessage(next.transcript, event.response_id),
+        transcript: finalizeMessage(next.transcript, normalizedResponseId(event)),
       };
     case "session.end.requested":
       return { ...next, uiState: "ending" };
@@ -154,15 +176,38 @@ function upsertMessage(
 function appendAssistantDelta(
   messages: readonly TranscriptMessage[],
   responseId: string,
+  roundId: string,
   textDelta: string,
 ): readonly TranscriptMessage[] {
   const existing = messages.find((message) => message.id === responseId);
   return upsertMessage(messages, {
     id: responseId,
+    roundId,
     role: "assistant",
     text: `${existing?.text ?? ""}${textDelta}`,
     isFinal: false,
   });
+}
+
+function interruptAssistantMessages(
+  messages: readonly TranscriptMessage[],
+  roundId: string,
+): readonly TranscriptMessage[] {
+  return messages.map((message) =>
+    message.role === "assistant" && message.roundId === roundId
+      ? { ...message, isFinal: true, isInterrupted: true }
+      : message,
+  );
+}
+
+function normalizedRoundId(event: ConversationEvent): string {
+  const source = event.producer === "volcengine_voice_provider" ? "rtc" : "mock";
+  return `${source}:${event.round_id}`;
+}
+
+function normalizedResponseId(event: ConversationEvent): string {
+  const source = event.producer === "volcengine_voice_provider" ? "rtc" : "mock";
+  return `${source}:${event.response_id}`;
 }
 
 function finalizeMessage(

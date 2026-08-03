@@ -7,6 +7,7 @@ import { z } from "zod";
 import type { ServerConfig } from "../core/config.js";
 import type { SecretValue } from "../core/secret-value.js";
 import type { AgentGateway } from "./agent-gateway.js";
+import { loadCustomerServicePromptPolicy } from "./customer-service-prompt-policy.js";
 import { MockAgentGateway } from "./mock-agent-gateway.js";
 import { VolcengineAgentGateway } from "./volcengine-agent-gateway.js";
 import { VolcengineVoiceChatClient } from "./volcengine-voice-chat-client.js";
@@ -22,8 +23,9 @@ const voiceConfigFileSchema = z
 const repositoryRoot = fileURLToPath(new URL("../../../../", import.meta.url));
 
 export function createAgentGateway(config: ServerConfig): AgentGateway {
+  const promptPolicy = loadCustomerServicePromptPolicy(config.customerServicePolicyPath);
   if (config.voiceProvider === "mock") {
-    return new MockAgentGateway();
+    return new MockAgentGateway(promptPolicy.version);
   }
 
   const appId = requireValue(config.volcengine.rtcAppId, "VOLCENGINE_RTC_APP_ID");
@@ -38,10 +40,24 @@ export function createAgentGateway(config: ServerConfig): AgentGateway {
     secretAccessKey,
     apiVersion: config.volcengine.voiceApiVersion,
   });
+  const functionCalling = config.volcengine.functionCallingEnabled
+    ? {
+        callbackUrl: requireValue(
+          config.volcengine.functionCallbackUrl,
+          "VOLCENGINE_FUNCTION_CALLBACK_URL",
+        ),
+        callbackSignature: requireSecret(
+          config.volcengine.callbackSigningSecret,
+          "VOLCENGINE_CALLBACK_SIGNING_SECRET",
+        ),
+      }
+    : undefined;
 
   return new VolcengineAgentGateway({
     appId,
     config: voiceConfig,
+    promptPolicy,
+    ...(functionCalling ? { functionCalling } : {}),
     idleTimeoutSeconds: config.volcengine.agentIdleTimeoutSeconds,
     client,
   });

@@ -29,6 +29,38 @@ describe("conversationReducer", () => {
     expect(duplicate).toBe(first);
     expect(duplicate.transcript).toEqual([]);
   });
+
+  it("marks an interrupted assistant response and keeps its partial text", () => {
+    let state = receive(initialConversationState, userFinalEvent(1));
+    state = receive(state, aiDeltaEvent(2));
+    state = conversationReducer(state, {
+      type: "round.interrupted",
+      roundId: "mock:rnd_000001",
+    });
+
+    expect(state.transcript[1]).toMatchObject({
+      text: "正在配送。",
+      isFinal: true,
+      isInterrupted: true,
+      roundId: "mock:rnd_000001",
+    });
+    expect(state.uiState).toBe("listening");
+  });
+
+  it("marks a superseded Response without terminating its Round", () => {
+    let state = receive(initialConversationState, userFinalEvent(1));
+    state = receive(state, aiDeltaEvent(2));
+    state = conversationReducer(state, {
+      type: "response.invalidated",
+      responseId: "mock:rsp_000001",
+    });
+
+    expect(state.transcript[1]).toMatchObject({
+      isFinal: true,
+      isInterrupted: true,
+    });
+    expect(state.uiState).toBe("thinking");
+  });
 });
 
 function receive(

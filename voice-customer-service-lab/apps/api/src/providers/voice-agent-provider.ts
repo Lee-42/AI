@@ -13,11 +13,13 @@ export interface CreateVoiceSessionCommand {
 export interface SubmitMockTurnCommand {
   readonly sessionId: string;
   readonly text: string;
+  readonly idempotencyKey: string;
   readonly correlationId: string;
 }
 
 export interface EndVoiceSessionCommand {
   readonly sessionId: string;
+  readonly idempotencyKey: string;
   readonly correlationId: string;
 }
 
@@ -40,7 +42,11 @@ export function supportsMockTurns(
 
 export class VoiceProviderError extends Error {
   constructor(
-    readonly code: "SESSION_NOT_FOUND" | "SESSION_NOT_ACTIVE" | "PROVIDER_NOT_IMPLEMENTED",
+    readonly code:
+      | "SESSION_NOT_FOUND"
+      | "SESSION_NOT_ACTIVE"
+      | "PROVIDER_NOT_IMPLEMENTED"
+      | "IDEMPOTENCY_KEY_REUSED",
     message: string,
     readonly statusCode: 404 | 409 | 501,
     readonly retryable = false,

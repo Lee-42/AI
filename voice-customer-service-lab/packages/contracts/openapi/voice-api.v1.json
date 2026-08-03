@@ -65,6 +65,11 @@
             "format": "date-time",
             "type": "string"
           },
+          "prompt_policy_version": {
+            "maxLength": 64,
+            "minLength": 3,
+            "type": "string"
+          },
           "provider": {
             "anyOf": [
               {
@@ -122,6 +127,7 @@
           "task_id",
           "bot_user_id",
           "provider",
+          "prompt_policy_version",
           "state",
           "revision",
           "created_at",
@@ -1742,6 +1748,132 @@
       "def-13": {
         "additionalProperties": false,
         "properties": {
+          "command_replayed": {
+            "type": "boolean"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/def-10"
+            },
+            "type": "array"
+          },
+          "session": {
+            "$ref": "#/components/schemas/def-8"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/def-28"
+          }
+        },
+        "required": [
+          "session",
+          "events",
+          "summary",
+          "command_replayed"
+        ],
+        "title": "EndSessionResponse",
+        "type": "object"
+      },
+      "def-14": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "replayed_count": {
+            "maximum": 4,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "tool_call_count": {
+            "maximum": 4,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted",
+          "tool_call_count",
+          "replayed_count"
+        ],
+        "title": "FunctionCallCallbackAck",
+        "type": "object"
+      },
+      "def-15": {
+        "additionalProperties": false,
+        "properties": {
+          "arguments": {
+            "additionalProperties": false,
+            "properties": {
+              "order_reference": {
+                "maxLength": 32,
+                "minLength": 6,
+                "pattern": "^[A-Za-z0-9-]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "order_reference"
+            ],
+            "type": "object"
+          },
+          "name": {
+            "enum": [
+              "get_order_status"
+            ],
+            "type": "string"
+          },
+          "tool_call_id": {
+            "maxLength": 128,
+            "minLength": 6,
+            "pattern": "^call_[A-Za-z0-9_-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_call_id",
+          "name",
+          "arguments"
+        ],
+        "title": "MockBusinessToolCallRequest",
+        "type": "object"
+      },
+      "def-16": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "enum": [
+              "get_order_status"
+            ],
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "result": {
+            "$ref": "#/components/schemas/def-22"
+          },
+          "tool_call_id": {
+            "maxLength": 128,
+            "minLength": 6,
+            "pattern": "^call_[A-Za-z0-9_-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_call_id",
+          "name",
+          "replayed",
+          "result"
+        ],
+        "title": "MockBusinessToolCallResponse",
+        "type": "object"
+      },
+      "def-17": {
+        "additionalProperties": false,
+        "properties": {
           "text": {
             "maxLength": 500,
             "minLength": 1,
@@ -1755,7 +1887,327 @@
         "title": "MockTurnRequest",
         "type": "object"
       },
-      "def-14": {
+      "def-18": {
+        "anyOf": [
+          {
+            "enum": [
+              "user_request"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "unsupported_request"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "safety_concern"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "repeated_failure"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "HandoffReason"
+      },
+      "def-19": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/def-18"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "HandoffRequest",
+        "type": "object"
+      },
+      "def-2": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "$ref": "#/components/schemas/def-1"
+          },
+          "command_replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent",
+          "command_replayed"
+        ],
+        "title": "AgentCommandResponse",
+        "type": "object"
+      },
+      "def-20": {
+        "additionalProperties": false,
+        "properties": {
+          "command_replayed": {
+            "type": "boolean"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/def-10"
+            },
+            "type": "array"
+          },
+          "handoff": {
+            "$ref": "#/components/schemas/def-21"
+          },
+          "session": {
+            "$ref": "#/components/schemas/def-8"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/def-28"
+          }
+        },
+        "required": [
+          "session",
+          "events",
+          "summary",
+          "handoff",
+          "command_replayed"
+        ],
+        "title": "HandoffResponse",
+        "type": "object"
+      },
+      "def-21": {
+        "additionalProperties": false,
+        "properties": {
+          "human_connected": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "message": {
+            "enum": [
+              "已记录演示转人工工单；当前没有真人坐席接入。"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/def-18"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "recorded"
+            ],
+            "type": "string"
+          },
+          "ticket_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket_id",
+          "status",
+          "human_connected",
+          "reason",
+          "requested_at",
+          "message"
+        ],
+        "title": "HandoffTicket",
+        "type": "object"
+      },
+      "def-22": {
+        "additionalProperties": false,
+        "properties": {
+          "estimated_delivery_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fulfillment_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "processing"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "shipped"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "delivered"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "cancelled"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "latest_event": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "order_reference": {
+            "maxLength": 32,
+            "minLength": 6,
+            "pattern": "^[A-Za-z0-9-]+$",
+            "type": "string"
+          },
+          "status_text": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_reference",
+          "fulfillment_status",
+          "status_text",
+          "estimated_delivery_date",
+          "latest_event"
+        ],
+        "title": "OrderStatusToolResult",
+        "type": "object"
+      },
+      "def-23": {
+        "title": "PrometheusMetricsResponse",
+        "type": "string"
+      },
+      "def-24": {
+        "anyOf": [
+          {
+            "enum": [
+              "rtc_join"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "turn_first_output"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "barge_in_stop"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "RealtimeSliName"
+      },
+      "def-25": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "accepted",
+          "replayed"
+        ],
+        "title": "RealtimeSliObservationAck",
+        "type": "object"
+      },
+      "def-26": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_ms": {
+            "anyOf": [
+              {
+                "maximum": 60000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observation_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^obs_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "success"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "failure"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "sli": {
+            "$ref": "#/components/schemas/def-24"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mock"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "rtc"
+                ],
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "observation_id",
+          "sli",
+          "source",
+          "outcome",
+          "duration_ms"
+        ],
+        "title": "RealtimeSliObservationRequest",
+        "type": "object"
+      },
+      "def-27": {
         "additionalProperties": false,
         "properties": {
           "command_replayed": {
@@ -1779,22 +2231,110 @@
         "title": "SessionCommandResponse",
         "type": "object"
       },
-      "def-2": {
+      "def-28": {
         "additionalProperties": false,
         "properties": {
-          "agent": {
-            "$ref": "#/components/schemas/def-1"
+          "generated_at": {
+            "format": "date-time",
+            "type": "string"
           },
-          "command_replayed": {
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "completed"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "handoff_requested"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "raw_audio_retained": {
+            "enum": [
+              false
+            ],
             "type": "boolean"
+          },
+          "retention_expires_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sensitive_input_detected": {
+            "type": "boolean"
+          },
+          "session_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "summary_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/def-29"
+            },
+            "maxItems": 3,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "transcript_retained": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "turn_count": {
+            "minimum": 0,
+            "type": "integer"
           }
         },
         "required": [
-          "agent",
-          "command_replayed"
+          "summary_id",
+          "session_id",
+          "outcome",
+          "turn_count",
+          "topics",
+          "sensitive_input_detected",
+          "raw_audio_retained",
+          "transcript_retained",
+          "generated_at",
+          "retention_expires_at"
         ],
-        "title": "AgentCommandResponse",
+        "title": "SessionPrivacySummary",
         "type": "object"
+      },
+      "def-29": {
+        "anyOf": [
+          {
+            "enum": [
+              "general_support"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "order_status"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "human_handoff"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "SessionSummaryTopic"
       },
       "def-3": {
         "additionalProperties": false,
@@ -1830,6 +2370,229 @@
           "error"
         ],
         "title": "ApiErrorResponse",
+        "type": "object"
+      },
+      "def-30": {
+        "anyOf": [
+          {
+            "enum": [
+              "control_plane_availability"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "rtc_join_success"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "turn_first_output"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "barge_in_stop"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "agent_cleanup"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "SloIndicatorName"
+      },
+      "def-31": {
+        "additionalProperties": false,
+        "properties": {
+          "achieved_ratio": {
+            "anyOf": [
+              {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eligible_events": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "error_budget_events": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "error_budget_remaining_events": {
+            "type": "integer"
+          },
+          "good_events": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "measurement_quality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "authoritative"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "proxy"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "name": {
+            "$ref": "#/components/schemas/def-30"
+          },
+          "objective_ratio": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_data"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "meeting"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "breached"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "threshold_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "objective_ratio",
+          "threshold_seconds",
+          "measurement_quality",
+          "eligible_events",
+          "good_events",
+          "achieved_ratio",
+          "error_budget_events",
+          "error_budget_remaining_events",
+          "status"
+        ],
+        "title": "SloIndicator",
+        "type": "object"
+      },
+      "def-32": {
+        "additionalProperties": false,
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "indicators": {
+            "items": {
+              "$ref": "#/components/schemas/def-31"
+            },
+            "maxItems": 5,
+            "minItems": 5,
+            "type": "array"
+          },
+          "sample_warning": {
+            "type": "boolean"
+          },
+          "window_seconds": {
+            "minimum": 60,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "generated_at",
+          "window_seconds",
+          "sample_warning",
+          "indicators"
+        ],
+        "title": "SloSnapshot",
+        "type": "object"
+      },
+      "def-33": {
+        "additionalProperties": true,
+        "properties": {
+          "AppId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "Message": {
+            "maxLength": 32768,
+            "minLength": 2,
+            "type": "string"
+          },
+          "RoomID": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "Signature": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "TaskID": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "TaskType": {
+            "enum": [
+              "voiceChat"
+            ],
+            "type": "string"
+          },
+          "Type": {
+            "enum": [
+              "tool_calls"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "Message",
+          "Signature",
+          "Type",
+          "RoomID",
+          "TaskID",
+          "TaskType",
+          "AppId"
+        ],
+        "title": "VolcengineFunctionCallCallbackRequest",
         "type": "object"
       },
       "def-4": {
@@ -2264,6 +3027,17 @@
               "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2271,7 +3045,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-14"
+                  "$ref": "#/components/schemas/def-13"
                 }
               }
             },
@@ -2509,9 +3283,133 @@
         ]
       }
     },
-    "/api/v1/sessions/{session_id}/mock-turns": {
+    "/api/v1/sessions/{session_id}/handoff": {
       "post": {
-        "operationId": "submitMockVoiceTurn",
+        "operationId": "requestHumanHandoff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-19"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-20"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-20"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "session-closure"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/mock-tool-calls": {
+      "post": {
+        "operationId": "invokeMockBusinessTool",
         "parameters": [
           {
             "in": "path",
@@ -2529,7 +3427,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/def-13"
+                "$ref": "#/components/schemas/def-15"
               }
             }
           },
@@ -2540,7 +3438,111 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-14"
+                  "$ref": "#/components/schemas/def-16"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "mock-tools"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/mock-turns": {
+      "post": {
+        "operationId": "submitMockVoiceTurn",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-17"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-27"
                 }
               }
             },
@@ -2602,6 +3604,79 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/realtime-observations": {
+      "post": {
+        "operationId": "recordRealtimeSliObservation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-26"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-25"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-25"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "observability"
+        ]
+      }
+    },
     "/healthz": {
       "get": {
         "operationId": "getHealth",
@@ -2619,6 +3694,126 @@
         },
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/internal/metrics": {
+      "get": {
+        "operationId": "getPrometheusMetrics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-23"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "observability"
+        ]
+      }
+    },
+    "/internal/observability/slo": {
+      "get": {
+        "operationId": "getLocalSloSnapshot",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-32"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "observability"
+        ]
+      }
+    },
+    "/internal/provider-callbacks/volcengine/function-calls": {
+      "post": {
+        "operationId": "receiveVolcengineFunctionCalls",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-33"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-14"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "provider-callbacks"
         ]
       }
     }

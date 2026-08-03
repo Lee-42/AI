@@ -25,6 +25,10 @@ Server secret
 | `RTC_TOKEN_PROVIDER` | Internal | API | `mock` 可以 |
 | `VOLCENGINE_VOICE_API_VERSION` | Internal | API | 示例值可以 |
 | `VOLCENGINE_PAID_CALLS_ENABLED` | Internal safety switch | API | `false` 可以 |
+| `SESSION_SUMMARY_RETENTION_DAYS` | Internal retention policy | API | 示例值可以 |
+| `OBSERVABILITY_WINDOW_SECONDS` | Internal SLO policy | API | 示例值可以 |
+| `VOLCENGINE_FUNCTION_CALLING_ENABLED` | Internal safety switch | API | `false` 可以 |
+| `VOLCENGINE_FUNCTION_CALLBACK_URL` | Internal endpoint | API | 空模板可以 |
 | `VOLCENGINE_VOICE_CONFIG_PATH` | Internal | API | 示例路径可以 |
 | VoiceChat `Config` 文件内容 | Secret | API | 不可以 |
 | `VOLCENGINE_RTC_APP_ID` | Public identifier | API，按需返回 Web | 空模板可以 |
@@ -32,7 +36,8 @@ Server secret
 | `VOLCENGINE_ACCESS_KEY_ID` | Secret | API | 不可以 |
 | `VOLCENGINE_SECRET_ACCESS_KEY` | Secret | API | 不可以 |
 | RTC Token | Session secret | Web + RTC | 不可以 |
-| `VOLCENGINE_CALLBACK_SIGNING_SECRET` | Secret | API | 不可以 |
+| `VOLCENGINE_CALLBACK_SIGNING_SECRET` | Shared callback secret | API | 不可以 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Internal endpoint | API/Collector | 空模板可以 |
 | `OTEL_EXPORTER_OTLP_HEADERS` | Secret | API/Collector | 不可以 |
 
 ## 3. 强制规则
@@ -49,6 +54,10 @@ Server secret
 10. 配置密钥不等于允许付费；`VOLCENGINE_PAID_CALLS_ENABLED` 必须单独显式开启。
 11. RTC Token 只保存在 React 内存；退出会话后立即清除，不写 `localStorage`。
 12. VoiceChat `Config` 可能含模型凭证，只放 Secret Store 或 Git 忽略的本地文件。
+13. Function Calling 回调只允许公网 HTTPS；共享签名必须固定时间比较并从请求日志脱敏。
+14. 指标 Label 禁止包含 Session、用户、订单、Room、Trace ID 或自由文本错误消息。
+15. OTLP Header 只在 Telemetry Adapter 边界解封，内部指标端点只能通过私网或 mTLS 抓取。
+14. 会话摘要只保存枚举和计数；原始音频、完整字幕和敏感值不得进入日志或摘要。
 
 注意：付费开关保护服务端 AI Provider，不会撤销已经下发给浏览器的 RTC Token。
 真实 Token 的持有者仍可以在有效期内加入绑定房间，因此签发端点本身也必须鉴权、

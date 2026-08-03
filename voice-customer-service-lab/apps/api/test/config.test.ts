@@ -58,10 +58,12 @@ describe("server configuration", () => {
       VOLCENGINE_RTC_APP_KEY: "unit-test-app-key",
       VOLCENGINE_ACCESS_KEY_ID: "unit-test-access-key",
       VOLCENGINE_SECRET_ACCESS_KEY: "unit-test-secret-key",
+      OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Bearer%20unit-test-otel-secret",
     });
 
     expect(JSON.stringify(config)).not.toContain("unit-test");
     expect(JSON.stringify(safeConfigSummary(config))).not.toMatch(/app.key|access.key|secret.key/i);
+    expect(JSON.stringify(config)).not.toContain("unit-test-otel-secret");
   });
 
   it("pins the current voice API and keeps paid calls disabled by default", () => {
@@ -69,10 +71,85 @@ describe("server configuration", () => {
 
     expect(summary.volcengineVoiceApiVersion).toBe("2025-06-01");
     expect(summary.volcenginePaidCallsEnabled).toBe(false);
+    expect(summary.volcengineFunctionCallingEnabled).toBe(false);
     expect(summary.rtcTokenProvider).toBe("mock");
     expect(summary.rtcTokenConfigured).toBe(false);
+    expect(summary.sessionSummaryRetentionDays).toBe(7);
+    expect(summary.observabilityWindowSeconds).toBe(3_600);
+    expect(summary.otlpTraceExportConfigured).toBe(false);
+    expect(loadServerConfig({}).customerServicePolicyPath).toBe(
+      "config/customer-service-policy.v1.json",
+    );
     expect(() => loadServerConfig({ VOLCENGINE_VOICE_API_VERSION: "2024-06-01" })).toThrow(
       /2025-06-01/,
     );
+  });
+
+  it("bounds structured summary retention", () => {
+    expect(
+      loadServerConfig({ SESSION_SUMMARY_RETENTION_DAYS: "30" }).sessionSummaryRetentionDays,
+    ).toBe(30);
+    expect(() => loadServerConfig({ SESSION_SUMMARY_RETENTION_DAYS: "31" })).toThrow();
+  });
+
+  it("bounds the local rolling observability window", () => {
+    expect(
+      loadServerConfig({ OBSERVABILITY_WINDOW_SECONDS: "60" }).observabilityWindowSeconds,
+    ).toBe(60);
+    expect(() => loadServerConfig({ OBSERVABILITY_WINDOW_SECONDS: "59" })).toThrow();
+  });
+
+  it("allows a local OTLP collector but requires a credential-free HTTPS endpoint in production", () => {
+    expect(
+      loadServerConfig({ OTEL_EXPORTER_OTLP_ENDPOINT: "http://127.0.0.1:4318" }).telemetry
+        .otlpEndpoint,
+    ).toBe("http://127.0.0.1:4318");
+    expect(() =>
+      loadServerConfig({
+        APP_ENV: "production",
+        OTEL_EXPORTER_OTLP_ENDPOINT: "http://collector.example.com:4318",
+      }),
+    ).toThrow(/use HTTPS/);
+    expect(() =>
+      loadServerConfig({
+        OTEL_EXPORTER_OTLP_ENDPOINT: "https://user:secret@collector.example.com?token=bad",
+      }),
+    ).toThrow(/no credentials/);
+  });
+
+  it("fails closed unless Function Calling has a public callback and secret", () => {
+    const base = {
+      VOICE_PROVIDER: "volcengine",
+      VOLCENGINE_PAID_CALLS_ENABLED: "true",
+      VOLCENGINE_RTC_APP_ID: "123456781234567812345678",
+      VOLCENGINE_RTC_APP_KEY: "unit-test-app-key",
+      VOLCENGINE_ACCESS_KEY_ID: "unit-test-access-key",
+      VOLCENGINE_SECRET_ACCESS_KEY: "unit-test-secret-key",
+      VOLCENGINE_FUNCTION_CALLING_ENABLED: "true",
+    };
+
+    expect(() => loadServerConfig(base)).toThrow(/VOLCENGINE_CALLBACK_SIGNING_SECRET/);
+    expect(() =>
+      loadServerConfig({
+        ...base,
+        VOLCENGINE_CALLBACK_SIGNING_SECRET: "unit-test-callback-secret",
+        VOLCENGINE_FUNCTION_CALLBACK_URL: "http://localhost:8000/callback",
+      }),
+    ).toThrow(/public HTTPS URL/);
+    expect(() =>
+      loadServerConfig({
+        ...base,
+        VOLCENGINE_CALLBACK_SIGNING_SECRET: "unit-test-callback-secret",
+        VOLCENGINE_FUNCTION_CALLBACK_URL: "https://192.168.1.8/callback",
+      }),
+    ).toThrow(/public HTTPS URL/);
+
+    const config = loadServerConfig({
+      ...base,
+      VOLCENGINE_CALLBACK_SIGNING_SECRET: "unit-test-callback-secret",
+      VOLCENGINE_FUNCTION_CALLBACK_URL:
+        "https://voice.example.com/internal/provider-callbacks/volcengine/function-calls",
+    });
+    expect(config.volcengine.functionCallingEnabled).toBe(true);
   });
 });

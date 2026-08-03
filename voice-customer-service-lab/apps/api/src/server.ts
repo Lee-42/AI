@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { buildApp } from "./app.js";
 import { loadServerConfig, safeConfigSummary } from "./core/config.js";
+import { startOpenTelemetry } from "./observability/open-telemetry-runtime.js";
 
 try {
   // pnpm runs this script from apps/api, so resolve the Monorepo root explicitly.
@@ -14,9 +15,15 @@ try {
 }
 
 const config = loadServerConfig();
-const app = buildApp(config, { logger: true });
+const telemetry = startOpenTelemetry(config);
+const app = buildApp(config, { logger: true, tracer: telemetry.tracer });
 
-app.log.info({ config: safeConfigSummary(config) }, "validated server configuration");
+app.addHook("onClose", async () => telemetry.shutdown());
+
+app.log.info(
+  { config: safeConfigSummary(config), otlpTraceExportConfigured: telemetry.configured },
+  "validated server configuration",
+);
 
 await app.listen({
   host: config.apiHost,

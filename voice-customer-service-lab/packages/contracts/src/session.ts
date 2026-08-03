@@ -346,6 +346,7 @@ export const AgentSnapshotSchema = Type.Object(
     task_id: IdentifierSchema,
     bot_user_id: IdentifierSchema,
     provider: Type.Union([Type.Literal("mock"), Type.Literal("volcengine")]),
+    prompt_policy_version: Type.String({ minLength: 3, maxLength: 64 }),
     state: schemaRef(AgentStateSchema),
     revision: Type.Integer({ minimum: 1 }),
     created_at: Type.String({ format: "date-time" }),

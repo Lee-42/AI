@@ -15,6 +15,8 @@ export interface StartVoiceChatBody {
     readonly TargetUserId: readonly [string];
     readonly UserId: string;
     readonly IdleTimeout: number;
+    readonly WelcomeMessage?: string;
+    readonly EnableConversationStateCallback?: boolean;
   };
 }
 
@@ -22,6 +24,14 @@ export interface StopVoiceChatBody {
   readonly AppId: string;
   readonly RoomId: string;
   readonly TaskId: string;
+}
+
+export interface SubmitToolResultBody {
+  readonly AppId: string;
+  readonly RoomId: string;
+  readonly TaskId: string;
+  readonly Command: "function";
+  readonly Message: string;
 }
 
 interface VoiceChatResponse {
@@ -32,7 +42,7 @@ interface VoiceChatResponse {
       readonly Message?: string;
     };
   };
-  readonly Result?: string;
+  readonly Result?: unknown;
 }
 
 export interface VolcengineVoiceChatClientOptions {
@@ -69,9 +79,13 @@ export class VolcengineVoiceChatClient {
     return this.#request("StopVoiceChat", body);
   }
 
+  submitToolResult(body: SubmitToolResultBody): Promise<{ providerRequestId: string | null }> {
+    return this.#request("UpdateVoiceChat", body);
+  }
+
   async #request(
-    action: "StartVoiceChat" | "StopVoiceChat",
-    body: StartVoiceChatBody | StopVoiceChatBody,
+    action: "StartVoiceChat" | "StopVoiceChat" | "UpdateVoiceChat",
+    body: StartVoiceChatBody | StopVoiceChatBody | SubmitToolResultBody,
   ): Promise<{ providerRequestId: string | null }> {
     const serializedBody = JSON.stringify(body);
     const queryParams = {
@@ -121,7 +135,12 @@ export class VolcengineVoiceChatClient {
 
     const payload = await readJson(response);
     const providerRequestId = payload.ResponseMetadata?.RequestId ?? null;
-    if (!response.ok || payload.ResponseMetadata?.Error || payload.Result?.toLowerCase() !== "ok") {
+    const result = typeof payload.Result === "string" ? payload.Result.toLowerCase() : undefined;
+    if (
+      !response.ok ||
+      payload.ResponseMetadata?.Error ||
+      (result !== undefined && !["ok", "success"].includes(result))
+    ) {
       throw new AgentGatewayError(
         "AGENT_PROVIDER_REJECTED",
         `The AI Agent provider rejected ${action}; request_id=${providerRequestId ?? "unknown"}.`,
