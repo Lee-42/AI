@@ -1829,177 +1829,57 @@
         ]
     },
     {
-        "title": "15 项目1：LLM RAG架构",
+        "title": "15 项目1：LLM/RAG架构与知识检索",
         "children": [
             {
-                "title": "01 项目架构设计核心思路.mp4",
-                "size": 42414862,
-                "duration": "04:58"
+                "title": "01 RAG产品目标、答案边界与评测基线"
             },
             {
-                "title": "02 将LLM部分独立出来.mp4",
-                "size": 77374960,
-                "duration": "03:35"
+                "title": "02 LLM/RAG架构与AiOrchestrator边界"
             },
             {
-                "title": "03 Rtc给第三方LLM推流架构解析.mp4",
-                "size": 180256610,
-                "duration": "15:55"
+                "title": "03 模型配置、密钥、调试API与Provider Adapter"
             },
             {
-                "title": "04 uv和ngrok环境准备.mp4",
-                "size": 114030048,
-                "duration": "07:19"
+                "title": "04 RTC、SSE、取消和背压的流式协议"
             },
             {
-                "title": "05 LLM的欢迎语是哪里来的？.mp4",
-                "size": 43649832,
-                "duration": "03:33"
+                "title": "05 知识源治理、租户隔离与文档生命周期"
             },
             {
-                "title": "06 项目改造的核心第一步.mp4",
-                "size": 67702638,
-                "duration": "04:05"
+                "title": "06 解析、清洗、切片、元数据与稳定ID"
             },
             {
-                "title": "07 getScenes接口逻辑梳理.mp4",
-                "size": 118553091,
-                "duration": "06:44"
+                "title": "07 Embedding、Chroma Collection与增量索引"
             },
             {
-                "title": "08 配置密钥环境.mp4",
-                "size": 87717386,
-                "duration": "07:46"
+                "title": "08 查询理解、Metadata Filter与混合召回"
             },
             {
-                "title": "09 远程启动、停止agent接口服务实现.mp4",
-                "size": 136797988,
-                "duration": "11:18"
-            },
-            {
-                "title": "10 指挥ai生成符合sse协议llm回复.mp4",
-                "size": 194165389,
-                "duration": "08:31"
-            },
-            {
-                "title": "11 callback生成sse协议stream流.mp4",
-                "size": 86430809,
-                "duration": "07:10"
-            },
-            {
-                "title": "12 什么是sse协议？.mp4",
-                "size": 93173416,
-                "duration": "05:47"
-            },
-            {
-                "title": "13 梳理前端数据交互逻辑1.mp4",
-                "size": 33384736,
-                "duration": "03:33"
-            },
-            {
-                "title": "14 梳理前端数据交互逻辑2.mp4",
-                "size": 66895447,
-                "duration": "04:54"
-            },
-            {
-                "title": "15 客户端接收rtc推送的二进制message消息.mp4",
-                "size": 76120351,
-                "duration": "07:00"
-            },
-            {
-                "title": "16 安装浏览器插件查看状态变化.mp4",
-                "size": 25262094,
-                "duration": "03:12"
+                "title": "09 Rerank、上下文组装、Token预算与引用"
             }
         ]
     },
     {
-        "title": "16 项目1：LLM改造",
+        "title": "16 项目1：RAG实时接入与质量治理",
         "children": [
             {
-                "title": "01 利用swagger搭建LLM调试环境.mp4",
-                "size": 217827706,
-                "duration": "18:55"
+                "title": "01 Grounded Prompt、欢迎语、记忆与安全降级"
             },
             {
-                "title": "02 定制LLM系统提示词与欢迎语.mp4",
-                "size": 156962121,
-                "duration": "11:29"
+                "title": "02 RAG Service接入Mock、调试API与实时语音"
             },
             {
-                "title": "03 设置temperature对回复的影响.mp4",
-                "size": 43505443,
-                "duration": "04:59"
+                "title": "03 多文档流式回答、插话取消与延迟预算"
             },
             {
-                "title": "04 优化提示词格式.mp4",
-                "size": 172908427,
-                "duration": "11:15"
+                "title": "04 检索与生成离线评测、回归数据集"
             },
             {
-                "title": "05 创建知识库环境.mp4",
-                "size": 161068943,
-                "duration": "14:40"
+                "title": "05 Prompt Injection、隐私、观测与成本保护"
             },
             {
-                "title": "06 rag知识库技术选型思路.mp4",
-                "size": 90548632,
-                "duration": "08:07"
-            },
-            {
-                "title": "07 对LLM的调用时长进行时间监控.mp4",
-                "size": 200860200,
-                "duration": "10:49"
-            },
-            {
-                "title": "08 Ai帮我参考知识库文档生成可运行业务代码.mp4",
-                "size": 169018520,
-                "duration": "12:23"
-            },
-            {
-                "title": "09 添加知识库service服务.mp4",
-                "size": 94747960,
-                "duration": "10:33"
-            },
-            {
-                "title": "10 知识库检索返回的原始信息.mp4",
-                "size": 223727924,
-                "duration": "19:28"
-            },
-            {
-                "title": "11 跑通Rag服务并兼容多条数据返回.mp4",
-                "size": 215844322,
-                "duration": "11:24"
-            },
-            {
-                "title": "12 将Rag服务接入到测试Api.mp4",
-                "size": 46658154,
-                "duration": "04:15"
-            },
-            {
-                "title": "13 修复Rag接入实时对话bug1.mp4",
-                "size": 102115264,
-                "duration": "08:14"
-            },
-            {
-                "title": "14 修复Rag接入实时对话bug2.mp4",
-                "size": 81970534,
-                "duration": "05:18"
-            },
-            {
-                "title": "15 修复Rag接入实时对话bug3.mp4",
-                "size": 40391527,
-                "duration": "02:35"
-            },
-            {
-                "title": "16 修复Rag接入实时对话bug4.mp4",
-                "size": 10208854,
-                "duration": "01:11"
-            },
-            {
-                "title": "17 Ai应用开发工程师的核心职能和在企业的工作流程.mp4",
-                "size": 117429195,
-                "duration": "09:34"
+                "title": "06 故障注入、灰度索引、Runbook与最终验收"
             }
         ]
     },
