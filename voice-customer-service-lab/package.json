@@ -12,6 +12,9 @@
     "format": "biome check --write .",
     "lint": "biome check .",
     "test": "pnpm --recursive --if-present test",
+    "test:contract": "pnpm contract:check && pnpm --filter @voice/api test:contract",
+    "test:e2e": "pnpm --filter @voice/api test:e2e",
+    "test:fault": "pnpm --filter @voice/api test:fault",
     "typecheck": "pnpm --recursive typecheck"
   },
   "devDependencies": {

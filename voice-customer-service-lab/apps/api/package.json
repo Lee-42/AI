@@ -9,6 +9,9 @@
     "dev": "tsx watch src/server.ts",
     "start": "node --enable-source-maps dist/server.js",
     "test": "vitest run",
+    "test:contract": "vitest run test/contract-conformance.test.ts",
+    "test:e2e": "vitest run test/voice-journey.e2e.test.ts",
+    "test:fault": "vitest run test/fault-injection.test.ts",
     "typecheck": "tsc --noEmit --pretty false"
   },
   "dependencies": {

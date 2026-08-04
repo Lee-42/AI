@@ -77,6 +77,10 @@ pnpm contract:generate
 导出与本地滚动 SLO 快照。哪些指标只是代理证据、错误预算算法和 SLS/ARMS 映射见
 [`OBSERVABILITY_AND_SLO.md`](docs/architecture/OBSERVABILITY_AND_SLO.md)。
 
+第 20 节把测试分成单元、契约、进程内 E2E 和 Staging 验收，并用测试专用脚本稳定注入
+Provider 超时、清理失败和并发重复请求。测试边界、故障矩阵和 CI 分层建议见
+[`TESTING_AND_FAULT_INJECTION.md`](docs/architecture/TESTING_AND_FAULT_INJECTION.md)。
+
 ## 本地学习流程
 
 分别启动：
@@ -120,6 +124,15 @@ pnpm contract:generate
 
 # 契约、类型、测试与静态检查
 pnpm check
+
+# 契约漂移与运行时响应校验
+pnpm test:contract
+
+# 零云费用关键旅程
+pnpm test:e2e
+
+# 确定性故障注入
+pnpm test:fault
 
 # 三个工作区的生产构建
 pnpm build
