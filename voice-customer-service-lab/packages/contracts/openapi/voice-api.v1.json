@@ -5,13 +5,158 @@
         "anyOf": [
           {
             "enum": [
-              "starting"
+              "grounded_answer"
             ],
             "type": "string"
           },
           {
             "enum": [
-              "dispatched"
+              "clarify"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "direct_answer"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "abstain"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "tool_required"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "handoff"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "out_of_scope"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "safety_refusal"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "AiAnswerMode"
+      },
+      "def-1": {
+        "anyOf": [
+          {
+            "enum": [
+              "sufficient"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "none"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "conflicting"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "stale"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "not_applicable"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "AiEvidenceStatus"
+      },
+      "def-10": {
+        "additionalProperties": false,
+        "properties": {
+          "api_version": {
+            "enum": [
+              "v1"
+            ],
+            "type": "string"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "enum": [
+                  "local"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "test"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "staging"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "production"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "max_session_seconds": {
+            "maximum": 3600,
+            "minimum": 60,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "api_version",
+          "environment",
+          "max_session_seconds"
+        ],
+        "title": "PublicRuntimeConfig",
+        "type": "object"
+      },
+      "def-11": {
+        "anyOf": [
+          {
+            "enum": [
+              "new"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "creating"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "connecting"
             ],
             "type": "string"
           },
@@ -23,13 +168,19 @@
           },
           {
             "enum": [
-              "stopping"
+              "reconnecting"
             ],
             "type": "string"
           },
           {
             "enum": [
-              "stopped"
+              "ending"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "ended"
             ],
             "type": "string"
           },
@@ -38,36 +189,19 @@
               "failed"
             ],
             "type": "string"
-          },
-          {
-            "enum": [
-              "orphaned"
-            ],
-            "type": "string"
           }
         ],
-        "title": "AgentState"
+        "title": "SessionState"
       },
-      "def-1": {
+      "def-12": {
         "additionalProperties": false,
         "properties": {
-          "bot_user_id": {
-            "maxLength": 80,
-            "minLength": 8,
-            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
-            "type": "string"
-          },
           "created_at": {
             "format": "date-time",
             "type": "string"
           },
-          "deadline_at": {
+          "expires_at": {
             "format": "date-time",
-            "type": "string"
-          },
-          "prompt_policy_version": {
-            "maxLength": 64,
-            "minLength": 3,
             "type": "string"
           },
           "provider": {
@@ -86,59 +220,141 @@
               }
             ]
           },
-          "provider_request_id": {
-            "anyOf": [
-              {
-                "maxLength": 128,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "revision": {
             "minimum": 1,
             "type": "integer"
           },
-          "state": {
-            "$ref": "#/components/schemas/def-0"
-          },
-          "stopped_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "task_id": {
+          "room_id": {
             "maxLength": 80,
             "minLength": 8,
             "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
             "type": "string"
+          },
+          "rtc_user_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "session_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/def-11"
           }
         },
         "required": [
-          "task_id",
-          "bot_user_id",
+          "session_id",
+          "room_id",
+          "rtc_user_id",
           "provider",
-          "prompt_policy_version",
           "state",
           "revision",
           "created_at",
-          "deadline_at",
-          "stopped_at",
-          "provider_request_id"
+          "expires_at"
         ],
-        "title": "AgentSnapshot",
+        "title": "SessionSnapshot",
         "type": "object"
       },
-      "def-10": {
+      "def-13": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "app_id": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              "expires_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "mock"
+                ],
+                "type": "string"
+              },
+              "room_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "token": {
+                "minLength": 8,
+                "type": "string"
+              },
+              "user_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "app_id",
+              "room_id",
+              "user_id",
+              "token",
+              "expires_at"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "app_id": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              "expires_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "volcengine"
+                ],
+                "type": "string"
+              },
+              "room_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "token": {
+                "minLength": 8,
+                "type": "string"
+              },
+              "user_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "app_id",
+              "room_id",
+              "user_id",
+              "token",
+              "expires_at"
+            ],
+            "type": "object"
+          }
+        ],
+        "title": "RtcCredentials"
+      },
+      "def-14": {
         "anyOf": [
           {
             "additionalProperties": false,
@@ -1701,7 +1917,7 @@
         ],
         "title": "ConversationEvent"
       },
-      "def-11": {
+      "def-15": {
         "additionalProperties": false,
         "properties": {
           "locale": {
@@ -1717,7 +1933,7 @@
         "title": "CreateSessionRequest",
         "type": "object"
       },
-      "def-12": {
+      "def-16": {
         "additionalProperties": false,
         "properties": {
           "command_replayed": {
@@ -1725,15 +1941,15 @@
           },
           "events": {
             "items": {
-              "$ref": "#/components/schemas/def-10"
+              "$ref": "#/components/schemas/def-14"
             },
             "type": "array"
           },
           "rtc_credentials": {
-            "$ref": "#/components/schemas/def-9"
+            "$ref": "#/components/schemas/def-13"
           },
           "session": {
-            "$ref": "#/components/schemas/def-8"
+            "$ref": "#/components/schemas/def-12"
           }
         },
         "required": [
@@ -1745,7 +1961,7 @@
         "title": "CreateSessionResponse",
         "type": "object"
       },
-      "def-13": {
+      "def-17": {
         "additionalProperties": false,
         "properties": {
           "command_replayed": {
@@ -1753,15 +1969,15 @@
           },
           "events": {
             "items": {
-              "$ref": "#/components/schemas/def-10"
+              "$ref": "#/components/schemas/def-14"
             },
             "type": "array"
           },
           "session": {
-            "$ref": "#/components/schemas/def-8"
+            "$ref": "#/components/schemas/def-12"
           },
           "summary": {
-            "$ref": "#/components/schemas/def-28"
+            "$ref": "#/components/schemas/def-32"
           }
         },
         "required": [
@@ -1773,7 +1989,7 @@
         "title": "EndSessionResponse",
         "type": "object"
       },
-      "def-14": {
+      "def-18": {
         "additionalProperties": false,
         "properties": {
           "accepted": {
@@ -1801,7 +2017,7 @@
         "title": "FunctionCallCallbackAck",
         "type": "object"
       },
-      "def-15": {
+      "def-19": {
         "additionalProperties": false,
         "properties": {
           "arguments": {
@@ -1840,7 +2056,23 @@
         "title": "MockBusinessToolCallRequest",
         "type": "object"
       },
-      "def-16": {
+      "def-2": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "AiDebugTurnRequest",
+        "type": "object"
+      },
+      "def-20": {
         "additionalProperties": false,
         "properties": {
           "name": {
@@ -1853,7 +2085,7 @@
             "type": "boolean"
           },
           "result": {
-            "$ref": "#/components/schemas/def-22"
+            "$ref": "#/components/schemas/def-26"
           },
           "tool_call_id": {
             "maxLength": 128,
@@ -1871,7 +2103,7 @@
         "title": "MockBusinessToolCallResponse",
         "type": "object"
       },
-      "def-17": {
+      "def-21": {
         "additionalProperties": false,
         "properties": {
           "text": {
@@ -1887,7 +2119,7 @@
         "title": "MockTurnRequest",
         "type": "object"
       },
-      "def-18": {
+      "def-22": {
         "anyOf": [
           {
             "enum": [
@@ -1916,11 +2148,11 @@
         ],
         "title": "HandoffReason"
       },
-      "def-19": {
+      "def-23": {
         "additionalProperties": false,
         "properties": {
           "reason": {
-            "$ref": "#/components/schemas/def-18"
+            "$ref": "#/components/schemas/def-22"
           }
         },
         "required": [
@@ -1929,24 +2161,7 @@
         "title": "HandoffRequest",
         "type": "object"
       },
-      "def-2": {
-        "additionalProperties": false,
-        "properties": {
-          "agent": {
-            "$ref": "#/components/schemas/def-1"
-          },
-          "command_replayed": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "agent",
-          "command_replayed"
-        ],
-        "title": "AgentCommandResponse",
-        "type": "object"
-      },
-      "def-20": {
+      "def-24": {
         "additionalProperties": false,
         "properties": {
           "command_replayed": {
@@ -1954,18 +2169,18 @@
           },
           "events": {
             "items": {
-              "$ref": "#/components/schemas/def-10"
+              "$ref": "#/components/schemas/def-14"
             },
             "type": "array"
           },
           "handoff": {
-            "$ref": "#/components/schemas/def-21"
+            "$ref": "#/components/schemas/def-25"
           },
           "session": {
-            "$ref": "#/components/schemas/def-8"
+            "$ref": "#/components/schemas/def-12"
           },
           "summary": {
-            "$ref": "#/components/schemas/def-28"
+            "$ref": "#/components/schemas/def-32"
           }
         },
         "required": [
@@ -1978,7 +2193,7 @@
         "title": "HandoffResponse",
         "type": "object"
       },
-      "def-21": {
+      "def-25": {
         "additionalProperties": false,
         "properties": {
           "human_connected": {
@@ -1994,7 +2209,7 @@
             "type": "string"
           },
           "reason": {
-            "$ref": "#/components/schemas/def-18"
+            "$ref": "#/components/schemas/def-22"
           },
           "requested_at": {
             "format": "date-time",
@@ -2024,7 +2239,7 @@
         "title": "HandoffTicket",
         "type": "object"
       },
-      "def-22": {
+      "def-26": {
         "additionalProperties": false,
         "properties": {
           "estimated_delivery_date": {
@@ -2093,11 +2308,11 @@
         "title": "OrderStatusToolResult",
         "type": "object"
       },
-      "def-23": {
+      "def-27": {
         "title": "PrometheusMetricsResponse",
         "type": "string"
       },
-      "def-24": {
+      "def-28": {
         "anyOf": [
           {
             "enum": [
@@ -2120,7 +2335,7 @@
         ],
         "title": "RealtimeSliName"
       },
-      "def-25": {
+      "def-29": {
         "additionalProperties": false,
         "properties": {
           "accepted": {
@@ -2140,7 +2355,258 @@
         "title": "RealtimeSliObservationAck",
         "type": "object"
       },
-      "def-26": {
+      "def-3": {
+        "additionalProperties": false,
+        "properties": {
+          "answer_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "grounded_answer"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "clarify"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "direct_answer"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "abstain"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "tool_required"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "handoff"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "out_of_scope"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "safety_refusal"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "citations": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "source_id": {
+                  "maxLength": 128,
+                  "minLength": 3,
+                  "type": "string"
+                },
+                "title": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "version": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "source_id",
+                "title",
+                "version"
+              ],
+              "type": "object"
+            },
+            "maxItems": 12,
+            "type": "array"
+          },
+          "command_replayed": {
+            "type": "boolean"
+          },
+          "evidence_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "sufficient"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "conflicting"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "stale"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "not_applicable"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "execution": {
+            "additionalProperties": false,
+            "properties": {
+              "model": {
+                "anyOf": [
+                  {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "model_usage": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "input_tokens": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "output_tokens": {
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "input_tokens",
+                      "output_tokens"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "policy_version": {
+                "maxLength": 64,
+                "minLength": 3,
+                "type": "string"
+              },
+              "provider_request_id": {
+                "anyOf": [
+                  {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "retriever": {
+                "anyOf": [
+                  {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "route_reason": {
+                "maxLength": 64,
+                "minLength": 2,
+                "type": "string"
+              },
+              "router": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "policy_version",
+              "router",
+              "retriever",
+              "model",
+              "route_reason",
+              "provider_request_id",
+              "model_usage"
+            ],
+            "type": "object"
+          },
+          "round_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "schema_version": {
+            "enum": [
+              1
+            ],
+            "type": "number"
+          },
+          "session_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "spoken_text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "command_replayed",
+          "session_id",
+          "round_id",
+          "answer_mode",
+          "evidence_status",
+          "spoken_text",
+          "citations",
+          "execution"
+        ],
+        "title": "AiDebugTurnResponse",
+        "type": "object"
+      },
+      "def-30": {
         "additionalProperties": false,
         "properties": {
           "duration_ms": {
@@ -2178,7 +2644,7 @@
             ]
           },
           "sli": {
-            "$ref": "#/components/schemas/def-24"
+            "$ref": "#/components/schemas/def-28"
           },
           "source": {
             "anyOf": [
@@ -2207,7 +2673,7 @@
         "title": "RealtimeSliObservationRequest",
         "type": "object"
       },
-      "def-27": {
+      "def-31": {
         "additionalProperties": false,
         "properties": {
           "command_replayed": {
@@ -2215,12 +2681,12 @@
           },
           "events": {
             "items": {
-              "$ref": "#/components/schemas/def-10"
+              "$ref": "#/components/schemas/def-14"
             },
             "type": "array"
           },
           "session": {
-            "$ref": "#/components/schemas/def-8"
+            "$ref": "#/components/schemas/def-12"
           }
         },
         "required": [
@@ -2231,7 +2697,7 @@
         "title": "SessionCommandResponse",
         "type": "object"
       },
-      "def-28": {
+      "def-32": {
         "additionalProperties": false,
         "properties": {
           "generated_at": {
@@ -2281,7 +2747,7 @@
           },
           "topics": {
             "items": {
-              "$ref": "#/components/schemas/def-29"
+              "$ref": "#/components/schemas/def-33"
             },
             "maxItems": 3,
             "type": "array",
@@ -2313,7 +2779,7 @@
         "title": "SessionPrivacySummary",
         "type": "object"
       },
-      "def-29": {
+      "def-33": {
         "anyOf": [
           {
             "enum": [
@@ -2336,43 +2802,7 @@
         ],
         "title": "SessionSummaryTopic"
       },
-      "def-3": {
-        "additionalProperties": false,
-        "properties": {
-          "error": {
-            "additionalProperties": false,
-            "properties": {
-              "code": {
-                "pattern": "^[A-Z][A-Z0-9_]*$",
-                "type": "string"
-              },
-              "correlation_id": {
-                "type": "string"
-              },
-              "message": {
-                "type": "string"
-              },
-              "retryable": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "code",
-              "message",
-              "retryable",
-              "correlation_id"
-            ],
-            "title": "ApiErrorDetail",
-            "type": "object"
-          }
-        },
-        "required": [
-          "error"
-        ],
-        "title": "ApiErrorResponse",
-        "type": "object"
-      },
-      "def-30": {
+      "def-34": {
         "anyOf": [
           {
             "enum": [
@@ -2407,7 +2837,7 @@
         ],
         "title": "SloIndicatorName"
       },
-      "def-31": {
+      "def-35": {
         "additionalProperties": false,
         "properties": {
           "achieved_ratio": {
@@ -2454,7 +2884,7 @@
             ]
           },
           "name": {
-            "$ref": "#/components/schemas/def-30"
+            "$ref": "#/components/schemas/def-34"
           },
           "objective_ratio": {
             "maximum": 1,
@@ -2510,7 +2940,7 @@
         "title": "SloIndicator",
         "type": "object"
       },
-      "def-32": {
+      "def-36": {
         "additionalProperties": false,
         "properties": {
           "generated_at": {
@@ -2519,7 +2949,7 @@
           },
           "indicators": {
             "items": {
-              "$ref": "#/components/schemas/def-31"
+              "$ref": "#/components/schemas/def-35"
             },
             "maxItems": 5,
             "minItems": 5,
@@ -2542,7 +2972,7 @@
         "title": "SloSnapshot",
         "type": "object"
       },
-      "def-33": {
+      "def-37": {
         "additionalProperties": true,
         "properties": {
           "AppId": {
@@ -2596,6 +3026,196 @@
         "type": "object"
       },
       "def-4": {
+        "anyOf": [
+          {
+            "enum": [
+              "starting"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "dispatched"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "active"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "stopping"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "stopped"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "failed"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "orphaned"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "AgentState"
+      },
+      "def-5": {
+        "additionalProperties": false,
+        "properties": {
+          "bot_user_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deadline_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "prompt_policy_version": {
+            "maxLength": 64,
+            "minLength": 3,
+            "type": "string"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mock"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "volcengine"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "provider_request_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/def-4"
+          },
+          "stopped_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "bot_user_id",
+          "provider",
+          "prompt_policy_version",
+          "state",
+          "revision",
+          "created_at",
+          "deadline_at",
+          "stopped_at",
+          "provider_request_id"
+        ],
+        "title": "AgentSnapshot",
+        "type": "object"
+      },
+      "def-6": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "$ref": "#/components/schemas/def-5"
+          },
+          "command_replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent",
+          "command_replayed"
+        ],
+        "title": "AgentCommandResponse",
+        "type": "object"
+      },
+      "def-7": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "pattern": "^[A-Z][A-Z0-9_]*$",
+                "type": "string"
+              },
+              "correlation_id": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "retryable",
+              "correlation_id"
+            ],
+            "title": "ApiErrorDetail",
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ApiErrorResponse",
+        "type": "object"
+      },
+      "def-8": {
         "additionalProperties": false,
         "properties": {
           "code": {
@@ -2621,7 +3241,7 @@
         "title": "ApiErrorDetail",
         "type": "object"
       },
-      "def-5": {
+      "def-9": {
         "additionalProperties": false,
         "properties": {
           "status": {
@@ -2636,271 +3256,6 @@
         ],
         "title": "HealthResponse",
         "type": "object"
-      },
-      "def-6": {
-        "additionalProperties": false,
-        "properties": {
-          "api_version": {
-            "enum": [
-              "v1"
-            ],
-            "type": "string"
-          },
-          "environment": {
-            "anyOf": [
-              {
-                "enum": [
-                  "local"
-                ],
-                "type": "string"
-              },
-              {
-                "enum": [
-                  "test"
-                ],
-                "type": "string"
-              },
-              {
-                "enum": [
-                  "staging"
-                ],
-                "type": "string"
-              },
-              {
-                "enum": [
-                  "production"
-                ],
-                "type": "string"
-              }
-            ]
-          },
-          "max_session_seconds": {
-            "maximum": 3600,
-            "minimum": 60,
-            "type": "integer"
-          }
-        },
-        "required": [
-          "api_version",
-          "environment",
-          "max_session_seconds"
-        ],
-        "title": "PublicRuntimeConfig",
-        "type": "object"
-      },
-      "def-7": {
-        "anyOf": [
-          {
-            "enum": [
-              "new"
-            ],
-            "type": "string"
-          },
-          {
-            "enum": [
-              "creating"
-            ],
-            "type": "string"
-          },
-          {
-            "enum": [
-              "connecting"
-            ],
-            "type": "string"
-          },
-          {
-            "enum": [
-              "active"
-            ],
-            "type": "string"
-          },
-          {
-            "enum": [
-              "reconnecting"
-            ],
-            "type": "string"
-          },
-          {
-            "enum": [
-              "ending"
-            ],
-            "type": "string"
-          },
-          {
-            "enum": [
-              "ended"
-            ],
-            "type": "string"
-          },
-          {
-            "enum": [
-              "failed"
-            ],
-            "type": "string"
-          }
-        ],
-        "title": "SessionState"
-      },
-      "def-8": {
-        "additionalProperties": false,
-        "properties": {
-          "created_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "expires_at": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "provider": {
-            "anyOf": [
-              {
-                "enum": [
-                  "mock"
-                ],
-                "type": "string"
-              },
-              {
-                "enum": [
-                  "volcengine"
-                ],
-                "type": "string"
-              }
-            ]
-          },
-          "revision": {
-            "minimum": 1,
-            "type": "integer"
-          },
-          "room_id": {
-            "maxLength": 80,
-            "minLength": 8,
-            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
-            "type": "string"
-          },
-          "rtc_user_id": {
-            "maxLength": 80,
-            "minLength": 8,
-            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
-            "type": "string"
-          },
-          "session_id": {
-            "maxLength": 80,
-            "minLength": 8,
-            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
-            "type": "string"
-          },
-          "state": {
-            "$ref": "#/components/schemas/def-7"
-          }
-        },
-        "required": [
-          "session_id",
-          "room_id",
-          "rtc_user_id",
-          "provider",
-          "state",
-          "revision",
-          "created_at",
-          "expires_at"
-        ],
-        "title": "SessionSnapshot",
-        "type": "object"
-      },
-      "def-9": {
-        "anyOf": [
-          {
-            "additionalProperties": false,
-            "properties": {
-              "app_id": {
-                "maxLength": 64,
-                "minLength": 1,
-                "type": "string"
-              },
-              "expires_at": {
-                "format": "date-time",
-                "type": "string"
-              },
-              "kind": {
-                "enum": [
-                  "mock"
-                ],
-                "type": "string"
-              },
-              "room_id": {
-                "maxLength": 80,
-                "minLength": 8,
-                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
-                "type": "string"
-              },
-              "token": {
-                "minLength": 8,
-                "type": "string"
-              },
-              "user_id": {
-                "maxLength": 80,
-                "minLength": 8,
-                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
-                "type": "string"
-              }
-            },
-            "required": [
-              "kind",
-              "app_id",
-              "room_id",
-              "user_id",
-              "token",
-              "expires_at"
-            ],
-            "type": "object"
-          },
-          {
-            "additionalProperties": false,
-            "properties": {
-              "app_id": {
-                "maxLength": 64,
-                "minLength": 1,
-                "type": "string"
-              },
-              "expires_at": {
-                "format": "date-time",
-                "type": "string"
-              },
-              "kind": {
-                "enum": [
-                  "volcengine"
-                ],
-                "type": "string"
-              },
-              "room_id": {
-                "maxLength": 80,
-                "minLength": 8,
-                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
-                "type": "string"
-              },
-              "token": {
-                "minLength": 8,
-                "type": "string"
-              },
-              "user_id": {
-                "maxLength": 80,
-                "minLength": 8,
-                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
-                "type": "string"
-              }
-            },
-            "required": [
-              "kind",
-              "app_id",
-              "room_id",
-              "user_id",
-              "token",
-              "expires_at"
-            ],
-            "type": "object"
-          }
-        ],
-        "title": "RtcCredentials"
       }
     }
   },
@@ -2918,7 +3273,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-6"
+                  "$ref": "#/components/schemas/def-10"
                 }
               }
             },
@@ -2928,7 +3283,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -2960,7 +3315,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/def-11"
+                "$ref": "#/components/schemas/def-15"
               }
             }
           },
@@ -2971,7 +3326,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-12"
+                  "$ref": "#/components/schemas/def-16"
                 }
               }
             },
@@ -2981,7 +3336,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-12"
+                  "$ref": "#/components/schemas/def-16"
                 }
               }
             },
@@ -2991,7 +3346,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3001,7 +3356,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3045,7 +3400,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-13"
+                  "$ref": "#/components/schemas/def-17"
                 }
               }
             },
@@ -3055,7 +3410,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3065,7 +3420,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3075,7 +3430,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3119,7 +3474,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-2"
+                  "$ref": "#/components/schemas/def-6"
                 }
               }
             },
@@ -3129,7 +3484,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3139,7 +3494,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3149,7 +3504,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3159,7 +3514,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3169,7 +3524,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3211,7 +3566,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-2"
+                  "$ref": "#/components/schemas/def-6"
                 }
               }
             },
@@ -3221,7 +3576,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-2"
+                  "$ref": "#/components/schemas/def-6"
                 }
               }
             },
@@ -3231,7 +3586,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3241,7 +3596,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3251,7 +3606,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3261,7 +3616,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3271,7 +3626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3280,6 +3635,140 @@
         },
         "tags": [
           "agents"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/ai/debug-turns": {
+      "post": {
+        "operationId": "createAiDebugTurn",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "ai-debug"
         ]
       }
     },
@@ -3314,7 +3803,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/def-19"
+                "$ref": "#/components/schemas/def-23"
               }
             }
           },
@@ -3325,7 +3814,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-20"
+                  "$ref": "#/components/schemas/def-24"
                 }
               }
             },
@@ -3335,7 +3824,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-20"
+                  "$ref": "#/components/schemas/def-24"
                 }
               }
             },
@@ -3345,7 +3834,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3355,7 +3844,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3365,7 +3854,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3375,7 +3864,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3385,7 +3874,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3395,7 +3884,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3427,7 +3916,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/def-15"
+                "$ref": "#/components/schemas/def-19"
               }
             }
           },
@@ -3438,7 +3927,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-16"
+                  "$ref": "#/components/schemas/def-20"
                 }
               }
             },
@@ -3448,7 +3937,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3458,7 +3947,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3468,7 +3957,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3478,7 +3967,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3488,7 +3977,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3531,7 +4020,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/def-17"
+                "$ref": "#/components/schemas/def-21"
               }
             }
           },
@@ -3542,7 +4031,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-27"
+                  "$ref": "#/components/schemas/def-31"
                 }
               }
             },
@@ -3552,7 +4041,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3562,7 +4051,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3572,7 +4061,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3582,7 +4071,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3592,7 +4081,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3624,7 +4113,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/def-26"
+                "$ref": "#/components/schemas/def-30"
               }
             }
           },
@@ -3635,7 +4124,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-25"
+                  "$ref": "#/components/schemas/def-29"
                 }
               }
             },
@@ -3645,7 +4134,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-25"
+                  "$ref": "#/components/schemas/def-29"
                 }
               }
             },
@@ -3655,7 +4144,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3665,7 +4154,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3685,7 +4174,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-5"
+                  "$ref": "#/components/schemas/def-9"
                 }
               }
             },
@@ -3705,7 +4194,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-23"
+                  "$ref": "#/components/schemas/def-27"
                 }
               }
             },
@@ -3725,7 +4214,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-32"
+                  "$ref": "#/components/schemas/def-36"
                 }
               }
             },
@@ -3744,7 +4233,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/def-33"
+                "$ref": "#/components/schemas/def-37"
               }
             }
           },
@@ -3755,7 +4244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-14"
+                  "$ref": "#/components/schemas/def-18"
                 }
               }
             },
@@ -3765,7 +4254,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3775,7 +4264,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3785,7 +4274,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3795,7 +4284,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },
@@ -3805,7 +4294,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/def-3"
+                  "$ref": "#/components/schemas/def-7"
                 }
               }
             },

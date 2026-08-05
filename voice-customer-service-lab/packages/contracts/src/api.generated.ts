@@ -68,6 +68,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{session_id}/ai/debug-turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createAiDebugTurn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{session_id}/handoff": {
         parameters: {
             query?: never;
@@ -200,25 +216,54 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AgentState */
-        "def-0": "starting" | "dispatched" | "active" | "stopping" | "stopped" | "failed" | "orphaned";
-        /** AgentSnapshot */
-        "def-1": {
-            bot_user_id: string;
+        /** AiAnswerMode */
+        "def-0": "grounded_answer" | "clarify" | "direct_answer" | "abstain" | "tool_required" | "handoff" | "out_of_scope" | "safety_refusal";
+        /** AiEvidenceStatus */
+        "def-1": "sufficient" | "none" | "conflicting" | "stale" | "not_applicable";
+        /** PublicRuntimeConfig */
+        "def-10": {
+            /** @enum {string} */
+            api_version: "v1";
+            environment: "local" | "test" | "staging" | "production";
+            max_session_seconds: number;
+        };
+        /** SessionState */
+        "def-11": "new" | "creating" | "connecting" | "active" | "reconnecting" | "ending" | "ended" | "failed";
+        /** SessionSnapshot */
+        "def-12": {
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
-            deadline_at: string;
-            prompt_policy_version: string;
+            expires_at: string;
             provider: "mock" | "volcengine";
-            provider_request_id: string | null;
             revision: number;
-            state: components["schemas"]["def-0"];
-            stopped_at: string | null;
-            task_id: string;
+            room_id: string;
+            rtc_user_id: string;
+            session_id: string;
+            state: components["schemas"]["def-11"];
+        };
+        /** RtcCredentials */
+        "def-13": {
+            app_id: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @enum {string} */
+            kind: "mock";
+            room_id: string;
+            token: string;
+            user_id: string;
+        } | {
+            app_id: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @enum {string} */
+            kind: "volcengine";
+            room_id: string;
+            token: string;
+            user_id: string;
         };
         /** ConversationEvent */
-        "def-10": {
+        "def-14": {
             correlation_id: string;
             event_id: string;
             /** @enum {string} */
@@ -495,33 +540,33 @@ export interface components {
             stream_id: string;
         };
         /** CreateSessionRequest */
-        "def-11": {
+        "def-15": {
             /** @enum {string} */
             locale: "zh-CN";
         };
         /** CreateSessionResponse */
-        "def-12": {
+        "def-16": {
             command_replayed: boolean;
-            events: components["schemas"]["def-10"][];
-            rtc_credentials: components["schemas"]["def-9"];
-            session: components["schemas"]["def-8"];
+            events: components["schemas"]["def-14"][];
+            rtc_credentials: components["schemas"]["def-13"];
+            session: components["schemas"]["def-12"];
         };
         /** EndSessionResponse */
-        "def-13": {
+        "def-17": {
             command_replayed: boolean;
-            events: components["schemas"]["def-10"][];
-            session: components["schemas"]["def-8"];
-            summary: components["schemas"]["def-28"];
+            events: components["schemas"]["def-14"][];
+            session: components["schemas"]["def-12"];
+            summary: components["schemas"]["def-32"];
         };
         /** FunctionCallCallbackAck */
-        "def-14": {
+        "def-18": {
             /** @enum {boolean} */
             accepted: true;
             replayed_count: number;
             tool_call_count: number;
         };
         /** MockBusinessToolCallRequest */
-        "def-15": {
+        "def-19": {
             arguments: {
                 order_reference: string;
             };
@@ -529,44 +574,43 @@ export interface components {
             name: "get_order_status";
             tool_call_id: string;
         };
+        /** AiDebugTurnRequest */
+        "def-2": {
+            text: string;
+        };
         /** MockBusinessToolCallResponse */
-        "def-16": {
+        "def-20": {
             /** @enum {string} */
             name: "get_order_status";
             replayed: boolean;
-            result: components["schemas"]["def-22"];
+            result: components["schemas"]["def-26"];
             tool_call_id: string;
         };
         /** MockTurnRequest */
-        "def-17": {
+        "def-21": {
             text: string;
         };
         /** HandoffReason */
-        "def-18": "user_request" | "unsupported_request" | "safety_concern" | "repeated_failure";
+        "def-22": "user_request" | "unsupported_request" | "safety_concern" | "repeated_failure";
         /** HandoffRequest */
-        "def-19": {
-            reason: components["schemas"]["def-18"];
-        };
-        /** AgentCommandResponse */
-        "def-2": {
-            agent: components["schemas"]["def-1"];
-            command_replayed: boolean;
+        "def-23": {
+            reason: components["schemas"]["def-22"];
         };
         /** HandoffResponse */
-        "def-20": {
+        "def-24": {
             command_replayed: boolean;
-            events: components["schemas"]["def-10"][];
-            handoff: components["schemas"]["def-21"];
-            session: components["schemas"]["def-8"];
-            summary: components["schemas"]["def-28"];
+            events: components["schemas"]["def-14"][];
+            handoff: components["schemas"]["def-25"];
+            session: components["schemas"]["def-12"];
+            summary: components["schemas"]["def-32"];
         };
         /** HandoffTicket */
-        "def-21": {
+        "def-25": {
             /** @enum {boolean} */
             human_connected: false;
             /** @enum {string} */
             message: "已记录演示转人工工单；当前没有真人坐席接入。";
-            reason: components["schemas"]["def-18"];
+            reason: components["schemas"]["def-22"];
             /** Format: date-time */
             requested_at: string;
             /** @enum {string} */
@@ -574,7 +618,7 @@ export interface components {
             ticket_id: string;
         };
         /** OrderStatusToolResult */
-        "def-22": {
+        "def-26": {
             estimated_delivery_date: string | null;
             fulfillment_status: "processing" | "shipped" | "delivered" | "cancelled";
             latest_event: string;
@@ -582,31 +626,59 @@ export interface components {
             status_text: string;
         };
         /** PrometheusMetricsResponse */
-        "def-23": string;
+        "def-27": string;
         /** RealtimeSliName */
-        "def-24": "rtc_join" | "turn_first_output" | "barge_in_stop";
+        "def-28": "rtc_join" | "turn_first_output" | "barge_in_stop";
         /** RealtimeSliObservationAck */
-        "def-25": {
+        "def-29": {
             /** @enum {boolean} */
             accepted: true;
             replayed: boolean;
         };
+        /** AiDebugTurnResponse */
+        "def-3": {
+            answer_mode: "grounded_answer" | "clarify" | "direct_answer" | "abstain" | "tool_required" | "handoff" | "out_of_scope" | "safety_refusal";
+            citations: {
+                source_id: string;
+                title: string;
+                version: string;
+            }[];
+            command_replayed: boolean;
+            evidence_status: "sufficient" | "none" | "conflicting" | "stale" | "not_applicable";
+            execution: {
+                model: string | null;
+                model_usage: {
+                    input_tokens: number;
+                    output_tokens: number;
+                } | null;
+                policy_version: string;
+                provider_request_id: string | null;
+                retriever: string | null;
+                route_reason: string;
+                router: string;
+            };
+            round_id: string;
+            /** @enum {number} */
+            schema_version: 1;
+            session_id: string;
+            spoken_text: string;
+        };
         /** RealtimeSliObservationRequest */
-        "def-26": {
+        "def-30": {
             duration_ms: number | null;
             observation_id: string;
             outcome: "success" | "failure";
-            sli: components["schemas"]["def-24"];
+            sli: components["schemas"]["def-28"];
             source: "mock" | "rtc";
         };
         /** SessionCommandResponse */
-        "def-27": {
+        "def-31": {
             command_replayed: boolean;
-            events: components["schemas"]["def-10"][];
-            session: components["schemas"]["def-8"];
+            events: components["schemas"]["def-14"][];
+            session: components["schemas"]["def-12"];
         };
         /** SessionPrivacySummary */
-        "def-28": {
+        "def-32": {
             /** Format: date-time */
             generated_at: string;
             outcome: "completed" | "handoff_requested";
@@ -617,48 +689,38 @@ export interface components {
             sensitive_input_detected: boolean;
             session_id: string;
             summary_id: string;
-            topics: components["schemas"]["def-29"][];
+            topics: components["schemas"]["def-33"][];
             /** @enum {boolean} */
             transcript_retained: false;
             turn_count: number;
         };
         /** SessionSummaryTopic */
-        "def-29": "general_support" | "order_status" | "human_handoff";
-        /** ApiErrorResponse */
-        "def-3": {
-            /** ApiErrorDetail */
-            error: {
-                code: string;
-                correlation_id: string;
-                message: string;
-                retryable: boolean;
-            };
-        };
+        "def-33": "general_support" | "order_status" | "human_handoff";
         /** SloIndicatorName */
-        "def-30": "control_plane_availability" | "rtc_join_success" | "turn_first_output" | "barge_in_stop" | "agent_cleanup";
+        "def-34": "control_plane_availability" | "rtc_join_success" | "turn_first_output" | "barge_in_stop" | "agent_cleanup";
         /** SloIndicator */
-        "def-31": {
+        "def-35": {
             achieved_ratio: number | null;
             eligible_events: number;
             error_budget_events: number;
             error_budget_remaining_events: number;
             good_events: number;
             measurement_quality: "authoritative" | "proxy";
-            name: components["schemas"]["def-30"];
+            name: components["schemas"]["def-34"];
             objective_ratio: number;
             status: "no_data" | "meeting" | "breached";
             threshold_seconds: number | null;
         };
         /** SloSnapshot */
-        "def-32": {
+        "def-36": {
             /** Format: date-time */
             generated_at: string;
-            indicators: components["schemas"]["def-31"][];
+            indicators: components["schemas"]["def-35"][];
             sample_warning: boolean;
             window_seconds: number;
         };
         /** VolcengineFunctionCallCallbackRequest */
-        "def-33": {
+        "def-37": {
             AppId: string;
             Message: string;
             RoomID: string;
@@ -671,59 +733,49 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** AgentState */
+        "def-4": "starting" | "dispatched" | "active" | "stopping" | "stopped" | "failed" | "orphaned";
+        /** AgentSnapshot */
+        "def-5": {
+            bot_user_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            deadline_at: string;
+            prompt_policy_version: string;
+            provider: "mock" | "volcengine";
+            provider_request_id: string | null;
+            revision: number;
+            state: components["schemas"]["def-4"];
+            stopped_at: string | null;
+            task_id: string;
+        };
+        /** AgentCommandResponse */
+        "def-6": {
+            agent: components["schemas"]["def-5"];
+            command_replayed: boolean;
+        };
+        /** ApiErrorResponse */
+        "def-7": {
+            /** ApiErrorDetail */
+            error: {
+                code: string;
+                correlation_id: string;
+                message: string;
+                retryable: boolean;
+            };
+        };
         /** ApiErrorDetail */
-        "def-4": {
+        "def-8": {
             code: string;
             correlation_id: string;
             message: string;
             retryable: boolean;
         };
         /** HealthResponse */
-        "def-5": {
+        "def-9": {
             /** @enum {string} */
             status: "ok";
-        };
-        /** PublicRuntimeConfig */
-        "def-6": {
-            /** @enum {string} */
-            api_version: "v1";
-            environment: "local" | "test" | "staging" | "production";
-            max_session_seconds: number;
-        };
-        /** SessionState */
-        "def-7": "new" | "creating" | "connecting" | "active" | "reconnecting" | "ending" | "ended" | "failed";
-        /** SessionSnapshot */
-        "def-8": {
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            expires_at: string;
-            provider: "mock" | "volcengine";
-            revision: number;
-            room_id: string;
-            rtc_user_id: string;
-            session_id: string;
-            state: components["schemas"]["def-7"];
-        };
-        /** RtcCredentials */
-        "def-9": {
-            app_id: string;
-            /** Format: date-time */
-            expires_at: string;
-            /** @enum {string} */
-            kind: "mock";
-            room_id: string;
-            token: string;
-            user_id: string;
-        } | {
-            app_id: string;
-            /** Format: date-time */
-            expires_at: string;
-            /** @enum {string} */
-            kind: "volcengine";
-            room_id: string;
-            token: string;
-            user_id: string;
         };
     };
     responses: never;
@@ -749,7 +801,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-6"];
+                    "application/json": components["schemas"]["def-10"];
                 };
             };
             /** @description Default Response */
@@ -758,7 +810,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };
@@ -774,7 +826,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["def-11"];
+                "application/json": components["schemas"]["def-15"];
             };
         };
         responses: {
@@ -784,7 +836,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-12"];
+                    "application/json": components["schemas"]["def-16"];
                 };
             };
             /** @description Default Response */
@@ -793,7 +845,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-12"];
+                    "application/json": components["schemas"]["def-16"];
                 };
             };
             /** @description Default Response */
@@ -802,7 +854,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -811,7 +863,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };
@@ -835,7 +887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-13"];
+                    "application/json": components["schemas"]["def-17"];
                 };
             };
             /** @description Default Response */
@@ -844,7 +896,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -853,7 +905,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -862,7 +914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };
@@ -886,7 +938,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-2"];
+                    "application/json": components["schemas"]["def-6"];
                 };
             };
             /** @description Default Response */
@@ -895,7 +947,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-2"];
+                    "application/json": components["schemas"]["def-6"];
                 };
             };
             /** @description Default Response */
@@ -904,7 +956,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -913,7 +965,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -922,7 +974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -931,7 +983,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -940,7 +992,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };
@@ -964,7 +1016,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-2"];
+                    "application/json": components["schemas"]["def-6"];
                 };
             };
             /** @description Default Response */
@@ -973,7 +1025,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -982,7 +1034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -991,7 +1043,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1000,7 +1052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1009,7 +1061,107 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+        };
+    };
+    createAiDebugTurn: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["def-2"];
+            };
+        };
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-3"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };
@@ -1020,6 +1172,95 @@ export interface operations {
             header: {
                 "idempotency-key": string;
             };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["def-23"];
+            };
+        };
+        responses: {
+            /** @description Default Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-24"];
+                };
+            };
+            /** @description Default Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-24"];
+                };
+            };
+            /** @description Default Response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+            /** @description Default Response */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["def-7"];
+                };
+            };
+        };
+    };
+    invokeMockBusinessTool: {
+        parameters: {
+            query?: never;
+            header?: never;
             path: {
                 session_id: string;
             };
@@ -1041,21 +1282,12 @@ export interface operations {
                 };
             };
             /** @description Default Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["def-20"];
-                };
-            };
-            /** @description Default Response */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1064,7 +1296,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1073,7 +1305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1082,87 +1314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
-                };
-            };
-            /** @description Default Response */
-            502: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["def-3"];
-                };
-            };
-            /** @description Default Response */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["def-3"];
-                };
-            };
-        };
-    };
-    invokeMockBusinessTool: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                session_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["def-15"];
-            };
-        };
-        responses: {
-            /** @description Default Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["def-16"];
-                };
-            };
-            /** @description Default Response */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["def-3"];
-                };
-            };
-            /** @description Default Response */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["def-3"];
-                };
-            };
-            /** @description Default Response */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["def-3"];
-                };
-            };
-            /** @description Default Response */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1171,7 +1323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };
@@ -1189,7 +1341,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["def-17"];
+                "application/json": components["schemas"]["def-21"];
             };
         };
         responses: {
@@ -1199,7 +1351,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-27"];
+                    "application/json": components["schemas"]["def-31"];
                 };
             };
             /** @description Default Response */
@@ -1208,7 +1360,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1217,7 +1369,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1226,7 +1378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1235,7 +1387,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1244,7 +1396,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };
@@ -1260,7 +1412,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["def-26"];
+                "application/json": components["schemas"]["def-30"];
             };
         };
         responses: {
@@ -1270,7 +1422,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-25"];
+                    "application/json": components["schemas"]["def-29"];
                 };
             };
             /** @description Default Response */
@@ -1279,7 +1431,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-25"];
+                    "application/json": components["schemas"]["def-29"];
                 };
             };
             /** @description Default Response */
@@ -1288,7 +1440,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1297,7 +1449,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };
@@ -1317,7 +1469,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-5"];
+                    "application/json": components["schemas"]["def-9"];
                 };
             };
         };
@@ -1337,7 +1489,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-23"];
+                    "application/json": components["schemas"]["def-27"];
                 };
             };
         };
@@ -1357,7 +1509,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-32"];
+                    "application/json": components["schemas"]["def-36"];
                 };
             };
         };
@@ -1371,7 +1523,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["def-33"];
+                "application/json": components["schemas"]["def-37"];
             };
         };
         responses: {
@@ -1381,7 +1533,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-14"];
+                    "application/json": components["schemas"]["def-18"];
                 };
             };
             /** @description Default Response */
@@ -1390,7 +1542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1399,7 +1551,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1408,7 +1560,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1417,7 +1569,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
             /** @description Default Response */
@@ -1426,7 +1578,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["def-3"];
+                    "application/json": components["schemas"]["def-7"];
                 };
             };
         };

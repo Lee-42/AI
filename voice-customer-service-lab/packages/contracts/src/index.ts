@@ -1,3 +1,17 @@
+export type {
+  AiAnswerMode,
+  AiDebugTurnHeaders,
+  AiDebugTurnRequest,
+  AiDebugTurnResponse,
+  AiEvidenceStatus,
+} from "./ai.js";
+export {
+  AiAnswerModeSchema,
+  AiDebugTurnHeadersSchema,
+  AiDebugTurnRequestSchema,
+  AiDebugTurnResponseSchema,
+  AiEvidenceStatusSchema,
+} from "./ai.js";
 export type { components, operations, paths } from "./api.generated.js";
 export type {
   FunctionCallCallbackAck,

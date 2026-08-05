@@ -48,6 +48,14 @@ const rawEnvironmentSchema = z
       .string()
       .trim()
       .default("config/customer-service-policy.v1.json"),
+    RAG_ANSWER_POLICY_PATH: z.string().trim().default("config/rag-answer-policy.v1.json"),
+    LLM_PROVIDER: z.enum(["mock", "volcengine"]).default("mock"),
+    LLM_DEBUG_API_ENABLED: disabledByDefaultBoolean,
+    LLM_PAID_CALLS_ENABLED: disabledByDefaultBoolean,
+    LLM_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(60_000).default(15_000),
+    VOLCENGINE_ARK_BASE_URL: z.string().trim().default("https://ark.cn-beijing.volces.com/api/v3"),
+    VOLCENGINE_ARK_MODEL: optionalValue,
+    VOLCENGINE_ARK_API_KEY: optionalValue,
     VOLCENGINE_VOICE_API_VERSION: z.literal("2025-06-01").default("2025-06-01"),
     VOLCENGINE_PAID_CALLS_ENABLED: disabledByDefaultBoolean,
     VOLCENGINE_FUNCTION_CALLING_ENABLED: disabledByDefaultBoolean,
@@ -81,6 +89,59 @@ const rawEnvironmentSchema = z
         message:
           "OTEL_EXPORTER_OTLP_ENDPOINT must be HTTP(S), contain no credentials/query, and use HTTPS in production",
       });
+    }
+
+    if (value.LLM_DEBUG_API_ENABLED && !["local", "test"].includes(value.APP_ENV)) {
+      context.addIssue({
+        code: "custom",
+        path: ["LLM_DEBUG_API_ENABLED"],
+        message: "LLM_DEBUG_API_ENABLED is only allowed in local or test environments",
+      });
+    }
+
+    if (value.LLM_PAID_CALLS_ENABLED && value.LLM_PROVIDER !== "volcengine") {
+      context.addIssue({
+        code: "custom",
+        path: ["LLM_PAID_CALLS_ENABLED"],
+        message: "LLM_PAID_CALLS_ENABLED requires LLM_PROVIDER=volcengine",
+      });
+    }
+
+    if (value.LLM_PROVIDER === "volcengine") {
+      if (!value.LLM_PAID_CALLS_ENABLED) {
+        context.addIssue({
+          code: "custom",
+          path: ["LLM_PAID_CALLS_ENABLED"],
+          message: "LLM_PAID_CALLS_ENABLED must be true when LLM_PROVIDER=volcengine",
+        });
+      }
+      if (!isSafeArkBaseUrl(value.VOLCENGINE_ARK_BASE_URL)) {
+        context.addIssue({
+          code: "custom",
+          path: ["VOLCENGINE_ARK_BASE_URL"],
+          message: "VOLCENGINE_ARK_BASE_URL must be the allow-listed official Ark API v3 URL",
+        });
+      }
+      if (!value.VOLCENGINE_ARK_MODEL) {
+        context.addIssue({
+          code: "custom",
+          path: ["VOLCENGINE_ARK_MODEL"],
+          message: "VOLCENGINE_ARK_MODEL is required when LLM_PROVIDER=volcengine",
+        });
+      } else if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$/.test(value.VOLCENGINE_ARK_MODEL)) {
+        context.addIssue({
+          code: "custom",
+          path: ["VOLCENGINE_ARK_MODEL"],
+          message: "VOLCENGINE_ARK_MODEL contains unsupported characters",
+        });
+      }
+      if (!value.VOLCENGINE_ARK_API_KEY) {
+        context.addIssue({
+          code: "custom",
+          path: ["VOLCENGINE_ARK_API_KEY"],
+          message: "VOLCENGINE_ARK_API_KEY is required when LLM_PROVIDER=volcengine",
+        });
+      }
     }
 
     if (value.VOICE_PROVIDER === "volcengine") {
@@ -173,6 +234,18 @@ export interface ServerConfig {
   readonly agentReaperIntervalSeconds: number;
   readonly observabilityWindowSeconds: number;
   readonly customerServicePolicyPath: string;
+  readonly ai: {
+    readonly provider: RawEnvironment["LLM_PROVIDER"];
+    readonly debugApiEnabled: boolean;
+    readonly paidCallsEnabled: boolean;
+    readonly answerPolicyPath: string;
+    readonly requestTimeoutMs: number;
+    readonly volcengine: {
+      readonly baseUrl: string;
+      readonly model: string | undefined;
+      readonly apiKey: SecretValue | undefined;
+    };
+  };
   readonly volcengine: {
     readonly voiceApiVersion: RawEnvironment["VOLCENGINE_VOICE_API_VERSION"];
     readonly paidCallsEnabled: boolean;
@@ -204,6 +277,10 @@ export interface SafeConfigSummary {
   readonly maxSessionSeconds: number;
   readonly sessionSummaryRetentionDays: number;
   readonly observabilityWindowSeconds: number;
+  readonly llmProvider: ServerConfig["ai"]["provider"];
+  readonly llmDebugApiEnabled: boolean;
+  readonly llmPaidCallsEnabled: boolean;
+  readonly llmModelConfigured: boolean;
   readonly otlpTraceExportConfigured: boolean;
   readonly volcengineVoiceApiVersion: ServerConfig["volcengine"]["voiceApiVersion"];
   readonly volcenginePaidCallsEnabled: boolean;
@@ -230,6 +307,18 @@ export function loadServerConfig(
     agentReaperIntervalSeconds: raw.AGENT_REAPER_INTERVAL_SECONDS,
     observabilityWindowSeconds: raw.OBSERVABILITY_WINDOW_SECONDS,
     customerServicePolicyPath: raw.CUSTOMER_SERVICE_POLICY_PATH,
+    ai: Object.freeze({
+      provider: raw.LLM_PROVIDER,
+      debugApiEnabled: raw.LLM_DEBUG_API_ENABLED,
+      paidCallsEnabled: raw.LLM_PAID_CALLS_ENABLED,
+      answerPolicyPath: raw.RAG_ANSWER_POLICY_PATH,
+      requestTimeoutMs: raw.LLM_REQUEST_TIMEOUT_MS,
+      volcengine: Object.freeze({
+        baseUrl: raw.VOLCENGINE_ARK_BASE_URL,
+        model: raw.VOLCENGINE_ARK_MODEL,
+        apiKey: toSecret(raw.VOLCENGINE_ARK_API_KEY),
+      }),
+    }),
     volcengine: Object.freeze({
       voiceApiVersion: raw.VOLCENGINE_VOICE_API_VERSION,
       paidCallsEnabled: raw.VOLCENGINE_PAID_CALLS_ENABLED,
@@ -263,6 +352,10 @@ export function safeConfigSummary(config: ServerConfig): SafeConfigSummary {
     maxSessionSeconds: config.maxSessionSeconds,
     sessionSummaryRetentionDays: config.sessionSummaryRetentionDays,
     observabilityWindowSeconds: config.observabilityWindowSeconds,
+    llmProvider: config.ai.provider,
+    llmDebugApiEnabled: config.ai.debugApiEnabled,
+    llmPaidCallsEnabled: config.ai.paidCallsEnabled,
+    llmModelConfigured: Boolean(config.ai.volcengine.model && config.ai.volcengine.apiKey),
     otlpTraceExportConfigured: Boolean(config.telemetry.otlpEndpoint),
     volcengineVoiceApiVersion: config.volcengine.voiceApiVersion,
     volcenginePaidCallsEnabled: config.volcengine.paidCallsEnabled,
@@ -329,6 +422,24 @@ function isSafeOtlpEndpoint(value: string, appEnv: RawEnvironment["APP_ENV"]): b
     return (
       ["http:", "https:"].includes(url.protocol) &&
       (appEnv !== "production" || url.protocol === "https:") &&
+      url.username === "" &&
+      url.password === "" &&
+      url.search === "" &&
+      url.hash === ""
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isSafeArkBaseUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      url.hostname === "ark.cn-beijing.volces.com" &&
+      url.port === "" &&
+      url.pathname.replace(/\/$/, "") === "/api/v3" &&
       url.username === "" &&
       url.password === "" &&
       url.search === "" &&

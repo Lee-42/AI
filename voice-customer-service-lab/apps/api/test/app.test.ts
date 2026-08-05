@@ -52,6 +52,9 @@ describe("HTTP contracts", () => {
     expect(schema.paths?.["/api/v1/sessions/{session_id}/mock-tool-calls"]?.post?.operationId).toBe(
       "invokeMockBusinessTool",
     );
+    expect(schema.paths?.["/api/v1/sessions/{session_id}/ai/debug-turns"]?.post?.operationId).toBe(
+      "createAiDebugTurn",
+    );
     expect(
       schema.paths?.["/internal/provider-callbacks/volcengine/function-calls"]?.post?.operationId,
     ).toBe("receiveVolcengineFunctionCalls");

@@ -1,4 +1,5 @@
 import {
+  AiDebugTurnResponseSchema,
   ApiErrorResponseSchema,
   ConversationEventSchema,
   CreateSessionResponseSchema,
@@ -54,10 +55,29 @@ describe("published HTTP contract", () => {
     expect(response.statusCode).toBe(400);
     expect(Check(ApiErrorResponseSchema, response.json())).toBe(true);
   });
+
+  it("keeps the local AI debug response compatible with the shared schema", async () => {
+    const app = createApp({ LLM_DEBUG_API_ENABLED: "true" });
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/v1/sessions",
+      headers: { "idempotency-key": "contract-ai-debug-session" },
+      payload: { locale: "zh-CN" },
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/sessions/${created.json().session.session_id}/ai/debug-turns`,
+      headers: { "idempotency-key": "contract-ai-debug-turn" },
+      payload: { text: "普通商品签收后几天可以申请退货？" },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(Check(AiDebugTurnResponseSchema, response.json())).toBe(true);
+  });
 });
 
-function createApp() {
-  const app = buildApp(loadServerConfig({ APP_ENV: "test" }));
+function createApp(environment: Record<string, string> = {}) {
+  const app = buildApp(loadServerConfig({ APP_ENV: "test", ...environment }));
   apps.push(app);
   return app;
 }

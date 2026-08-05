@@ -8,6 +8,10 @@ import {
   AgentCommandResponseSchema,
   AgentSnapshotSchema,
   AgentStateSchema,
+  AiAnswerModeSchema,
+  AiDebugTurnRequestSchema,
+  AiDebugTurnResponseSchema,
+  AiEvidenceStatusSchema,
   ApiErrorResponseSchema,
   ConversationEventSchema,
   CreateSessionRequestSchema,
@@ -45,6 +49,11 @@ import type { AgentGateway } from "./agent/agent-gateway.js";
 import { AgentGatewayError } from "./agent/agent-gateway.js";
 import { AgentLifecycleError, AgentLifecycleService } from "./agent/agent-lifecycle-service.js";
 import { createAgentGateway } from "./agent/create-agent-gateway.js";
+import { AiDebugService, AiDebugServiceError } from "./ai/ai-debug-service.js";
+import { LanguageModelError } from "./ai/ai-ports.js";
+import type { AiOrchestrator } from "./ai/ai-types.js";
+import { AiOrchestratorError } from "./ai/ai-types.js";
+import { createDebugAiOrchestrator } from "./ai/create-debug-ai-orchestrator.js";
 import { BusinessToolError, BusinessToolService } from "./business-tools/business-tool-service.js";
 import { DemoOrderRepository } from "./business-tools/demo-order-repository.js";
 import type { ServerConfig } from "./core/config.js";
@@ -57,6 +66,7 @@ import { ObservabilityService } from "./observability/observability-service.js";
 import { createVoiceAgentProvider } from "./providers/create-voice-agent-provider.js";
 import type { VoiceAgentProvider } from "./providers/voice-agent-provider.js";
 import { VoiceProviderError } from "./providers/voice-agent-provider.js";
+import { registerAiDebugRoutes } from "./routes/ai-debug-routes.js";
 import { registerBusinessToolRoutes } from "./routes/business-tool-routes.js";
 import { registerObservabilityRoutes } from "./routes/observability-routes.js";
 import { registerSessionRoutes } from "./routes/session-routes.js";
@@ -78,6 +88,7 @@ export interface BuildAppOptions {
   readonly sessionDataService?: SessionDataService;
   readonly sessionClosureService?: SessionClosureService;
   readonly observabilityService?: ObservabilityService;
+  readonly aiOrchestrator?: AiOrchestrator;
   readonly tracer?: Tracer;
 }
 
@@ -122,6 +133,9 @@ export function buildApp(config: ServerConfig, options: BuildAppOptions = {}) {
       sessionData,
       retentionDays: config.sessionSummaryRetentionDays,
     });
+  const aiDebugService = config.ai.debugApiEnabled
+    ? new AiDebugService(options.aiOrchestrator ?? createDebugAiOrchestrator(config))
+    : undefined;
   const tracer = options.tracer ?? trace.getTracer("voice-customer-service-api", "0.1.0");
   const activeRequests = new WeakMap<object, ActiveRequestObservation>();
   const app = Fastify({
@@ -153,6 +167,10 @@ export function buildApp(config: ServerConfig, options: BuildAppOptions = {}) {
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   for (const schema of [
+    AiAnswerModeSchema,
+    AiEvidenceStatusSchema,
+    AiDebugTurnRequestSchema,
+    AiDebugTurnResponseSchema,
     AgentStateSchema,
     AgentSnapshotSchema,
     AgentCommandResponseSchema,
@@ -264,9 +282,21 @@ export function buildApp(config: ServerConfig, options: BuildAppOptions = {}) {
       error instanceof AgentLifecycleError ||
       error instanceof AgentGatewayError ||
       error instanceof BusinessToolError ||
-      error instanceof SessionClosureError
+      error instanceof SessionClosureError ||
+      error instanceof AiDebugServiceError
     ) {
       return reply.status(error.statusCode).send({
+        error: {
+          code: error.code,
+          message: error.message,
+          retryable: error.retryable,
+          correlation_id: request.id,
+        },
+      });
+    }
+
+    if (error instanceof LanguageModelError || error instanceof AiOrchestratorError) {
+      return reply.status(aiErrorStatus(error)).send({
         error: {
           code: error.code,
           message: error.message,
@@ -351,6 +381,12 @@ export function buildApp(config: ServerConfig, options: BuildAppOptions = {}) {
       sessionClosure,
       sessionData,
     });
+    await routes.register(registerAiDebugRoutes, {
+      provider: voiceProvider,
+      service: aiDebugService,
+      // The demo Tenant is bound by trusted server code, never accepted from the debug request.
+      resolveTenantId: () => "tenant_demo_store",
+    });
     await routes.register(registerBusinessToolRoutes, {
       provider: voiceProvider,
       tools: businessTools,
@@ -427,4 +463,18 @@ function singleHeader(value: string | string[] | undefined): string | undefined 
 
 function errorName(error: unknown): string {
   return error instanceof Error ? error.name : "UnknownError";
+}
+
+function aiErrorStatus(error: LanguageModelError | AiOrchestratorError): 409 | 502 | 503 | 504 {
+  if (error instanceof AiOrchestratorError) {
+    return error.code === "AI_TURN_ABORTED" ? 409 : 502;
+  }
+  return {
+    LLM_PROVIDER_AUTHENTICATION_FAILED: 503 as const,
+    LLM_PROVIDER_RATE_LIMITED: 503 as const,
+    LLM_PROVIDER_REJECTED: 502 as const,
+    LLM_PROVIDER_UNAVAILABLE: 503 as const,
+    LLM_PROVIDER_TIMEOUT: 504 as const,
+    LLM_INVALID_RESPONSE: 502 as const,
+  }[error.code];
 }

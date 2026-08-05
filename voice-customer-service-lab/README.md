@@ -81,6 +81,19 @@ pnpm contract:generate
 Provider 超时、清理失败和并发重复请求。测试边界、故障矩阵和 CI 分层建议见
 [`TESTING_AND_FAULT_INJECTION.md`](docs/architecture/TESTING_AND_FAULT_INJECTION.md)。
 
+第 15 章第 01 节先冻结 RAG 的公开知识范围、答案路由、无证据拒答规则和合成评测集，
+暂不引入向量库或真实模型。产品边界、指标口径和练习见
+[`RAG_PRODUCT_SCOPE_AND_EVALUATION.md`](docs/architecture/RAG_PRODUCT_SCOPE_AND_EVALUATION.md)。
+
+第 15 章第 02 节用六边形架构建立 `AiOrchestrator` 输入 Port，以及 Router、Retriever、
+LLM 和答案策略输出 Port；当前留在 API 进程内，并用确定性 Mock LLM 零费用验证。边界与
+部署决策见
+[`AI_ORCHESTRATOR_BOUNDARY.md`](docs/architecture/AI_ORCHESTRATOR_BOUNDARY.md)。
+
+第 15 章第 03 节增加独立 LLM 配置、两阶段费用开关、火山方舟 Chat Completions Adapter，
+以及默认关闭且仅限 local/test 的 Session 绑定调试 API。配置与密钥边界见
+[`MODEL_CONFIGURATION_AND_PROVIDER_ADAPTER.md`](docs/architecture/MODEL_CONFIGURATION_AND_PROVIDER_ADAPTER.md)。
+
 ## 本地学习流程
 
 分别启动：
@@ -133,6 +146,15 @@ pnpm test:e2e
 
 # 确定性故障注入
 pnpm test:fault
+
+# RAG 产品边界与评测数据集校验（零模型费用）
+pnpm test:rag-baseline
+
+# AiOrchestrator Port、证据门禁与 Mock LLM
+pnpm test:ai-orchestrator
+
+# 模型配置、方舟 Provider Adapter 与调试 API（Fake Fetch，零模型费用）
+pnpm test:ai-provider
 
 # 三个工作区的生产构建
 pnpm build

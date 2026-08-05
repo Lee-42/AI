@@ -9,9 +9,12 @@
     "dev": "tsx watch src/server.ts",
     "start": "node --enable-source-maps dist/server.js",
     "test": "vitest run",
+    "test:ai-orchestrator": "vitest run test/ai-orchestrator.test.ts",
+    "test:ai-provider": "vitest run test/volcengine-ark-language-model.test.ts test/ai-debug-api.test.ts test/config.test.ts",
     "test:contract": "vitest run test/contract-conformance.test.ts",
     "test:e2e": "vitest run test/voice-journey.e2e.test.ts",
     "test:fault": "vitest run test/fault-injection.test.ts",
+    "test:rag-baseline": "vitest run test/rag-product-baseline.test.ts",
     "typecheck": "tsc --noEmit --pretty false"
   },
   "dependencies": {

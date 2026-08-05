@@ -12,9 +12,12 @@
     "format": "biome check --write .",
     "lint": "biome check .",
     "test": "pnpm --recursive --if-present test",
+    "test:ai-orchestrator": "pnpm --filter @voice/api test:ai-orchestrator",
+    "test:ai-provider": "pnpm --filter @voice/api test:ai-provider",
     "test:contract": "pnpm contract:check && pnpm --filter @voice/api test:contract",
     "test:e2e": "pnpm --filter @voice/api test:e2e",
     "test:fault": "pnpm --filter @voice/api test:fault",
+    "test:rag-baseline": "pnpm --filter @voice/api test:rag-baseline",
     "typecheck": "pnpm --recursive typecheck"
   },
   "devDependencies": {

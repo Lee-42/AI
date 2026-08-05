@@ -344,6 +344,8 @@ turn.ai.audio.started
 | --- | --- | --- |
 | [ADR-001](docs/adr/ADR-001-real-time-voice-architecture.md) | Accepted | WebRTC 数据面、HTTPS 控制面、托管对话式 AI |
 | [ADR-002](docs/adr/ADR-002-all-typescript-runtime.md) | Accepted | React、Fastify、TypeBox 与 pnpm 的全 TypeScript 运行时 |
+| [ADR-003](docs/adr/ADR-003-ai-orchestrator-hexagonal-boundary.md) | Accepted | 六边形 AiOrchestrator 边界，当前保持同进程部署 |
+| [ADR-004](docs/adr/ADR-004-llm-provider-and-debug-api.md) | Accepted | 独立 LLM 配置、两把费用锁、方舟 Adapter 与受限调试 API |
 
 ## 15. 领域协议索引
 
@@ -357,3 +359,6 @@ turn.ai.audio.started
 | --- | --- | --- |
 | [Monorepo 与契约基线](docs/architecture/PROJECT_STRUCTURE.md) | Implemented | 工作区、配置分层、OpenAPI 生成链 |
 | [密钥边界](docs/security/SECRET_BOUNDARIES.md) | Implemented | Public、Session Secret、Server Secret 边界 |
+| [RAG 产品与评测基线](docs/architecture/RAG_PRODUCT_SCOPE_AND_EVALUATION.md) | Design baseline | 公开知识范围、答案路由、证据门禁与合成评测集 |
+| [AiOrchestrator 边界](docs/architecture/AI_ORCHESTRATOR_BOUNDARY.md) | Implemented | 输入/输出 Port、Mock LLM、失败关闭与部署边界 |
+| [模型配置与 Provider](docs/architecture/MODEL_CONFIGURATION_AND_PROVIDER_ADAPTER.md) | Implemented | 密钥、费用保护、方舟 Adapter 与调试契约 |

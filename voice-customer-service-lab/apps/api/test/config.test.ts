@@ -55,6 +55,7 @@ describe("server configuration", () => {
 
   it("redacts secret values from serialization and startup summaries", () => {
     const config = loadServerConfig({
+      VOLCENGINE_ARK_API_KEY: "unit-test-ark-key",
       VOLCENGINE_RTC_APP_KEY: "unit-test-app-key",
       VOLCENGINE_ACCESS_KEY_ID: "unit-test-access-key",
       VOLCENGINE_SECRET_ACCESS_KEY: "unit-test-secret-key",
@@ -64,12 +65,17 @@ describe("server configuration", () => {
     expect(JSON.stringify(config)).not.toContain("unit-test");
     expect(JSON.stringify(safeConfigSummary(config))).not.toMatch(/app.key|access.key|secret.key/i);
     expect(JSON.stringify(config)).not.toContain("unit-test-otel-secret");
+    expect(JSON.stringify(config)).not.toContain("unit-test-ark-key");
   });
 
   it("pins the current voice API and keeps paid calls disabled by default", () => {
     const summary = safeConfigSummary(loadServerConfig({}));
 
     expect(summary.volcengineVoiceApiVersion).toBe("2025-06-01");
+    expect(summary.llmProvider).toBe("mock");
+    expect(summary.llmDebugApiEnabled).toBe(false);
+    expect(summary.llmPaidCallsEnabled).toBe(false);
+    expect(summary.llmModelConfigured).toBe(false);
     expect(summary.volcenginePaidCallsEnabled).toBe(false);
     expect(summary.volcengineFunctionCallingEnabled).toBe(false);
     expect(summary.rtcTokenProvider).toBe("mock");
@@ -80,9 +86,63 @@ describe("server configuration", () => {
     expect(loadServerConfig({}).customerServicePolicyPath).toBe(
       "config/customer-service-policy.v1.json",
     );
+    expect(loadServerConfig({}).ai.answerPolicyPath).toBe("config/rag-answer-policy.v1.json");
     expect(() => loadServerConfig({ VOLCENGINE_VOICE_API_VERSION: "2024-06-01" })).toThrow(
       /2025-06-01/,
     );
+  });
+
+  it("requires a second paid-call switch and server-only Ark configuration", () => {
+    expect(() =>
+      loadServerConfig({
+        LLM_PROVIDER: "volcengine",
+        VOLCENGINE_ARK_MODEL: "ep-unit-test-model",
+        VOLCENGINE_ARK_API_KEY: "unit-test-ark-key",
+      }),
+    ).toThrow(/LLM_PAID_CALLS_ENABLED/);
+    expect(() =>
+      loadServerConfig({
+        LLM_PROVIDER: "volcengine",
+        LLM_PAID_CALLS_ENABLED: "true",
+      }),
+    ).toThrow(/VOLCENGINE_ARK_MODEL/);
+    expect(() =>
+      loadServerConfig({
+        LLM_PAID_CALLS_ENABLED: "true",
+      }),
+    ).toThrow(/requires LLM_PROVIDER=volcengine/);
+
+    const config = loadServerConfig({
+      LLM_PROVIDER: "volcengine",
+      LLM_PAID_CALLS_ENABLED: "true",
+      VOLCENGINE_ARK_MODEL: "ep-unit-test-model",
+      VOLCENGINE_ARK_API_KEY: "unit-test-ark-key",
+    });
+    expect(config.ai.provider).toBe("volcengine");
+    expect(config.ai.volcengine.apiKey?.reveal()).toBe("unit-test-ark-key");
+    expect(safeConfigSummary(config).llmModelConfigured).toBe(true);
+  });
+
+  it("prevents API Key exfiltration through an arbitrary Ark base URL", () => {
+    expect(() =>
+      loadServerConfig({
+        LLM_PROVIDER: "volcengine",
+        LLM_PAID_CALLS_ENABLED: "true",
+        VOLCENGINE_ARK_BASE_URL: "https://attacker.example/api/v3",
+        VOLCENGINE_ARK_MODEL: "ep-unit-test-model",
+        VOLCENGINE_ARK_API_KEY: "unit-test-ark-key",
+      }),
+    ).toThrow(/allow-listed official Ark API/);
+  });
+
+  it("allows the debug API only in local and test environments", () => {
+    expect(loadServerConfig({ APP_ENV: "test", LLM_DEBUG_API_ENABLED: "true" }).ai).toMatchObject({
+      debugApiEnabled: true,
+      provider: "mock",
+    });
+    expect(() =>
+      loadServerConfig({ APP_ENV: "production", LLM_DEBUG_API_ENABLED: "true" }),
+    ).toThrow(/only allowed in local or test/);
   });
 
   it("bounds structured summary retention", () => {
