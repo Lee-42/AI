@@ -191,7 +191,9 @@ continues to emit typed `stream.started`, `answer.delta`, `answer.completed`, `s
 
 `SessionClosureService` receives an `onSessionClosed` callback. After Provider session closure succeeds,
 normal end and handoff both call `RealtimeRagTurnPort.clearSession` with the server-resolved Tenant and
-Session ID. Mock raw replay data and RAG memory therefore end together.
+Session ID. `clearSession` deletes both conversation memory and every application-level idempotency
+record for that exact scope. Mock raw replay data, RAG replay data and RAG memory therefore end
+together.
 
 Process shutdown drops process-local memory naturally. Durable production memory requires an explicit
 TTL/reaper in addition to the close callback.
@@ -217,7 +219,7 @@ The real Volcengine Voice Agent continues its current managed LLM/audio path in 
 - Sensitive and oversized pairs return the memory exclusion outcome.
 - Evidence fallbacks record; Provider/internal fallbacks do not record.
 - Cancellation produces no fallback, no memory and no retained replay entry.
-- `clearSession` removes only the selected Tenant + Session scope.
+- `clearSession` removes memory and replay records only for the selected Tenant + Session scope.
 
 ### Vertical-slice tests
 
