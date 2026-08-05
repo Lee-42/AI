@@ -66,8 +66,15 @@ export interface RealtimeRagTurnResult {
     | "not_recorded_failure";
 }
 
+export interface RealtimeRagTurnHandle {
+  readonly roundId: string;
+  readonly replayed: boolean;
+  readonly result: Promise<RealtimeRagTurnResult>;
+}
+
 export interface RealtimeRagTurnPort {
   readonly welcomeMessage: string;
+  openTurn(command: RealtimeRagTurnCommand): RealtimeRagTurnHandle;
   answer(command: RealtimeRagTurnCommand): Promise<RealtimeRagTurnResult>;
   clearSession(scope: ConversationMemoryScope): void;
 }
@@ -92,7 +99,8 @@ For a new command:
 
 1. Validate and normalize text, trusted scope and idempotency key.
 2. Build a replay key from `tenantId + sessionId + idempotencyKey` and a SHA-256 text fingerprint.
-3. Reserve a stable `rnd_<uuid>` Round ID and store the in-flight Promise before awaiting.
+3. `openTurn()` reserves a stable `rnd_<uuid>` Round ID and stores the in-flight Promise before
+   awaiting. It returns both immediately so streaming adapters can emit `stream.started` first.
 4. Read the bounded Session snapshot.
 5. Build System Instruction and separate History messages with `RealtimeConversationPolicy`.
 6. Call `DefaultAiOrchestrator` with the current question and trusted Grounded context.
@@ -184,7 +192,8 @@ service.
 
 `AiTurnStreamService` depends on `RealtimeRagTurnPort`, not `AiOrchestrator`. Its command includes the
 idempotency key, and the debug SSE route requires the existing debug idempotency header schema. It
-continues to emit typed `stream.started`, `answer.delta`, `answer.completed`, `stream.cancelled` and
+calls `openTurn()`, emits `stream.started` with the returned stable Round ID, then awaits the shared
+result. It continues to emit typed `answer.delta`, `answer.completed`, `stream.cancelled` and
 `stream.failed` frames.
 
 ### 8.3 Session cleanup
@@ -216,6 +225,7 @@ The real Volcengine Voice Agent continues its current managed LLM/audio path in 
 - History never appears inside the current Evidence block or contains trusted scope identifiers.
 - Concurrent same-key commands make one model call and one memory write.
 - Same key/different text fails closed; a replay keeps the original Round ID.
+- `openTurn()` exposes that Round ID before orchestration completes, and SSE uses it for every event.
 - Sensitive and oversized pairs return the memory exclusion outcome.
 - Evidence fallbacks record; Provider/internal fallbacks do not record.
 - Cancellation produces no fallback, no memory and no retained replay entry.
