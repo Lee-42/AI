@@ -10,5 +10,41 @@
     "query": "适合剪辑视频和做三维设计的电脑",
     "expectedSkus": ["laptop-studio-16"],
     "tags": ["semantic", "use-case", "chinese"]
+  },
+  {
+    "id": "text-paper-001",
+    "query": "用来做手账的本子",
+    "expectedSkus": ["notebook-paper-a5"],
+    "tags": ["semantic", "hard-negative", "chinese"]
+  },
+  {
+    "id": "text-air-image-001",
+    "query": "轻度图片处理",
+    "expectedSkus": ["laptop-air-14"],
+    "tags": ["semantic", "use-case", "ablation"]
+  },
+  {
+    "id": "text-air-mobile-001",
+    "query": "移动办公",
+    "expectedSkus": ["laptop-air-14"],
+    "tags": ["semantic", "use-case", "ablation"]
+  },
+  {
+    "id": "text-studio-screen-001",
+    "query": "3.2K 120Hz",
+    "expectedSkus": ["laptop-studio-16"],
+    "tags": ["semantic", "specification", "ablation"]
+  },
+  {
+    "id": "text-air-meeting-001",
+    "query": "用于在线会议的设备",
+    "expectedSkus": ["laptop-air-14"],
+    "tags": ["semantic", "unresolved", "chinese"]
+  },
+  {
+    "id": "text-air-price-001",
+    "query": "售价6999元的笔记本电脑",
+    "expectedSkus": ["laptop-air-14"],
+    "tags": ["numeric", "metadata-filter", "unresolved"]
   }
 ]

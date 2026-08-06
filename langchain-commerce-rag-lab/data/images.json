@@ -1,0 +1,29 @@
+[
+  {
+    "sku": "laptop-air-14",
+    "imageRole": "front",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/MacBook_Air_%2813-inch%2C_M4%2C_Silver%29.jpg/960px-MacBook_Air_%2813-inch%2C_M4%2C_Silver%29.jpg",
+    "visualDescription": "银色轻薄窄边框笔记本电脑，打开摆放在木桌上",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:MacBook_Air_(13-inch,_M4,_Silver).jpg",
+    "author": "AzureSaturn",
+    "license": "CC0 1.0"
+  },
+  {
+    "sku": "laptop-studio-16",
+    "imageRole": "front",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/67/HP_Victus_15_gaming_laptop_side_view.jpg",
+    "visualDescription": "深灰色大尺寸高性能笔记本电脑，机身厚实并带有丰富接口",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:HP_Victus_15_gaming_laptop_side_view.jpg",
+    "author": "Laziz940",
+    "license": "CC0 1.0"
+  },
+  {
+    "sku": "notebook-paper-a5",
+    "imageRole": "front",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/95/Notebook.png",
+    "visualDescription": "木桌上的白色方格纸质线圈笔记本",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Notebook.png",
+    "author": "Tuffstein",
+    "license": "CC BY 3.0"
+  }
+]

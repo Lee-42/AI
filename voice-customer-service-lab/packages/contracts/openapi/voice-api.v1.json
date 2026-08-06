@@ -1,0 +1,4814 @@
+{
+  "components": {
+    "schemas": {
+      "def-0": {
+        "anyOf": [
+          {
+            "enum": [
+              "grounded_answer"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "clarify"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "direct_answer"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "abstain"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "tool_required"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "handoff"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "out_of_scope"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "safety_refusal"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "AiAnswerMode"
+      },
+      "def-1": {
+        "anyOf": [
+          {
+            "enum": [
+              "sufficient"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "none"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "conflicting"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "stale"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "not_applicable"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "AiEvidenceStatus"
+      },
+      "def-10": {
+        "additionalProperties": false,
+        "properties": {
+          "api_version": {
+            "enum": [
+              "v1"
+            ],
+            "type": "string"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "enum": [
+                  "local"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "test"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "staging"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "production"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "max_session_seconds": {
+            "maximum": 3600,
+            "minimum": 60,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "api_version",
+          "environment",
+          "max_session_seconds"
+        ],
+        "title": "PublicRuntimeConfig",
+        "type": "object"
+      },
+      "def-11": {
+        "anyOf": [
+          {
+            "enum": [
+              "new"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "creating"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "connecting"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "active"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "reconnecting"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "ending"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "ended"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "failed"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "SessionState"
+      },
+      "def-12": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mock"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "volcengine"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "room_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "rtc_user_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "session_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/def-11"
+          }
+        },
+        "required": [
+          "session_id",
+          "room_id",
+          "rtc_user_id",
+          "provider",
+          "state",
+          "revision",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "SessionSnapshot",
+        "type": "object"
+      },
+      "def-13": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "app_id": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              "expires_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "mock"
+                ],
+                "type": "string"
+              },
+              "room_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "token": {
+                "minLength": 8,
+                "type": "string"
+              },
+              "user_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "app_id",
+              "room_id",
+              "user_id",
+              "token",
+              "expires_at"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "app_id": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              "expires_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "volcengine"
+                ],
+                "type": "string"
+              },
+              "room_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "token": {
+                "minLength": 8,
+                "type": "string"
+              },
+              "user_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "app_id",
+              "room_id",
+              "user_id",
+              "token",
+              "expires_at"
+            ],
+            "type": "object"
+          }
+        ],
+        "title": "RtcCredentials"
+      },
+      "def-14": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "session.created"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "expires_at": {
+                    "format": "date-time",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "expires_at"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "type": "null"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "rtc.join.succeeded"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "type": "null"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "agent.start.succeeded"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "type": "null"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "session.ready"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "ready_components": {
+                    "items": {
+                      "anyOf": [
+                        {
+                          "enum": [
+                            "rtc"
+                          ],
+                          "type": "string"
+                        },
+                        {
+                          "enum": [
+                            "agent"
+                          ],
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "ready_components"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "type": "null"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "turn.user.speech.started"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "round_origin": {
+                    "enum": [
+                      "user"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "round_origin"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "turn.user.transcript.partial"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text",
+                  "revision"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "turn.user.speech.ended"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "turn.user.transcript.final"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "language": {
+                    "enum": [
+                      "zh-CN"
+                    ],
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text",
+                  "language"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "turn.ai.response.started"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "model_route": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "model_route"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "turn.ai.transcript.delta"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "index": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "text_delta": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text_delta",
+                  "index"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "turn.ai.audio.started"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "turn.ai.response.completed"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "finish_reason": {
+                    "enum": [
+                      "stop"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "finish_reason"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "session.end.requested"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "user_request"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "type": "null"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "cleanup.finished"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "resource_results": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "resource": {
+                          "anyOf": [
+                            {
+                              "enum": [
+                                "rtc"
+                              ],
+                              "type": "string"
+                            },
+                            {
+                              "enum": [
+                                "agent"
+                              ],
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "enum": [
+                            "released"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "resource",
+                        "status"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "resource_results"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "type": "null"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "correlation_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "event_type": {
+                "enum": [
+                  "session.ended"
+                ],
+                "type": "string"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "user_request"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "type": "object"
+              },
+              "producer": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "mock_voice_provider"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "enum": [
+                      "volcengine_voice_provider"
+                    ],
+                    "type": "string"
+                  }
+                ]
+              },
+              "response_id": {
+                "type": "null"
+              },
+              "round_id": {
+                "type": "null"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "stream_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "event_id",
+              "session_id",
+              "producer",
+              "stream_id",
+              "sequence",
+              "occurred_at",
+              "correlation_id",
+              "event_type",
+              "round_id",
+              "response_id",
+              "payload"
+            ],
+            "type": "object"
+          }
+        ],
+        "title": "ConversationEvent"
+      },
+      "def-15": {
+        "additionalProperties": false,
+        "properties": {
+          "locale": {
+            "enum": [
+              "zh-CN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "locale"
+        ],
+        "title": "CreateSessionRequest",
+        "type": "object"
+      },
+      "def-16": {
+        "additionalProperties": false,
+        "properties": {
+          "command_replayed": {
+            "type": "boolean"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/def-14"
+            },
+            "type": "array"
+          },
+          "rtc_credentials": {
+            "$ref": "#/components/schemas/def-13"
+          },
+          "session": {
+            "$ref": "#/components/schemas/def-12"
+          }
+        },
+        "required": [
+          "session",
+          "rtc_credentials",
+          "events",
+          "command_replayed"
+        ],
+        "title": "CreateSessionResponse",
+        "type": "object"
+      },
+      "def-17": {
+        "additionalProperties": false,
+        "properties": {
+          "command_replayed": {
+            "type": "boolean"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/def-14"
+            },
+            "type": "array"
+          },
+          "session": {
+            "$ref": "#/components/schemas/def-12"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/def-32"
+          }
+        },
+        "required": [
+          "session",
+          "events",
+          "summary",
+          "command_replayed"
+        ],
+        "title": "EndSessionResponse",
+        "type": "object"
+      },
+      "def-18": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "replayed_count": {
+            "maximum": 4,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "tool_call_count": {
+            "maximum": 4,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted",
+          "tool_call_count",
+          "replayed_count"
+        ],
+        "title": "FunctionCallCallbackAck",
+        "type": "object"
+      },
+      "def-19": {
+        "additionalProperties": false,
+        "properties": {
+          "arguments": {
+            "additionalProperties": false,
+            "properties": {
+              "order_reference": {
+                "maxLength": 32,
+                "minLength": 6,
+                "pattern": "^[A-Za-z0-9-]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "order_reference"
+            ],
+            "type": "object"
+          },
+          "name": {
+            "enum": [
+              "get_order_status"
+            ],
+            "type": "string"
+          },
+          "tool_call_id": {
+            "maxLength": 128,
+            "minLength": 6,
+            "pattern": "^call_[A-Za-z0-9_-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_call_id",
+          "name",
+          "arguments"
+        ],
+        "title": "MockBusinessToolCallRequest",
+        "type": "object"
+      },
+      "def-2": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "AiDebugTurnRequest",
+        "type": "object"
+      },
+      "def-20": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "enum": [
+              "get_order_status"
+            ],
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "result": {
+            "$ref": "#/components/schemas/def-26"
+          },
+          "tool_call_id": {
+            "maxLength": 128,
+            "minLength": 6,
+            "pattern": "^call_[A-Za-z0-9_-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool_call_id",
+          "name",
+          "replayed",
+          "result"
+        ],
+        "title": "MockBusinessToolCallResponse",
+        "type": "object"
+      },
+      "def-21": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "\\S",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "MockTurnRequest",
+        "type": "object"
+      },
+      "def-22": {
+        "anyOf": [
+          {
+            "enum": [
+              "user_request"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "unsupported_request"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "safety_concern"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "repeated_failure"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "HandoffReason"
+      },
+      "def-23": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/def-22"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "HandoffRequest",
+        "type": "object"
+      },
+      "def-24": {
+        "additionalProperties": false,
+        "properties": {
+          "command_replayed": {
+            "type": "boolean"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/def-14"
+            },
+            "type": "array"
+          },
+          "handoff": {
+            "$ref": "#/components/schemas/def-25"
+          },
+          "session": {
+            "$ref": "#/components/schemas/def-12"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/def-32"
+          }
+        },
+        "required": [
+          "session",
+          "events",
+          "summary",
+          "handoff",
+          "command_replayed"
+        ],
+        "title": "HandoffResponse",
+        "type": "object"
+      },
+      "def-25": {
+        "additionalProperties": false,
+        "properties": {
+          "human_connected": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "message": {
+            "enum": [
+              "已记录演示转人工工单；当前没有真人坐席接入。"
+            ],
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/def-22"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "recorded"
+            ],
+            "type": "string"
+          },
+          "ticket_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket_id",
+          "status",
+          "human_connected",
+          "reason",
+          "requested_at",
+          "message"
+        ],
+        "title": "HandoffTicket",
+        "type": "object"
+      },
+      "def-26": {
+        "additionalProperties": false,
+        "properties": {
+          "estimated_delivery_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fulfillment_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "processing"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "shipped"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "delivered"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "cancelled"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "latest_event": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "order_reference": {
+            "maxLength": 32,
+            "minLength": 6,
+            "pattern": "^[A-Za-z0-9-]+$",
+            "type": "string"
+          },
+          "status_text": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_reference",
+          "fulfillment_status",
+          "status_text",
+          "estimated_delivery_date",
+          "latest_event"
+        ],
+        "title": "OrderStatusToolResult",
+        "type": "object"
+      },
+      "def-27": {
+        "title": "PrometheusMetricsResponse",
+        "type": "string"
+      },
+      "def-28": {
+        "anyOf": [
+          {
+            "enum": [
+              "rtc_join"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "turn_first_output"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "barge_in_stop"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "RealtimeSliName"
+      },
+      "def-29": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "accepted",
+          "replayed"
+        ],
+        "title": "RealtimeSliObservationAck",
+        "type": "object"
+      },
+      "def-3": {
+        "additionalProperties": false,
+        "properties": {
+          "answer_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "grounded_answer"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "clarify"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "direct_answer"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "abstain"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "tool_required"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "handoff"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "out_of_scope"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "safety_refusal"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "citations": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "source_id": {
+                  "maxLength": 128,
+                  "minLength": 3,
+                  "type": "string"
+                },
+                "title": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "version": {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "source_id",
+                "title",
+                "version"
+              ],
+              "type": "object"
+            },
+            "maxItems": 12,
+            "type": "array"
+          },
+          "command_replayed": {
+            "type": "boolean"
+          },
+          "evidence_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "sufficient"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "conflicting"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "stale"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "not_applicable"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "execution": {
+            "additionalProperties": false,
+            "properties": {
+              "model": {
+                "anyOf": [
+                  {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "model_usage": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "input_tokens": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "output_tokens": {
+                        "minimum": 0,
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "input_tokens",
+                      "output_tokens"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "policy_version": {
+                "maxLength": 128,
+                "minLength": 3,
+                "type": "string"
+              },
+              "provider_request_id": {
+                "anyOf": [
+                  {
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "retriever": {
+                "anyOf": [
+                  {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "route_reason": {
+                "maxLength": 64,
+                "minLength": 2,
+                "type": "string"
+              },
+              "router": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "policy_version",
+              "router",
+              "retriever",
+              "model",
+              "route_reason",
+              "provider_request_id",
+              "model_usage"
+            ],
+            "type": "object"
+          },
+          "round_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "schema_version": {
+            "enum": [
+              1
+            ],
+            "type": "number"
+          },
+          "session_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "spoken_text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "command_replayed",
+          "session_id",
+          "round_id",
+          "answer_mode",
+          "evidence_status",
+          "spoken_text",
+          "citations",
+          "execution"
+        ],
+        "title": "AiDebugTurnResponse",
+        "type": "object"
+      },
+      "def-30": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_ms": {
+            "anyOf": [
+              {
+                "maximum": 60000,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observation_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^obs_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "success"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "failure"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "sli": {
+            "$ref": "#/components/schemas/def-28"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mock"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "rtc"
+                ],
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": [
+          "observation_id",
+          "sli",
+          "source",
+          "outcome",
+          "duration_ms"
+        ],
+        "title": "RealtimeSliObservationRequest",
+        "type": "object"
+      },
+      "def-31": {
+        "additionalProperties": false,
+        "properties": {
+          "command_replayed": {
+            "type": "boolean"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/def-14"
+            },
+            "type": "array"
+          },
+          "session": {
+            "$ref": "#/components/schemas/def-12"
+          }
+        },
+        "required": [
+          "session",
+          "events",
+          "command_replayed"
+        ],
+        "title": "SessionCommandResponse",
+        "type": "object"
+      },
+      "def-32": {
+        "additionalProperties": false,
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "completed"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "handoff_requested"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "raw_audio_retained": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "retention_expires_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sensitive_input_detected": {
+            "type": "boolean"
+          },
+          "session_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "summary_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/def-33"
+            },
+            "maxItems": 3,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "transcript_retained": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "turn_count": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "summary_id",
+          "session_id",
+          "outcome",
+          "turn_count",
+          "topics",
+          "sensitive_input_detected",
+          "raw_audio_retained",
+          "transcript_retained",
+          "generated_at",
+          "retention_expires_at"
+        ],
+        "title": "SessionPrivacySummary",
+        "type": "object"
+      },
+      "def-33": {
+        "anyOf": [
+          {
+            "enum": [
+              "general_support"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "order_status"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "human_handoff"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "SessionSummaryTopic"
+      },
+      "def-34": {
+        "anyOf": [
+          {
+            "enum": [
+              "control_plane_availability"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "rtc_join_success"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "turn_first_output"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "barge_in_stop"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "agent_cleanup"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "SloIndicatorName"
+      },
+      "def-35": {
+        "additionalProperties": false,
+        "properties": {
+          "achieved_ratio": {
+            "anyOf": [
+              {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eligible_events": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "error_budget_events": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "error_budget_remaining_events": {
+            "type": "integer"
+          },
+          "good_events": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "measurement_quality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "authoritative"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "proxy"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "name": {
+            "$ref": "#/components/schemas/def-34"
+          },
+          "objective_ratio": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "no_data"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "meeting"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "breached"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "threshold_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "objective_ratio",
+          "threshold_seconds",
+          "measurement_quality",
+          "eligible_events",
+          "good_events",
+          "achieved_ratio",
+          "error_budget_events",
+          "error_budget_remaining_events",
+          "status"
+        ],
+        "title": "SloIndicator",
+        "type": "object"
+      },
+      "def-36": {
+        "additionalProperties": false,
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "indicators": {
+            "items": {
+              "$ref": "#/components/schemas/def-35"
+            },
+            "maxItems": 5,
+            "minItems": 5,
+            "type": "array"
+          },
+          "sample_warning": {
+            "type": "boolean"
+          },
+          "window_seconds": {
+            "minimum": 60,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "generated_at",
+          "window_seconds",
+          "sample_warning",
+          "indicators"
+        ],
+        "title": "SloSnapshot",
+        "type": "object"
+      },
+      "def-37": {
+        "additionalProperties": true,
+        "properties": {
+          "AppId": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "Message": {
+            "maxLength": 32768,
+            "minLength": 2,
+            "type": "string"
+          },
+          "RoomID": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "Signature": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "TaskID": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "TaskType": {
+            "enum": [
+              "voiceChat"
+            ],
+            "type": "string"
+          },
+          "Type": {
+            "enum": [
+              "tool_calls"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "Message",
+          "Signature",
+          "Type",
+          "RoomID",
+          "TaskID",
+          "TaskType",
+          "AppId"
+        ],
+        "title": "VolcengineFunctionCallCallbackRequest",
+        "type": "object"
+      },
+      "def-38": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "event_type": {
+                "enum": [
+                  "stream.started"
+                ],
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {},
+                "type": "object"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "session_id",
+              "round_id",
+              "sequence",
+              "event_type",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "event_type": {
+                "enum": [
+                  "answer.delta"
+                ],
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "index": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "text_delta": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "index",
+                  "text_delta"
+                ],
+                "type": "object"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "session_id",
+              "round_id",
+              "sequence",
+              "event_type",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "event_type": {
+                "enum": [
+                  "answer.completed"
+                ],
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "answer_mode": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "grounded_answer"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "clarify"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "direct_answer"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "abstain"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "tool_required"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "handoff"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "out_of_scope"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "safety_refusal"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "citations": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "source_id": {
+                          "maxLength": 128,
+                          "minLength": 3,
+                          "type": "string"
+                        },
+                        "title": {
+                          "maxLength": 200,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "version": {
+                          "maxLength": 64,
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "source_id",
+                        "title",
+                        "version"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 12,
+                    "type": "array"
+                  },
+                  "evidence_status": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "sufficient"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "none"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "conflicting"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "stale"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "enum": [
+                          "not_applicable"
+                        ],
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "policy_version": {
+                    "maxLength": 128,
+                    "minLength": 3,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "answer_mode",
+                  "evidence_status",
+                  "policy_version",
+                  "citations"
+                ],
+                "type": "object"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "session_id",
+              "round_id",
+              "sequence",
+              "event_type",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "event_type": {
+                "enum": [
+                  "stream.cancelled"
+                ],
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "caller_cancelled"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "type": "object"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "session_id",
+              "round_id",
+              "sequence",
+              "event_type",
+              "payload"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "event_type": {
+                "enum": [
+                  "stream.failed"
+                ],
+                "type": "string"
+              },
+              "payload": {
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "maxLength": 80,
+                    "pattern": "^[A-Z][A-Z0-9_]*$",
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "code",
+                  "retryable"
+                ],
+                "type": "object"
+              },
+              "round_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              },
+              "schema_version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              },
+              "sequence": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "session_id": {
+                "maxLength": 80,
+                "minLength": 8,
+                "pattern": "^[a-z]{3,6}_[A-Za-z0-9]+$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "schema_version",
+              "session_id",
+              "round_id",
+              "sequence",
+              "event_type",
+              "payload"
+            ],
+            "type": "object"
+          }
+        ],
+        "title": "AiStreamEvent"
+      },
+      "def-39": {
+        "contentMediaType": "text/event-stream",
+        "title": "AiDebugStreamResponse",
+        "type": "string"
+      },
+      "def-4": {
+        "anyOf": [
+          {
+            "enum": [
+              "starting"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "dispatched"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "active"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "stopping"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "stopped"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "failed"
+            ],
+            "type": "string"
+          },
+          {
+            "enum": [
+              "orphaned"
+            ],
+            "type": "string"
+          }
+        ],
+        "title": "AgentState"
+      },
+      "def-5": {
+        "additionalProperties": false,
+        "properties": {
+          "bot_user_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "deadline_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "prompt_policy_version": {
+            "maxLength": 64,
+            "minLength": 3,
+            "type": "string"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mock"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "volcengine"
+                ],
+                "type": "string"
+              }
+            ]
+          },
+          "provider_request_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/def-4"
+          },
+          "stopped_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task_id": {
+            "maxLength": 80,
+            "minLength": 8,
+            "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "bot_user_id",
+          "provider",
+          "prompt_policy_version",
+          "state",
+          "revision",
+          "created_at",
+          "deadline_at",
+          "stopped_at",
+          "provider_request_id"
+        ],
+        "title": "AgentSnapshot",
+        "type": "object"
+      },
+      "def-6": {
+        "additionalProperties": false,
+        "properties": {
+          "agent": {
+            "$ref": "#/components/schemas/def-5"
+          },
+          "command_replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent",
+          "command_replayed"
+        ],
+        "title": "AgentCommandResponse",
+        "type": "object"
+      },
+      "def-7": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "pattern": "^[A-Z][A-Z0-9_]*$",
+                "type": "string"
+              },
+              "correlation_id": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "retryable",
+              "correlation_id"
+            ],
+            "title": "ApiErrorDetail",
+            "type": "object"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ApiErrorResponse",
+        "type": "object"
+      },
+      "def-8": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "retryable",
+          "correlation_id"
+        ],
+        "title": "ApiErrorDetail",
+        "type": "object"
+      },
+      "def-9": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "ok"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Voice Customer Service API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/api/v1/config": {
+      "get": {
+        "operationId": "getPublicRuntimeConfig",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-10"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "public-config"
+        ]
+      }
+    },
+    "/api/v1/sessions": {
+      "post": {
+        "operationId": "createVoiceSession",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-15"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-16"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-16"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}": {
+      "delete": {
+        "operationId": "endVoiceSession",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-17"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/agent": {
+      "delete": {
+        "operationId": "stopVoiceAgent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-6"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "agents"
+        ]
+      },
+      "post": {
+        "operationId": "startVoiceAgent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-6"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-6"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "agents"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/ai/debug-streams": {
+      "post": {
+        "operationId": "createAiDebugStream",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-39"
+                }
+              }
+            },
+            "description": "Server-Sent Events stream"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "ai-debug"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/ai/debug-turns": {
+      "post": {
+        "operationId": "createAiDebugTurn",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-3"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "ai-debug"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/handoff": {
+      "post": {
+        "operationId": "requestHumanHandoff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-23"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-24"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-24"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "session-closure"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/mock-tool-calls": {
+      "post": {
+        "operationId": "invokeMockBusinessTool",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-19"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-20"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "mock-tools"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/mock-turns": {
+      "post": {
+        "operationId": "submitMockVoiceTurn",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9._:-]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-21"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-31"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "mock-sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/realtime-observations": {
+      "post": {
+        "operationId": "recordRealtimeSliObservation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 80,
+              "minLength": 8,
+              "pattern": "^[a-z]{3}_[A-Za-z0-9]+$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-30"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-29"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-29"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "observability"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-9"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/internal/metrics": {
+      "get": {
+        "operationId": "getPrometheusMetrics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-27"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "observability"
+        ]
+      }
+    },
+    "/internal/observability/slo": {
+      "get": {
+        "operationId": "getLocalSloSnapshot",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-36"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "observability"
+        ]
+      }
+    },
+    "/internal/provider-callbacks/volcengine/function-calls": {
+      "post": {
+        "operationId": "receiveVolcengineFunctionCalls",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/def-37"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-18"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/def-7"
+                }
+              }
+            },
+            "description": "Default Response"
+          }
+        },
+        "tags": [
+          "provider-callbacks"
+        ]
+      }
+    }
+  }
+}

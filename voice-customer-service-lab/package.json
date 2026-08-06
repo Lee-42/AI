@@ -1,0 +1,39 @@
+{
+  "name": "voice-customer-service-lab",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "build": "pnpm --filter @voice/contracts build && pnpm --filter @voice/api build && pnpm --filter @voice/web build",
+    "check": "pnpm contract:generate && pnpm typecheck && pnpm test && pnpm lint",
+    "contract:check": "pnpm contract:generate && git diff --exit-code -- packages/contracts/openapi packages/contracts/src/api.generated.ts",
+    "contract:generate": "pnpm --filter @voice/contracts build && pnpm --filter @voice/api contract:export && pnpm --filter @voice/contracts generate && pnpm --filter @voice/contracts build",
+    "dev:api": "pnpm --filter @voice/contracts build && pnpm --filter @voice/api dev",
+    "dev:web": "pnpm --filter @voice/web dev",
+    "format": "biome check --write .",
+    "index:knowledge:cloud": "pnpm --filter @voice/api index:knowledge:cloud",
+    "inspect:knowledge-ingestion": "pnpm --filter @voice/api inspect:knowledge-ingestion",
+    "inspect:knowledge-index": "pnpm --filter @voice/api inspect:knowledge-index",
+    "inspect:knowledge-retrieval": "pnpm --filter @voice/api inspect:knowledge-retrieval",
+    "inspect:realtime-rag-policy": "pnpm --filter @voice/api inspect:realtime-rag-policy",
+    "inspect:realtime-rag-service": "pnpm --filter @voice/api inspect:realtime-rag-service",
+    "lint": "biome check .",
+    "test": "pnpm --recursive --if-present test",
+    "test:ai-orchestrator": "pnpm --filter @voice/api test:ai-orchestrator",
+    "test:ai-provider": "pnpm --filter @voice/api test:ai-provider",
+    "test:ai-stream": "pnpm --filter @voice/api test:ai-stream",
+    "test:contract": "pnpm contract:check && pnpm --filter @voice/api test:contract",
+    "test:e2e": "pnpm --filter @voice/api test:e2e",
+    "test:fault": "pnpm --filter @voice/api test:fault",
+    "test:knowledge-governance": "pnpm --filter @voice/api test:knowledge-governance",
+    "test:knowledge-ingestion": "pnpm --filter @voice/api test:knowledge-ingestion",
+    "test:knowledge-index": "pnpm --filter @voice/api test:knowledge-index",
+    "test:knowledge-retrieval": "pnpm --filter @voice/api test:knowledge-retrieval",
+    "test:rag-baseline": "pnpm --filter @voice/api test:rag-baseline",
+    "test:realtime-rag-policy": "pnpm --filter @voice/api test:realtime-rag-policy",
+    "test:realtime-rag-service": "pnpm --filter @voice/api test:realtime-rag-service",
+    "typecheck": "pnpm --recursive typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.5"
+  }
+}

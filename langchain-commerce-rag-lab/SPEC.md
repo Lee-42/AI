@@ -314,6 +314,12 @@ embedQuery(text: string): Promise<number[]>
 
 实现需要支持批处理、超时、有限重试和响应向量校验。
 
+> 2026-07 兼容性说明：火山方舟控制台中的旧版
+> `Doubao-embedding` 纯文本模型已进入下线流程。Phase 1 改用当前
+> `Doubao-embedding-vision`，以纯文本 input 调用
+> `/embeddings/multimodal`。该适配仍实现 `TextEmbeddingProvider`
+> 契约，并只向上层返回 `number[]`；旧 `/embeddings` 协议保留为可选模式。
+
 ### 12.2 多模态 Embedding
 
 `MultimodalEmbeddingProvider` 提供：
@@ -584,7 +590,12 @@ pnpm dev 无 API Key 也能运行
 环境变量：
 
 ```text
+CHROMA_MODE
 CHROMA_URL
+CHROMA_API_KEY
+CHROMA_TENANT
+CHROMA_DATABASE
+CHROMA_HOST
 ARK_API_KEY
 ARK_BASE_URL
 ARK_TEXT_EMBEDDING_MODEL
@@ -632,6 +643,83 @@ TypeScript 调用火山方舟图文向量化 API，Chroma 只接收预计算向�
 
 不预设“distance 小于某值就一定相关”。阈值、TopK 和切片参数必须通过固定评估集选择。
 
+### ADR-008 Chroma Cloud 作为主学习环境
+
+Phase 1 使用 Chroma Cloud 和官方 `CloudClient`，避免本地容器依赖。项目保留
+`CHROMA_MODE=local` 与 `CHROMA_URL` 作为本地兼容路径。课程 Collection 使用
+独立、带版本的名称，不读取、修改或删除同一 Database 中的其他 Collection。
+
+### ADR-009 区分模型训练、Embedding 推理与索引构建
+
+本项目调用已经训练好的豆包模型生成向量，不更新模型权重。Chroma 接收预计算
+向量并维护 SPANN 或 HNSW 检索索引；课程中口语化的“训练向量数据库”统一表述
+为“生成向量并构建索引”。
+
+### ADR-010 最简案例使用独立沙盒 Collection
+
+第 06 课的二维教学向量写入 `course_lesson06_minimal_v1`，不与三个业务
+Collection 混用。沙盒使用稳定 ID 和 `upsert`，可重复运行并保留在 Cloud
+控制台中供观察。
+
+### ADR-011 检索优化必须先通过固定评估集
+
+内容模板、Embedding 模型、distance、TopK 或查询策略变更，必须复用相同查询
+及期望 SKU，至少比较 Recall@1、Recall@K 和 MRR。精确价格等结构化条件不依赖
+Embedding 猜测，留给 metadata filter。
+
+### ADR-012 删除操作必须先预览并验证
+
+按 metadata 删除记录前，先使用相同 `where` 读取目标，并要求实际 ID 集合与
+预期完全一致；删除后再次按稳定 ID 验证。教学中的真实删除只允许发生在独立
+沙盒 Collection，不删除商品 Collection 或整个 Collection。
+
+### ADR-013 说明书切片必须可追溯
+
+说明书使用 Markdown 递归字符切片，基线为 `chunkSize=600`、
+`chunkOverlap=100`。每个 chunk 使用可重复生成的序号 ID，并保存 SKU、源文件、
+起始字符位置、Embedding 模型和内容版本。商品与说明书使用不同 Collection，
+避免文档粒度混合。
+
+### ADR-014 精确读取与语义查询分开
+
+已知 ID 时使用 `get`，精确短文本包含使用 `whereDocument`，语义检索使用
+`queryEmbeddings`。预计算向量 Collection 不混用 Chroma 默认 Embedding；
+查询必须复用入库模型。完整源文件由 source 定位，不假设任一 chunk 保存全文。
+
+### ADR-015 向量记录 ID 由领域身份确定生成
+
+商品、说明书切片和图片分别使用集中维护的 ID 构建函数。相同逻辑记录始终生成
+相同 ID，并通过 `upsert` 更新；价格、库存、正文摘要等可变内容只进入 document
+或 metadata，不进入 ID。切片规则发生不兼容变化时提升 collection 或 content
+version 并重建，不让旧 ID 悄悄指向含义不同的切片。
+
+### ADR-016 图片二进制不写入 Chroma
+
+图片索引从受控清单读取 HTTP(S) URI。应用端下载图片后校验 MIME 类型和
+10 MiB 上限，再仅在豆包请求内转换为 Base64 data URL；Chroma 只保存预计算
+向量、短 URI、稳定 ID 和可追溯 metadata。图片与文字查询必须使用同一多模态
+Endpoint，模型不匹配时拒绝复用已有图片 Collection。
+
+### ADR-017 统一张量术语
+
+项目文档使用 `rank/ndim` 表示轴的数量，使用 `shape` 表示每个轴的长度，使用
+`element count` 表示所有轴长度的乘积。`Embedding dimension` 专指一条向量的
+分量数，不与张量 rank 混用。图片示例显式标注 HWC 或 NHWC 轴顺序。
+
+### ADR-018 图搜图复用已构建的图片索引
+
+图搜图入口只为查询图片生成一条多模态向量，不在每次查询前重复向量化和写入
+教学图片。查询图与入库图必须使用同一个 Endpoint；应用显式传递
+`queryEmbeddings`，Chroma 返回 URI、metadata 和 distance。查询图本身已入库
+时保留 self-match，调用方需要推荐候选时再按稳定 ID 或 URI 排除自身。
+
+### ADR-019 存储大小报告区分测量值与估算值
+
+图片向量大小报告从 Chroma 读取实际 dimension 和可见记录字段。文本字段按
+UTF-8 字节测量，JSON 大小只表示客户端序列化形式，`dimension × 4` 只作为
+Float32 稠密向量载荷下界。报告不得将这些数值称为 Cloud 账单或真实磁盘占用，
+因为 SPANN/HNSW 索引、WAL、数据库页、冗余和压缩不在单条记录 API 中暴露。
+
 ## 22. 待决定事项
 
 以下内容在对应阶段开始前确认：
@@ -639,10 +727,10 @@ TypeScript 调用火山方舟图文向量化 API，Chroma 只接收预计算向�
 | 项目 | 最晚决定阶段 |
 | --- | --- |
 | 当前可用的豆包文本模型或 Endpoint ID | Phase 1 |
-| 本地 Chroma 使用 CLI、容器还是已有服务 | Phase 1 |
+| Chroma 运行环境 | 已决定：Phase 1 使用 Chroma Cloud |
 | Chat Model 供应商 | Phase 3 |
-| 商品图片的稳定公网 URL 或对象存储 | Phase 4 |
-| 多模态模型版本及向量维度 | Phase 4 |
+| 商品图片的稳定公网 URL 或对象存储 | 教学使用 Wikimedia URI；生产对象存储待定 |
+| 多模态模型版本及向量维度 | 已验证：`doubao-embedding-vision-251215`，2048 维 |
 
 ## 23. 初始化完成定义
 

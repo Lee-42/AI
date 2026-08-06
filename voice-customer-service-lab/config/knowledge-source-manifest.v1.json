@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "manifest_id": "commerce-knowledge-sources@2026-08-05.1",
+  "generated_at": "2026-08-05T00:00:00.000Z",
+  "sources": [
+    {
+      "tenant_id": "tenant_demo_store",
+      "source_id": "policy-shipping-standard@2026-01",
+      "source_key": "policy-shipping-standard",
+      "revision": "2026-01",
+      "title": "标准配送说明",
+      "owner_team": "commerce-policy-team",
+      "classification": "public",
+      "conflict_group": null,
+      "content_uri": "fixture://eval/rag/synthetic-corpus.v1.json#policy-shipping-standard@2026-01",
+      "content_sha256": "6450d6e533e44f7a252224f5c7f7626209757684f2eee2b54ba677dd85464b95",
+      "lifecycle": {
+        "state": "published",
+        "effective_from": "2026-01-01T00:00:00.000Z",
+        "effective_to": null,
+        "changed_at": "2026-01-01T00:00:00.000Z",
+        "purge_after": null
+      }
+    },
+    {
+      "tenant_id": "tenant_demo_store",
+      "source_id": "policy-return-general@2026-01",
+      "source_key": "policy-return-general",
+      "revision": "2026-01",
+      "title": "退换货通用规则",
+      "owner_team": "commerce-policy-team",
+      "classification": "public",
+      "conflict_group": null,
+      "content_uri": "fixture://eval/rag/synthetic-corpus.v1.json#policy-return-general@2026-01",
+      "content_sha256": "c32dc72944a3dd9f9f6d37b441bb2e9c96864d2a1b92e211d8e6e79e38002274",
+      "lifecycle": {
+        "state": "published",
+        "effective_from": "2026-01-01T00:00:00.000Z",
+        "effective_to": null,
+        "changed_at": "2026-01-01T00:00:00.000Z",
+        "purge_after": null
+      }
+    },
+    {
+      "tenant_id": "tenant_demo_store",
+      "source_id": "policy-quality-service@2026-01",
+      "source_key": "policy-quality-service",
+      "revision": "2026-01",
+      "title": "质量问题售后流程",
+      "owner_team": "after-sales-policy-team",
+      "classification": "public",
+      "conflict_group": null,
+      "content_uri": "fixture://eval/rag/synthetic-corpus.v1.json#policy-quality-service@2026-01",
+      "content_sha256": "d975e14241817ac08b0712216c73b0c9d779675148d7783e9870d2d193d4c873",
+      "lifecycle": {
+        "state": "published",
+        "effective_from": "2026-01-01T00:00:00.000Z",
+        "effective_to": null,
+        "changed_at": "2026-01-01T00:00:00.000Z",
+        "purge_after": null
+      }
+    },
+    {
+      "tenant_id": "tenant_demo_store",
+      "source_id": "policy-invoice@2026-01",
+      "source_key": "policy-invoice",
+      "revision": "2026-01",
+      "title": "电子发票说明",
+      "owner_team": "finance-policy-team",
+      "classification": "public",
+      "conflict_group": null,
+      "content_uri": "fixture://eval/rag/synthetic-corpus.v1.json#policy-invoice@2026-01",
+      "content_sha256": "d7326c23156dda6641339bce031190285b196ccd0ee46d82cdd3a8f0e2968552",
+      "lifecycle": {
+        "state": "published",
+        "effective_from": "2026-01-01T00:00:00.000Z",
+        "effective_to": null,
+        "changed_at": "2026-01-01T00:00:00.000Z",
+        "purge_after": null
+      }
+    },
+    {
+      "tenant_id": "tenant_demo_store",
+      "source_id": "policy-night-delivery-old@2024-01",
+      "source_key": "policy-night-delivery-old",
+      "revision": "2024-01",
+      "title": "旧版夜间定时配送说明",
+      "owner_team": "commerce-policy-team",
+      "classification": "public",
+      "conflict_group": null,
+      "content_uri": "fixture://eval/rag/synthetic-corpus.v1.json#policy-night-delivery-old@2024-01",
+      "content_sha256": "3cfd1632a96df7cc1b3ed44d7f982dfb610fa35f26ff40856d6319bb034f8ccb",
+      "lifecycle": {
+        "state": "superseded",
+        "effective_from": "2024-01-01T00:00:00.000Z",
+        "effective_to": "2024-12-31T23:59:59.000Z",
+        "changed_at": "2025-01-01T00:00:00.000Z",
+        "purge_after": null
+      }
+    },
+    {
+      "tenant_id": "tenant_demo_store",
+      "source_id": "policy-pickup-fee-a@2026-01",
+      "source_key": "policy-pickup-fee-a",
+      "revision": "2026-01",
+      "title": "上门取件说明 A",
+      "owner_team": "after-sales-policy-team",
+      "classification": "public",
+      "conflict_group": "pickup-fee-current",
+      "content_uri": "fixture://eval/rag/synthetic-corpus.v1.json#policy-pickup-fee-a@2026-01",
+      "content_sha256": "29078aab22c89dbdeb36b9b5e4bf62f2ec5fbe97d070549ef37a75a70fd490f9",
+      "lifecycle": {
+        "state": "published",
+        "effective_from": "2026-01-01T00:00:00.000Z",
+        "effective_to": null,
+        "changed_at": "2026-01-01T00:00:00.000Z",
+        "purge_after": null
+      }
+    },
+    {
+      "tenant_id": "tenant_demo_store",
+      "source_id": "policy-pickup-fee-b@2026-01",
+      "source_key": "policy-pickup-fee-b",
+      "revision": "2026-01",
+      "title": "上门取件说明 B",
+      "owner_team": "after-sales-policy-team",
+      "classification": "public",
+      "conflict_group": "pickup-fee-current",
+      "content_uri": "fixture://eval/rag/synthetic-corpus.v1.json#policy-pickup-fee-b@2026-01",
+      "content_sha256": "56aa5d5fcf72e9b5604874eba68b99cdc4eff1cf7adcde09d83d719883b4dd5e",
+      "lifecycle": {
+        "state": "published",
+        "effective_from": "2026-01-01T00:00:00.000Z",
+        "effective_to": null,
+        "changed_at": "2026-01-01T00:00:00.000Z",
+        "purge_after": null
+      }
+    },
+    {
+      "tenant_id": "tenant_demo_store",
+      "source_id": "policy-green-packaging@2026-01",
+      "source_key": "policy-green-packaging",
+      "revision": "2026-01",
+      "title": "环保包装说明",
+      "owner_team": "sustainability-policy-team",
+      "classification": "public",
+      "conflict_group": null,
+      "content_uri": "fixture://eval/rag/synthetic-corpus.v1.json#policy-green-packaging@2026-01",
+      "content_sha256": "e10282844d0badfd02328f2087cd04e4a6e090eaad77d8ac45fc7d59b24cd8ce",
+      "lifecycle": {
+        "state": "published",
+        "effective_from": "2026-01-01T00:00:00.000Z",
+        "effective_to": null,
+        "changed_at": "2026-01-01T00:00:00.000Z",
+        "purge_after": null
+      }
+    }
+  ]
+}
