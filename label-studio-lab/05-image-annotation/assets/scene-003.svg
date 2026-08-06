@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400">
+  <title>Scene 003: clipped box, bottle, and cup</title>
+  <rect width="640" height="400" fill="#edf0f8" />
+  <rect y="320" width="640" height="80" fill="#c8cce0" />
+  <path d="M0 320H640" stroke="#989eb8" stroke-width="4" />
+
+  <ellipse cx="70" cy="350" rx="120" ry="13" fill="#8f95aa" opacity="0.4" />
+  <g id="clipped-cardboard-box">
+    <rect x="-35" y="190" width="195" height="150" rx="4" fill="#d89b50" stroke="#865b2b" stroke-width="5" />
+    <path d="M65 190V340" stroke="#f2d29d" stroke-width="22" />
+    <path d="M0 240H160" stroke="#9b6831" stroke-width="4" />
+  </g>
+
+  <ellipse cx="308" cy="294" rx="58" ry="12" fill="#8f95aa" opacity="0.4" />
+  <g id="bottle">
+    <rect x="287" y="90" width="41" height="30" rx="3" fill="#70409a" />
+    <rect x="270" y="120" width="75" height="160" rx="26" fill="#a16ac2" stroke="#61317f" stroke-width="5" />
+    <path d="M280 172H335" stroke="#eadcf3" stroke-width="24" opacity="0.82" />
+    <path d="M289 132V262" stroke="#d0a8e4" stroke-width="9" opacity="0.7" />
+  </g>
+
+  <ellipse cx="505" cy="300" rx="94" ry="12" fill="#8f95aa" opacity="0.4" />
+  <g id="cup">
+    <circle cx="550" cy="220" r="30" fill="none" stroke="#aa3f4d" stroke-width="18" />
+    <rect x="430" y="170" width="120" height="120" rx="12" fill="#d85a67" stroke="#8f2f3b" stroke-width="5" />
+    <ellipse cx="490" cy="170" rx="57" ry="11" fill="#f7d5d8" stroke="#8f2f3b" stroke-width="5" />
+    <path d="M450 205H530" stroke="#ef9ba3" stroke-width="10" opacity="0.8" />
+  </g>
+</svg>

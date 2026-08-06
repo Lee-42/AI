@@ -1,0 +1,61 @@
+{
+  "project": "ecommerce-object-detection-v1",
+  "guideline_version": "1.0",
+  "coordinate_system": {
+    "image_width": 640,
+    "image_height": 400,
+    "percentage_range": [0, 100]
+  },
+  "images": [
+    {
+      "image_id": "scene-001",
+      "objects": [
+        {
+          "label": "纸箱",
+          "bbox_pixels": { "x": 80, "y": 160, "width": 180, "height": 130 },
+          "bbox_percent": { "x": 12.5, "y": 40, "width": 28.125, "height": 32.5 }
+        },
+        {
+          "label": "瓶子",
+          "bbox_pixels": { "x": 380, "y": 100, "width": 70, "height": 170 },
+          "bbox_percent": { "x": 59.375, "y": 25, "width": 10.9375, "height": 42.5 }
+        }
+      ]
+    },
+    {
+      "image_id": "scene-002",
+      "objects": [
+        {
+          "label": "杯子",
+          "bbox_pixels": { "x": 90, "y": 150, "width": 160, "height": 130 },
+          "bbox_percent": { "x": 14.0625, "y": 37.5, "width": 25, "height": 32.5 }
+        },
+        {
+          "label": "纸箱",
+          "bbox_pixels": { "x": 350, "y": 170, "width": 180, "height": 120 },
+          "bbox_percent": { "x": 54.6875, "y": 42.5, "width": 28.125, "height": 30 }
+        }
+      ]
+    },
+    {
+      "image_id": "scene-003",
+      "objects": [
+        {
+          "label": "纸箱",
+          "bbox_pixels": { "x": 0, "y": 190, "width": 160, "height": 150 },
+          "bbox_percent": { "x": 0, "y": 47.5, "width": 25, "height": 37.5 }
+        },
+        {
+          "label": "瓶子",
+          "bbox_pixels": { "x": 270, "y": 90, "width": 75, "height": 190 },
+          "bbox_percent": { "x": 42.1875, "y": 22.5, "width": 11.71875, "height": 47.5 }
+        },
+        {
+          "label": "杯子",
+          "bbox_pixels": { "x": 430, "y": 170, "width": 150, "height": 120 },
+          "bbox_percent": { "x": 67.1875, "y": 42.5, "width": 23.4375, "height": 30 }
+        }
+      ]
+    }
+  ]
+}

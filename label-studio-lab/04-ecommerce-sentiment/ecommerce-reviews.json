@@ -1,0 +1,74 @@
+[
+  {
+    "data": {
+      "review_id": "review-001",
+      "text": "质量很好，物流也快，下次还会买。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-002",
+      "text": "刚穿一天鞋底就开胶，太失望了。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-003",
+      "text": "外观漂亮，但续航比宣传的差很多。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-004",
+      "text": "已于周三签收。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-005",
+      "text": "客服响应很快，问题顺利解决。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-006",
+      "text": "包装破损，好在商品没有问题。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-007",
+      "text": "一般般。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-008",
+      "text": "真是‘太好了’，第二天就坏了。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-009",
+      "text": "尺码合适，面料也很舒服。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-010",
+      "text": "颜色不符，客服也一直不回复。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-011",
+      "text": "商品不错，但是配送慢了两天。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-012",
+      "text": "收到了，还没开始用。"
+    }
+  }
+]

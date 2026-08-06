@@ -1,0 +1,931 @@
+[
+  {
+    "id": 16,
+    "annotations": [
+      {
+        "id": 16,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["B"] },
+            "id": "PRINfXFg2W",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:01:02.994727Z",
+        "updated_at": "2026-08-06T09:01:02.994748Z",
+        "draft_created_at": null,
+        "lead_time": 8.922,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "954f33fa-1093-476b-91ab-17da1486a31f",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 16,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-001",
+      "split": "train",
+      "knowledge_area": "数据标注基础",
+      "question": "下面哪一项最准确地描述了数据标注？",
+      "options": [
+        {
+          "value": "A",
+          "html": "<strong>A.<\/strong> 把原始数据压缩成更小的文件"
+        },
+        {
+          "value": "B",
+          "html": "<strong>B.<\/strong> 按统一规则为原始数据添加机器可读的语义信息或参考答案"
+        },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> 把所有数据上传到同一个数据库"
+        },
+        { "value": "D", "html": "<strong>D.<\/strong> 随机删除质量较差的数据" }
+      ],
+      "option_texts": {
+        "A": "把原始数据压缩成更小的文件",
+        "B": "按统一规则为原始数据添加机器可读的语义信息或参考答案",
+        "C": "把所有数据上传到同一个数据库",
+        "D": "随机删除质量较差的数据"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.474723Z",
+    "updated_at": "2026-08-06T09:01:03.023017Z",
+    "allow_skip": true,
+    "inner_id": 1,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 17,
+    "annotations": [
+      {
+        "id": 17,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["C"] },
+            "id": "aPrDxv6xui",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:02:04.931195Z",
+        "updated_at": "2026-08-06T09:02:04.931209Z",
+        "draft_created_at": null,
+        "lead_time": 60.405,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "d71e35e6-809e-4823-9bb4-a4c9693f223f",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 17,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-002",
+      "split": "train",
+      "knowledge_area": "数据集切分",
+      "question": "训练机器学习模型时，验证集最主要的用途是什么？",
+      "options": [
+        { "value": "A", "html": "<strong>A.<\/strong> 直接更新模型参数" },
+        { "value": "B", "html": "<strong>B.<\/strong> 替代训练集增加样本数量" },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> 比较方案、选择超参数并观察过拟合"
+        },
+        {
+          "value": "D",
+          "html": "<strong>D.<\/strong> 作为最终一次性的客观成绩"
+        }
+      ],
+      "option_texts": {
+        "A": "直接更新模型参数",
+        "B": "替代训练集增加样本数量",
+        "C": "比较方案、选择超参数并观察过拟合",
+        "D": "作为最终一次性的客观成绩"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.474819Z",
+    "updated_at": "2026-08-06T09:02:04.956815Z",
+    "allow_skip": true,
+    "inner_id": 2,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 18,
+    "annotations": [
+      {
+        "id": 18,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["A"] },
+            "id": "_b1bsz0ki3",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:02:16.123626Z",
+        "updated_at": "2026-08-06T09:02:16.123844Z",
+        "draft_created_at": null,
+        "lead_time": 7.604,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "ea83fb52-773e-4409-a6a3-823e5557865a",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 18,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-003",
+      "split": "train",
+      "knowledge_area": "Label Studio 定位",
+      "question": "Label Studio 在本课程实验中承担的核心职责是什么？",
+      "options": [
+        {
+          "value": "A",
+          "html": "<strong>A.<\/strong> 展示任务、收集标注并导出结构化结果"
+        },
+        {
+          "value": "B",
+          "html": "<strong>B.<\/strong> 自动完成所有模型参数训练"
+        },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> 代替标注规范决定所有边界情况"
+        },
+        {
+          "value": "D",
+          "html": "<strong>D.<\/strong> 保证导出的每个答案天然正确"
+        }
+      ],
+      "option_texts": {
+        "A": "展示任务、收集标注并导出结构化结果",
+        "B": "自动完成所有模型参数训练",
+        "C": "代替标注规范决定所有边界情况",
+        "D": "保证导出的每个答案天然正确"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.474867Z",
+    "updated_at": "2026-08-06T09:02:16.149230Z",
+    "allow_skip": true,
+    "inner_id": 3,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 19,
+    "annotations": [
+      {
+        "id": 19,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["D"] },
+            "id": "hLKf8vUzDF",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:02:35.491893Z",
+        "updated_at": "2026-08-06T09:02:35.491905Z",
+        "draft_created_at": null,
+        "lead_time": 18.504,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "1c815b4a-e7e4-4756-b57f-45a9753ab272",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 19,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-004",
+      "split": "train",
+      "knowledge_area": "标注配置",
+      "question": "配置中的 <Text name=\"review\" value=\"$text\" \/> 会从任务的哪个字段读取评论？",
+      "options": [
+        { "value": "A", "html": "<strong>A.<\/strong> annotations.review" },
+        { "value": "B", "html": "<strong>B.<\/strong> result.text" },
+        { "value": "C", "html": "<strong>C.<\/strong> project.text" },
+        { "value": "D", "html": "<strong>D.<\/strong> data.text" }
+      ],
+      "option_texts": {
+        "A": "annotations.review",
+        "B": "result.text",
+        "C": "project.text",
+        "D": "data.text"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.474906Z",
+    "updated_at": "2026-08-06T09:02:35.509270Z",
+    "allow_skip": true,
+    "inner_id": 4,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 20,
+    "annotations": [
+      {
+        "id": 20,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["C"] },
+            "id": "_zGLwWNfSL",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:02:41.770239Z",
+        "updated_at": "2026-08-06T09:02:41.770250Z",
+        "draft_created_at": null,
+        "lead_time": 5.462,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "c4c2ae1b-bfd1-4dba-a673-8308a912ffba",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 20,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-005",
+      "split": "train",
+      "knowledge_area": "选择题配置",
+      "question": "哪组设置最适合要求标注者必须从 A、B、C、D 中选择唯一答案？",
+      "options": [
+        {
+          "value": "A",
+          "html": "<strong>A.<\/strong> choice=\"multiple\"，required=\"false\""
+        },
+        {
+          "value": "B",
+          "html": "<strong>B.<\/strong> choice=\"single-radio\"，required=\"true\""
+        },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> choice=\"multiple\"，required=\"true\""
+        },
+        { "value": "D", "html": "<strong>D.<\/strong> 删除 Choices 控件" }
+      ],
+      "option_texts": {
+        "A": "choice=\"multiple\"，required=\"false\"",
+        "B": "choice=\"single-radio\"，required=\"true\"",
+        "C": "choice=\"multiple\"，required=\"true\"",
+        "D": "删除 Choices 控件"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.474945Z",
+    "updated_at": "2026-08-06T09:02:41.790623Z",
+    "allow_skip": true,
+    "inner_id": 5,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 21,
+    "annotations": [
+      {
+        "id": 21,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["C"] },
+            "id": "zpoJ3bDNik",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:03:02.867009Z",
+        "updated_at": "2026-08-06T09:03:02.867028Z",
+        "draft_created_at": null,
+        "lead_time": 20.259,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "a0b58ac2-ee88-4047-b23d-536a22434c2c",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 21,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-006",
+      "split": "train",
+      "knowledge_area": "图片标注",
+      "question": "目标检测的一条有效标注通常至少要同时表达什么？",
+      "options": [
+        { "value": "A", "html": "<strong>A.<\/strong> 图片文件名和上传时间" },
+        { "value": "B", "html": "<strong>B.<\/strong> 整张图片的唯一类别" },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> 目标类别以及目标在图中的位置"
+        },
+        { "value": "D", "html": "<strong>D.<\/strong> 标注者的设备型号" }
+      ],
+      "option_texts": {
+        "A": "图片文件名和上传时间",
+        "B": "整张图片的唯一类别",
+        "C": "目标类别以及目标在图中的位置",
+        "D": "标注者的设备型号"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.474985Z",
+    "updated_at": "2026-08-06T09:03:02.886764Z",
+    "allow_skip": true,
+    "inner_id": 6,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 22,
+    "annotations": [
+      {
+        "id": 22,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["A"] },
+            "id": "ae5-UPtlse",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:03:20.553276Z",
+        "updated_at": "2026-08-06T09:03:20.553297Z",
+        "draft_created_at": null,
+        "lead_time": 16.822,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "a15ff66b-c091-4339-bf38-07386914f022",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 22,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-007",
+      "split": "train",
+      "knowledge_area": "坐标换算",
+      "question": "一张图片原始宽度为 640 像素，矩形框的 x 为 12.5%。框左边缘的像素横坐标是多少？",
+      "options": [
+        { "value": "A", "html": "<strong>A.<\/strong> 80" },
+        { "value": "B", "html": "<strong>B.<\/strong> 51.2" },
+        { "value": "C", "html": "<strong>C.<\/strong> 125" },
+        { "value": "D", "html": "<strong>D.<\/strong> 512" }
+      ],
+      "option_texts": { "A": "80", "B": "51.2", "C": "125", "D": "512" }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.475040Z",
+    "updated_at": "2026-08-06T09:03:20.574843Z",
+    "allow_skip": true,
+    "inner_id": 7,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 23,
+    "annotations": [
+      {
+        "id": 23,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["D"] },
+            "id": "ajhdUgEdUi",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:03:32.446825Z",
+        "updated_at": "2026-08-06T09:03:32.446842Z",
+        "draft_created_at": null,
+        "lead_time": 10.918,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "e189c1ba-82b1-44f6-87f3-d39ad36e435e",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 23,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-008",
+      "split": "train",
+      "knowledge_area": "数据质量",
+      "question": "下面哪种情况属于会夸大测试成绩的数据泄漏？",
+      "options": [
+        { "value": "A", "html": "<strong>A.<\/strong> 训练集比验证集大" },
+        { "value": "B", "html": "<strong>B.<\/strong> 标注前编写统一规范" },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> 测试集只在最终评估时使用"
+        },
+        {
+          "value": "D",
+          "html": "<strong>D.<\/strong> 同一条或高度相似的样本同时出现在训练集和测试集"
+        }
+      ],
+      "option_texts": {
+        "A": "训练集比验证集大",
+        "B": "标注前编写统一规范",
+        "C": "测试集只在最终评估时使用",
+        "D": "同一条或高度相似的样本同时出现在训练集和测试集"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.475084Z",
+    "updated_at": "2026-08-06T09:03:32.468703Z",
+    "allow_skip": true,
+    "inner_id": 8,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 24,
+    "annotations": [
+      {
+        "id": 24,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["B"] },
+            "id": "hcZqivxhOF",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:03:38.031336Z",
+        "updated_at": "2026-08-06T09:03:38.031358Z",
+        "draft_created_at": null,
+        "lead_time": 4.718,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "fafa75dc-0876-40d6-833d-1ffc23b0725b",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 24,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-009",
+      "split": "validation",
+      "knowledge_area": "情绪标注",
+      "question": "按本章电商评论规则，“包装破损，好在商品本身没问题”最合适的整体情绪标签是什么？",
+      "options": [
+        { "value": "A", "html": "<strong>A.<\/strong> 正向" },
+        { "value": "B", "html": "<strong>B.<\/strong> 混合" },
+        { "value": "C", "html": "<strong>C.<\/strong> 负向" },
+        { "value": "D", "html": "<strong>D.<\/strong> 无法标注" }
+      ],
+      "option_texts": { "A": "正向", "B": "混合", "C": "负向", "D": "无法标注" }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.475124Z",
+    "updated_at": "2026-08-06T09:03:38.056067Z",
+    "allow_skip": true,
+    "inner_id": 9,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 25,
+    "annotations": [
+      {
+        "id": 25,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["C"] },
+            "id": "GHLpt6z6QE",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:03:54.976997Z",
+        "updated_at": "2026-08-06T09:03:54.977021Z",
+        "draft_created_at": null,
+        "lead_time": 11.578,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "c85b705b-1da7-459f-b929-d234a339ca1d",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 25,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-010",
+      "split": "validation",
+      "knowledge_area": "预标注",
+      "question": "对模型预标注最准确的说法是哪一项？",
+      "options": [
+        {
+          "value": "A",
+          "html": "<strong>A.<\/strong> 预标注结果不需要人工检查"
+        },
+        {
+          "value": "B",
+          "html": "<strong>B.<\/strong> 预标注一定比人工标注准确"
+        },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> 预标注可以提高效率，但仍需要人工审核和纠错"
+        },
+        {
+          "value": "D",
+          "html": "<strong>D.<\/strong> 预标注只能用于图片，不能用于文本"
+        }
+      ],
+      "option_texts": {
+        "A": "预标注结果不需要人工检查",
+        "B": "预标注一定比人工标注准确",
+        "C": "预标注可以提高效率，但仍需要人工审核和纠错",
+        "D": "预标注只能用于图片，不能用于文本"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.475180Z",
+    "updated_at": "2026-08-06T09:03:55.007028Z",
+    "allow_skip": true,
+    "inner_id": 10,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 26,
+    "annotations": [
+      {
+        "id": 26,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["A"] },
+            "id": "rnb_ZWMSWG",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:04:13.371063Z",
+        "updated_at": "2026-08-06T09:04:13.371085Z",
+        "draft_created_at": null,
+        "lead_time": 17.529,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "ef4f3bb2-24b0-4fc3-b04f-8c32d46983cf",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 26,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-011",
+      "split": "test",
+      "knowledge_area": "监督微调",
+      "question": "把单项选择题转换为“只回答选项字母”的监督微调样本时，最合理的输入和目标是什么？",
+      "options": [
+        {
+          "value": "A",
+          "html": "<strong>A.<\/strong> 输入题干与候选项，目标为标准答案字母"
+        },
+        {
+          "value": "B",
+          "html": "<strong>B.<\/strong> 输入标准答案，目标为题号"
+        },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> 输入数据集切分名，目标为全部候选项"
+        },
+        {
+          "value": "D",
+          "html": "<strong>D.<\/strong> 输入参考答案理由，目标为空字符串"
+        }
+      ],
+      "option_texts": {
+        "A": "输入题干与候选项，目标为标准答案字母",
+        "B": "输入标准答案，目标为题号",
+        "C": "输入数据集切分名，目标为全部候选项",
+        "D": "输入参考答案理由，目标为空字符串"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.475223Z",
+    "updated_at": "2026-08-06T09:04:13.394368Z",
+    "allow_skip": true,
+    "inner_id": 11,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 27,
+    "annotations": [
+      {
+        "id": 27,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["D"] },
+            "id": "i6TpsehC3m",
+            "from_name": "answer",
+            "to_name": "question",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T09:04:38.972563Z",
+        "updated_at": "2026-08-06T09:04:38.972578Z",
+        "draft_created_at": null,
+        "lead_time": 24.661,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "17cdeb69-dc91-46be-8df4-1a79de98913d",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 27,
+        "project": 6,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "de407758-multiple-choice-tasks.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "question_id": "mcq-012",
+      "split": "test",
+      "knowledge_area": "标注一致性",
+      "question": "下面哪种做法最容易让认真工作的标注者仍然给出互相矛盾的答案？",
+      "options": [
+        { "value": "A", "html": "<strong>A.<\/strong> 使用稳定的题目编号" },
+        { "value": "B", "html": "<strong>B.<\/strong> 保存标注时间和版本" },
+        {
+          "value": "C",
+          "html": "<strong>C.<\/strong> 在正式标注前做小规模试标"
+        },
+        {
+          "value": "D",
+          "html": "<strong>D.<\/strong> 规则含糊且没有说明边界案例"
+        }
+      ],
+      "option_texts": {
+        "A": "使用稳定的题目编号",
+        "B": "保存标注时间和版本",
+        "C": "在正式标注前做小规模试标",
+        "D": "规则含糊且没有说明边界案例"
+      }
+    },
+    "meta": {},
+    "created_at": "2026-08-06T09:00:26.475263Z",
+    "updated_at": "2026-08-06T09:04:38.993067Z",
+    "allow_skip": true,
+    "inner_id": 12,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 6,
+    "updated_by": 1,
+    "comment_authors": []
+  }
+]

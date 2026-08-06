@@ -1,0 +1,14 @@
+<View>
+  <Header value="请选择唯一正确答案" />
+  <Header value="题目编号：$question_id｜主题：$knowledge_area" />
+  <Text name="question" value="$question" />
+  <Choices
+    name="answer"
+    toName="question"
+    value="$options"
+    choice="single-radio"
+    required="true"
+    requiredMessage="请选择 A、B、C 或 D"
+    layout="vertical"
+  />
+</View>

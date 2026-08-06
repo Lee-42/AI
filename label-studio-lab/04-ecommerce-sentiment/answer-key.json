@@ -1,0 +1,78 @@
+{
+  "project": "ecommerce-sentiment-v1",
+  "guideline_version": "1.0",
+  "answers": [
+    {
+      "review_id": "review-001",
+      "label": "正向",
+      "code": "positive",
+      "rationale": "质量、物流和复购意愿均为正向"
+    },
+    {
+      "review_id": "review-002",
+      "label": "负向",
+      "code": "negative",
+      "rationale": "开胶和失望均为明确负向"
+    },
+    {
+      "review_id": "review-003",
+      "label": "混合",
+      "code": "mixed",
+      "rationale": "外观正向、续航负向"
+    },
+    {
+      "review_id": "review-004",
+      "label": "无法判断",
+      "code": "unknown",
+      "rationale": "只有签收事实，没有态度"
+    },
+    {
+      "review_id": "review-005",
+      "label": "正向",
+      "code": "positive",
+      "rationale": "客服响应和解决结果均为正向"
+    },
+    {
+      "review_id": "review-006",
+      "label": "混合",
+      "code": "mixed",
+      "rationale": "包装负向、商品状态正向"
+    },
+    {
+      "review_id": "review-007",
+      "label": "负向",
+      "code": "negative",
+      "rationale": "按规范，一般般属于明确弱不满"
+    },
+    {
+      "review_id": "review-008",
+      "label": "负向",
+      "code": "negative",
+      "rationale": "太好了是反讽，第二天损坏是明确负向事实"
+    },
+    {
+      "review_id": "review-009",
+      "label": "正向",
+      "code": "positive",
+      "rationale": "尺码和面料均为正向"
+    },
+    {
+      "review_id": "review-010",
+      "label": "负向",
+      "code": "negative",
+      "rationale": "商品和客服体验均为负向"
+    },
+    {
+      "review_id": "review-011",
+      "label": "混合",
+      "code": "mixed",
+      "rationale": "商品正向、配送负向"
+    },
+    {
+      "review_id": "review-012",
+      "label": "无法判断",
+      "code": "unknown",
+      "rationale": "尚未使用，缺少体验结论"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "task": "ecommerce_object_detection",
+  "labels": [
+    {
+      "display": "纸箱",
+      "code": "cardboard_box",
+      "id": 0,
+      "color": "#E59A3A"
+    },
+    {
+      "display": "瓶子",
+      "code": "bottle",
+      "id": 1,
+      "color": "#4F8DD6"
+    },
+    {
+      "display": "杯子",
+      "code": "cup",
+      "id": 2,
+      "color": "#D65362"
+    }
+  ]
+}

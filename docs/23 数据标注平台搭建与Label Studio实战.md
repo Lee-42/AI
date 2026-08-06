@@ -7,9 +7,9 @@
 - [x] 01 什么是数据标注
 - [x] 02 标注出来的数据到底是做什么用的？
 - [x] 03 Label Studio 环境安装
-- [ ] 04 案例 1：电商评论情绪识别
-- [ ] 05 案例 2：图片标注案例
-- [ ] 06 案例 3：用选择题训练模型
+- [x] 04 案例 1：电商评论情绪识别
+- [x] 05 案例 2：图片标注案例
+- [x] 06 案例 3：用选择题训练模型
 
 ---
 
@@ -657,7 +657,41 @@ y = “负向”
 
 ### 1. 选择路线并检查本机环境
 
-Label Studio 不只有一种运行方式：
+先回答一个常见问题：**数据标注平台一般使用的就是 Label Studio 吗？**
+
+不一定。Label Studio 是常见的通用型开源标注平台之一，但不是所有团队、所有数据类型的唯一
+标准。项目通常根据数据模态、标注工具、质检流程、部署方式、隐私要求和现有技术栈选择平台：
+
+| 主要场景 | 常见选择 | 特点 |
+| --- | --- | --- |
+| 文本、图片、音频、视频和多模态混合任务 | Label Studio | 类型覆盖广，界面可以通过配置组合 |
+| 图片、视频、3D 和复杂目标跟踪 | CVAT | 更专注于计算机视觉和专业图形工具 |
+| 文本分类、序列标注、实体识别 | doccano | NLP 工作流相对轻量直接 |
+| LLM 评价、偏好数据和人工反馈 | Argilla、Label Studio | 更重视反馈数据、模型建议与数据筛选 |
+| 大规模生产标注和外包管理 | 商业平台或企业自研系统 | 通常包含人员调度、审计、计费和定制质检 |
+
+这些平台并不是简单的“谁更好”，而是侧重点不同：[Label Studio](https://labelstud.io/guide/get_started)
+定位为支持多种数据类型的通用平台；[CVAT](https://docs.cvat.ai/docs/getting_started/overview/)重点面向
+计算机视觉；[doccano](https://doccano.github.io/doccano/)主要提供文本标注工作流；
+[Argilla](https://docs.argilla.io/)更偏向 NLP、LLM 数据和人工反馈协作。
+
+本课程选择 Label Studio，是因为情绪分类、图片框选和选择题可以在同一平台完成，而且 Community
+Edition 可以自行部署，便于观察任务导入、界面配置和 JSON 导出的完整过程。这代表“适合本课程”，
+不代表实际项目必须选择它。选择平台时可以使用下面的判断顺序：
+
+```text
+先确定数据类型与标注结果
+  ↓
+检查平台是否具备所需标注工具
+  ↓
+检查多人协作、复核、审计和自动预标注能力
+  ↓
+评估数据安全、部署方式、成本和系统集成
+  ↓
+用少量真实任务试标后再决定
+```
+
+确定使用 Label Studio 后，还要选择它的运行方式。Label Studio 不只有一种运行方式：
 
 | 方式 | 是否本地安装 | 数据和服务在哪里 | 适合场景 |
 | --- | --- | --- | --- |
@@ -1024,3 +1058,1179 @@ Desktop。
 
 安装成功的标准不是“终端没有报错”，而是页面可访问、项目可创建、服务可重启、数据可持久化。
 下一节将创建第一个真实标注项目：电商评论情绪识别。
+
+---
+
+## 04 案例 1：电商评论情绪识别
+
+### 本节目标
+
+这一节完成第一个端到端标注案例。学完后应该能够：
+
+- 把一个业务问题转换成可执行的单标签分类任务；
+- 准备符合 Label Studio 要求的 JSON 任务数据；
+- 理解 `<Text>`、`<Choices>`、`name`、`toName` 和 `$text` 的作用；
+- 按统一规范标注正向、负向、混合和无法判断四类评论；
+- 在 Data Manager 中检查进度和异常结果；
+- 导出 JSON，并找出原始评论与人工标签。
+
+本案例既可以在本地 Community Edition 中完成，也可以在 Starter Cloud 或 Enterprise Cloud 中
+完成。不同版本的页面细节可能略有差异，但任务数据、标注配置和结果结构的核心概念相同。
+
+本节所需文件已经整理到
+[`label-studio-lab/04-ecommerce-sentiment`](../label-studio-lab/04-ecommerce-sentiment/README.md)。
+可以直接使用目录中的任务数据和配置，也可以按照下文从头理解并自行创建。
+
+### 1. 先定义任务，不要先点界面
+
+业务问题是：
+
+```text
+一条电商评论表达了怎样的整体购物体验？
+```
+
+本案例把每条完整评论作为一个样本，并且只能选择一个结果：
+
+| 标签 | 定义 | 典型信号 |
+| --- | --- | --- |
+| 正向 | 只包含明确的满意、赞扬或推荐 | 好用、满意、很快、会回购 |
+| 负向 | 只包含明确的不满、问题或否定 | 破损、失望、太慢、不回复 |
+| 混合 | 同时包含明确的正向与负向评价 | “外观漂亮，但是续航很差” |
+| 无法判断 | 没有表达态度、信息不足或内容不可用 | “已签收”“还没开始用” |
+
+这里故意增加“混合”和“无法判断”，原因是：
+
+```text
+如果只提供“正向”和“负向”，
+标注者就会被迫为边界样本编造一个并不可靠的答案。
+```
+
+任务目标也必须限定清楚：本案例判断的是整条评论表达的整体购物体验，商品、包装、物流和客服
+都纳入判断。若一句话同时肯定商品、否定物流，就标为“混合”。
+
+本案例的最小验收标准是：
+
+- 12 条任务全部产生且只产生一个情绪标签；
+- 没有用“跳过”代替“无法判断”；
+- 相同规则下的相似评论得到一致结果；
+- 导出数据能够还原 `review_id + text + sentiment`；
+- 对反讽、弱情绪和同时褒贬的样本能够解释判断依据。
+
+### 2. 准备数据并创建项目
+
+配套材料已提供 UTF-8 编码的
+[`ecommerce-reviews.json`](../label-studio-lab/04-ecommerce-sentiment/ecommerce-reviews.json)，内容如下：
+
+```json
+[
+  {
+    "data": {
+      "review_id": "review-001",
+      "text": "质量很好，物流也快，下次还会买。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-002",
+      "text": "刚穿一天鞋底就开胶，太失望了。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-003",
+      "text": "外观漂亮，但续航比宣传的差很多。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-004",
+      "text": "已于周三签收。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-005",
+      "text": "客服响应很快，问题顺利解决。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-006",
+      "text": "包装破损，好在商品没有问题。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-007",
+      "text": "一般般。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-008",
+      "text": "真是‘太好了’，第二天就坏了。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-009",
+      "text": "尺码合适，面料也很舒服。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-010",
+      "text": "颜色不符，客服也一直不回复。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-011",
+      "text": "商品不错，但是配送慢了两天。"
+    }
+  },
+  {
+    "data": {
+      "review_id": "review-012",
+      "text": "收到了，还没开始用。"
+    }
+  }
+]
+```
+
+JSON 最外层是数组，数组中的每个对象是一条任务。真正要展示给标注者的数据放在 `data` 中：
+
+| 字段 | 用途 |
+| --- | --- |
+| `review_id` | 业务侧稳定编号，方便追踪和去重 |
+| `text` | 要进行情绪判断的评论正文 |
+
+在 Label Studio 中完成以下操作：
+
+1. 创建项目，名称使用 `ecommerce-sentiment-v1`；
+2. 进入项目的 Data Manager；
+3. 点击 Import，上传 `ecommerce-reviews.json`；
+4. 确认系统识别出 12 条任务，而不是 1 条或 24 条；
+5. 暂时不要开始标注，先配置标注界面。
+
+官方推荐使用 JSON 任务列表导入结构化任务，配置中的数据变量必须与 `data` 内的键对应。详细规则
+见 [Label Studio 数据导入文档](https://labelstud.io/guide/tasks.html)。
+
+如果系统只导入了 1 条任务，优先检查最外层是否确实为数组；如果评论没有显示，优先检查字段名
+是不是 `text`，以及下一步配置是否写成 `$text`。
+
+### 3. 配置情绪标注界面
+
+进入项目设置中的 Labeling Interface 或 Labeling Setup。可以先选择官方 Sentiment Analysis 模板，
+再切换到代码编辑模式，将配置替换为配套材料中的
+[`labeling-config.xml`](../label-studio-lab/04-ecommerce-sentiment/labeling-config.xml)：
+
+```xml
+<View>
+  <Header value="请判断整条评论表达的整体购物体验" />
+  <Header value="样本编号：$review_id" />
+
+  <Text name="review" value="$text" />
+
+  <Choices
+    name="sentiment"
+    toName="review"
+    choice="single-radio"
+    required="true"
+    requiredMessage="请选择一个情绪标签"
+  >
+    <Choice value="正向" />
+    <Choice value="负向" />
+    <Choice value="混合" />
+    <Choice value="无法判断" />
+  </Choices>
+</View>
+```
+
+这段配置不是普通 HTML，而是 Label Studio 的标注配置语言。关键映射如下：
+
+| 配置 | 含义 |
+| --- | --- |
+| `<View>` | 所有界面组件的根容器 |
+| `<Text name="review" value="$text" />` | 从任务的 `data.text` 读取评论并显示 |
+| `<Choices name="sentiment">` | 定义名为 `sentiment` 的标注结果 |
+| `toName="review"` | 表示这组选择题标注的是名为 `review` 的文本对象 |
+| `choice="single-radio"` | 只能选择一个单选项 |
+| `required="true"` | 没有选择标签时不能正常提交 |
+| `<Choice value="正向" />` | 定义一个会写入导出结果的标签值 |
+
+必须满足两组对应关系：
+
+```text
+任务 data.text
+       ↑
+配置 value="$text"
+
+Text name="review"
+       ↑
+Choices toName="review"
+```
+
+如果把 `data.text` 改成 `data.review`，配置也必须同步改为 `$review`。`name` 则是配置内部和导出
+结果使用的稳定标识，不是给用户看的中文标题。
+
+保存前使用界面预览检查：评论正文正常显示；四个标签全部出现；只能单选；未选择时不能提交。
+官方情绪模板及标签用法可参考 [Sentiment Analysis 模板](https://labelstud.io/templates/sentiment_analysis.html)
+和 [`Choices` 标签文档](https://labelstud.io/tags/choices.html)。
+
+### 4. 先统一边界规则
+
+正式标注前，所有标注者都应使用同一份规则：
+
+| 边界场景 | 本案例规则 | 示例 |
+| --- | --- | --- |
+| 同时褒贬 | 标为混合，不比较哪一侧更强 | “商品不错，但是配送慢” |
+| 只有客观状态 | 标为无法判断 | “已于周三签收” |
+| 尚未体验 | 标为无法判断 | “收到了，还没开始用” |
+| 明确的弱不满 | 标为负向 | “一般般” |
+| 反讽 | 以完整语义和事实结果为准 | “太好了，第二天就坏了”标为负向 |
+| 转折句 | 转折前后都保留，不只看“但是”后面 | “外观漂亮，但续航差”标为混合 |
+| 包装、物流或客服 | 与商品评价一起计入整体体验 | 包装差、商品好标为混合 |
+| 文本乱码或完全不相关 | 标为无法判断并记录待清洗原因 | 随机字符、广告链接 |
+
+“无法判断”是一个合法标签，表示按照当前任务规范无法得出情绪；“Skip”通常表示任务没有完成或
+暂时无法处理。两者含义不同，不能把所有困难样本都跳过，否则导出后无法区分“无情绪”和“漏标”。
+
+还要避免两个偷懒规则：
+
+- 不能只搜索“好、差、满意”等关键词；反讽和转折会让关键词方向与真实语义相反；
+- 不能凭品牌、价格或个人经历补充原文没有的信息，只根据当前评论判断。
+
+### 5. 执行标注并记录判断
+
+从 Data Manager 进入标注页面，依次处理 12 条评论：
+
+```text
+阅读全文
+  ↓
+识别是否存在明确正向评价
+  ↓
+识别是否存在明确负向评价
+  ↓
+同时存在 -> 混合
+只有一侧 -> 正向或负向
+两侧都没有或信息不可用 -> 无法判断
+  ↓
+提交并进入下一条
+```
+
+每条任务只能选择一个标签。不要因为某条评论提到了多个方面，就把 `choice` 改为 `multiple`；
+“多方面评价”和“多标签分类”不是一回事。本任务把多个方面汇总成一个整体情绪类别。
+
+标注过程中遇到规则未覆盖的情况时，不要临时发明个人规则。应该记录 `review_id`、争议点和候选
+答案，统一讨论后更新规范，再回头处理同类样本。生产项目还应记录规范版本，例如：
+
+```text
+project：ecommerce-sentiment-v1
+guideline_version：1.0
+label_schema：positive / negative / mixed / unknown
+```
+
+Label Studio 界面中使用中文标签便于标注，但训练流水线常希望使用稳定的英文或数字编码。可以在
+导出转换阶段建立固定映射，不要让不同脚本各自翻译：
+
+```json
+{
+  "正向": "positive",
+  "负向": "negative",
+  "混合": "mixed",
+  "无法判断": "unknown"
+}
+```
+
+### 6. 检查进度与标注质量
+
+完成后回到 Data Manager，至少检查：
+
+- 总任务数为 12；
+- 已完成任务数为 12；
+- 每条任务都有且只有一个 `sentiment` 结果；
+- 没有意外的 Skip、空标注或重复任务；
+- `review_id` 从 `review-001` 到 `review-012`，没有缺号；
+- 四个标签都至少出现一次，避免配置正确但某个标签从未实际使用。
+
+本案例的参考结果如下。应先独立完成，再进行比对：
+
+| 样本 | 参考标签 | 判断依据 |
+| --- | --- | --- |
+| review-001 | 正向 | 质量、物流和复购意愿均为正向 |
+| review-002 | 负向 | 开胶和失望均为明确负向 |
+| review-003 | 混合 | 外观正向、续航负向 |
+| review-004 | 无法判断 | 只有签收事实，没有态度 |
+| review-005 | 正向 | 客服响应和解决结果均为正向 |
+| review-006 | 混合 | 包装负向、商品状态正向 |
+| review-007 | 负向 | 按本案例规则，“一般般”属于明确弱不满 |
+| review-008 | 负向 | “太好了”是反讽，第二天损坏是明确负向事实 |
+| review-009 | 正向 | 尺码和面料均为正向 |
+| review-010 | 负向 | 商品和客服体验均为负向 |
+| review-011 | 混合 | 商品正向、配送负向 |
+| review-012 | 无法判断 | 尚未使用，缺少体验结论 |
+
+如果你的结果不同，先判断差异来自哪里：误读文本、漏看转折、没有遵循规则，还是规则本身存在
+歧义。只有前三类可以直接改标；如果是规范缺口，应先更新规则，再一致地重审所有同类数据。
+
+真实项目可以抽取部分任务让两名标注者独立标注，再统计一致率并对分歧进行仲裁。本案例只有 12
+条数据，重点是建立质量检查意识，而不是追求一个看起来很高的统计数字。
+
+### 7. 导出并读懂结果
+
+在项目中点击 Export，优先导出原始 JSON。Community Edition 的界面导出步骤和格式说明见
+[官方导出文档](https://labelstud.io/guide/export.html)。CSV 适合快速查看表格，JSON 更适合保留任务、
+标注和审计字段。
+
+一条简化后的导出结果大致如下：
+
+```json
+{
+  "id": 1,
+  "data": {
+    "review_id": "review-001",
+    "text": "质量很好，物流也快，下次还会买。"
+  },
+  "annotations": [
+    {
+      "result": [
+        {
+          "from_name": "sentiment",
+          "to_name": "review",
+          "type": "choices",
+          "value": {
+            "choices": ["正向"]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+它与配置一一对应：
+
+| 导出字段 | 来源或含义 |
+| --- | --- |
+| `data.text` | 导入时的 `$text` |
+| `data.review_id` | 导入时的业务编号 |
+| `from_name: sentiment` | `<Choices name="sentiment">` |
+| `to_name: review` | `toName="review"` |
+| `type: choices` | 结果由 `Choices` 控件产生 |
+| `value.choices[0]` | 人工选择的唯一情绪标签 |
+
+用于普通分类训练时，通常还会把原始导出结果转换成更简单的记录：
+
+```json
+{
+  "id": "review-001",
+  "text": "质量很好，物流也快，下次还会买。",
+  "label": "positive"
+}
+```
+
+不要在生产脚本中盲目读取 `annotations[0]`：真实项目可能存在多名标注者、返工记录、取消标注和
+审核结果。转换程序必须先定义采用最新标注、审核通过结果还是仲裁结果，并验证每条任务恰好得到
+一个最终标签。
+
+导出也不是备份的替代品。原始 JSON 用于数据交付，Label Studio 的项目数据库、上传资源、配置
+和用户记录仍需按照上一节的持久化策略单独备份。
+
+### 本节练习与验收
+
+完成下面的检查表：
+
+```text
+[ ] 创建 ecommerce-sentiment-v1 项目
+[ ] 导入 12 条任务
+[ ] 配置 Text + Choices 单选界面
+[ ] 未选择标签时无法提交
+[ ] 独立完成 12 条标注
+[ ] 对照规范复核反讽、转折和无态度样本
+[ ] 导出原始 JSON
+[ ] 在 JSON 中找到 data.text 和 value.choices[0]
+[ ] 能把中文标签映射为稳定英文编码
+[ ] 能解释为什么 Skip 不等于“无法判断”
+```
+
+再回答三个问题：
+
+1. 为什么 `value="$text"` 必须与导入数据的 `data.text` 对应？
+2. 为什么“包装破损，好在商品没有问题”不是单纯正向或负向？
+3. 为什么训练转换脚本不能默认采用 `annotations[0]`？
+
+参考答案：第一个映射决定界面从任务的哪个字段读取正文；第二条同时包含包装负向和商品正向；
+第三个问题是因为真实项目可能存在多个标注、审核和返工版本，必须先确定最终结果选择规则。
+
+### 本节小结
+
+本案例完成了第一个完整闭环：
+
+```text
+定义任务与标签边界
+  ↓
+准备 JSON 任务数据
+  ↓
+配置 Text 与 Choices
+  ↓
+按统一规范标注
+  ↓
+检查进度与边界样本
+  ↓
+导出并转换结果
+```
+
+最重要的不是记住 XML 标签，而是理解三层映射：业务规则决定标签含义，任务 JSON 提供原始数据，
+标注配置把数据字段与操作控件连接起来。只要其中一层定义错误，界面即使能正常提交，也可能产出
+无法用于训练和评测的数据。
+
+下一节将进入图片标注案例，比较图片分类、矩形框和像素级分割的差异，并学习如何让标注坐标与
+原始图片正确对应。
+
+---
+
+## 05 案例 2：图片标注案例
+
+### 本节目标
+
+这一节使用 Label Studio 完成一个小型图片目标检测项目。学完后应该能够：
+
+- 区分图片分类、目标检测和图像分割；
+- 使用本地资源服务器向 Label Studio 提供图片 URL；
+- 理解 `<Image>` 与 `<RectangleLabels>` 的对应关系；
+- 按照统一规范绘制紧致矩形框；
+- 正确处理杯子把手、瓶盖、阴影和图片边缘裁切目标；
+- 读懂导出结果中的百分比坐标，并换算成像素坐标；
+- 检查漏框、多框、错标签和边界偏差。
+
+本节完整材料位于
+[`label-studio-lab/05-image-annotation`](../label-studio-lab/05-image-annotation/README.md)，
+包括 3 张离线教学图片、任务数据、界面配置、标注规范、参考框、资源服务器和校验脚本。
+
+### 1. 先确定图片任务的粒度
+
+“标注图片”不是一种具体任务。同一张图片可以产生完全不同的标注结果：
+
+| 任务 | 要回答的问题 | 结果形式 |
+| --- | --- | --- |
+| 图片分类 | 整张图片主要是什么？ | 一个或多个整图标签 |
+| 目标检测 | 有哪些目标，它们在哪里？ | 类别与矩形框 |
+| 图像分割 | 每个目标精确覆盖哪些像素？ | 类别与像素区域 |
+| 关键点 | 目标的重要位置在哪里？ | 类别与坐标点 |
+| 目标跟踪 | 同一目标如何跨视频帧移动？ | 目标 ID 与连续轨迹 |
+
+例如一张图中同时有纸箱和瓶子：
+
+```text
+整图分类：纸箱、瓶子
+目标检测：纸箱 + 一个框；瓶子 + 一个框
+图像分割：纸箱轮廓区域；瓶子轮廓区域
+```
+
+本案例选择目标检测，任务定义为：
+
+```text
+在每张图片中找出所有纸箱、瓶子和杯子，
+为每个独立目标绘制一个水平矩形框并选择类别。
+```
+
+最终有 3 张图片和 7 个目标：纸箱 3 个、瓶子 2 个、杯子 2 个。课程重点不是训练检测模型，而
+是理解图片任务、矩形框规则和导出坐标。
+
+### 2. 启动图片资源服务器
+
+Label Studio 的 `<Image value="$image">` 需要通过路径或 URL 加载图片。官方导入文档也要求图片
+字段提供有效 URL，参见 [Image 标签](https://labelstud.io/tags/image)和
+[数据导入说明](https://labelstud.io/guide/tasks.html)。
+
+为了避免依赖外网图片，材料目录提供了 3 张 640×400 的 SVG：
+
+| 图片 | 目标与边界特点 |
+| --- | --- |
+| [`scene-001.svg`](../label-studio-lab/05-image-annotation/assets/scene-001.svg) | 一个纸箱、一个瓶子 |
+| [`scene-002.svg`](../label-studio-lab/05-image-annotation/assets/scene-002.svg) | 一个带把手杯子、一个纸箱 |
+| [`scene-003.svg`](../label-studio-lab/05-image-annotation/assets/scene-003.svg) | 一个贴左边裁切纸箱、一个瓶子、一个杯子 |
+
+进入材料目录并启动资源服务器：
+
+```bash
+cd label-studio-lab/05-image-annotation
+node serve-assets.mjs
+```
+
+看到以下地址后保持终端运行：
+
+```text
+http://127.0.0.1:8001/scene-001.svg
+http://127.0.0.1:8001/scene-002.svg
+http://127.0.0.1:8001/scene-003.svg
+```
+
+先在浏览器逐个打开 URL。能直接看到图片，才能继续导入任务。材料中的服务器会处理 `GET`、
+`HEAD` 和 CORS 响应，便于 Label Studio 前端读取图片。
+
+这套本地 URL 适合本地 Label Studio。若使用 HTTPS 云端 SaaS，浏览器可能阻止混合加载本地 HTTP
+资源；此时应把图片放到经过授权、可访问的 HTTPS 存储中，并修改任务 JSON 中的 URL。
+
+### 3. 创建项目并导入图片任务
+
+创建项目：
+
+```text
+ecommerce-object-detection-v1
+```
+
+然后上传材料目录中的
+[`image-tasks.json`](../label-studio-lab/05-image-annotation/image-tasks.json)。文件结构为：
+
+```json
+[
+  {
+    "data": {
+      "image_id": "scene-001",
+      "image": "http://127.0.0.1:8001/scene-001.svg"
+    }
+  }
+]
+```
+
+实际文件包含 3 条任务。字段作用如下：
+
+| 字段 | 用途 |
+| --- | --- |
+| `data.image_id` | 业务侧稳定图片编号，用于去重、质检和匹配答案 |
+| `data.image` | 浏览器加载图片的 URL |
+
+导入后检查：
+
+```text
+任务数量 = 3
+image_id = scene-001、scene-002、scene-003
+三张图片预览均能正常加载
+```
+
+如果只看到破损图片图标，按下面顺序排查：
+
+1. `serve-assets.mjs` 是否仍在运行；
+2. 浏览器能否直接打开任务中的 URL；
+3. 端口是否确实为 8001；
+4. SaaS 页面是否阻止 HTTP 混合内容；
+5. 修改 URL 后是否重新导入了任务。
+
+只修改磁盘上的 `image-tasks.json` 不会自动更新已经导入项目的旧任务。
+
+### 4. 配置矩形框标注界面
+
+进入 Labeling Interface，将材料中的
+[`labeling-config.xml`](../label-studio-lab/05-image-annotation/labeling-config.xml)粘贴到代码编辑器：
+
+```xml
+<View>
+  <Header value="请用紧致矩形框标出图片中的所有目标" />
+  <Header value="图片编号：$image_id" />
+
+  <Image
+    name="image"
+    value="$image"
+    maxWidth="900px"
+    zoom="true"
+    zoomControl="true"
+  />
+
+  <RectangleLabels name="objects" toName="image">
+    <Label value="纸箱" background="#E59A3A" />
+    <Label value="瓶子" background="#4F8DD6" />
+    <Label value="杯子" background="#D65362" />
+  </RectangleLabels>
+</View>
+```
+
+配置中存在两组关键映射：
+
+```text
+任务 data.image
+       ↑
+Image value="$image"
+
+Image name="image"
+       ↑
+RectangleLabels toName="image"
+```
+
+| 标签或参数 | 作用 |
+| --- | --- |
+| `<Image>` | 展示待标注图片 |
+| `name="image"` | 为图片对象提供配置内部标识 |
+| `value="$image"` | 从任务的 `data.image` 读取 URL |
+| `<RectangleLabels>` | 同时创建矩形区域和类别标签 |
+| `name="objects"` | 导出结果中的 `from_name` |
+| `toName="image"` | 表示矩形框属于哪个图片对象 |
+| `<Label>` | 定义可选目标类别和显示颜色 |
+
+官方目标检测模板同样使用 `Image + RectangleLabels`，可对照
+[Object Detection with Bounding Boxes](https://labelstud.io/templates/image_bbox.html)。
+
+保存前使用预览确认：图片能够显示；标签有且只有纸箱、瓶子、杯子；选择标签后可以拖动生成
+矩形框；缩放图片后框仍然与目标保持对齐。
+
+### 5. 统一矩形框边界规则
+
+开始框选前先阅读材料中的
+[`annotation-guidelines.md`](../label-studio-lab/05-image-annotation/annotation-guidelines.md)。本案例使用以下
+规则：
+
+- 框住目标全部可见部分，包括杯子把手和瓶盖；
+- 框尽量贴近目标最上、最下、最左、最右的可见边界；
+- 不把阴影、桌面、地面或大块背景框进去；
+- 每个独立物体使用一个框，不合并相邻目标；
+- 图片边缘裁切目标只框可见部分，不推测图片外形状；
+- 一个框只能有一个正确类别。
+
+所谓“紧致”并不等于切掉边缘：
+
+```text
+正确：目标完整 + 少量必要边界
+过大：包含大量背景或相邻目标
+过小：切掉杯把、瓶盖或箱体边缘
+```
+
+`scene-003` 左侧纸箱是专门设计的边界样本。因为纸箱在图片外的形状不可见，框的左边界应该从
+图片 `x = 0` 开始，只覆盖画面内可见部分。
+
+生产项目还要额外约定遮挡比例、模糊度、最小目标尺寸、截断目标、密集重叠以及“忽略区域”。
+规则没有定义之前，不同标注者会对同一张图产生系统性不同的框。
+
+### 6. 完成三张图片的框选
+
+每张图都按照同一顺序操作：
+
+```text
+先扫描整张图片，统计可见目标
+  ↓
+选择目标类别
+  ↓
+从目标左上角拖到右下角
+  ↓
+调整四边，使框紧贴可见轮廓
+  ↓
+检查 Regions 列表中的类别和数量
+  ↓
+确认无遗漏后提交
+```
+
+参考目标数量如下：
+
+| 图片 | 纸箱 | 瓶子 | 杯子 | 总数 |
+| --- | ---: | ---: | ---: | ---: |
+| scene-001 | 1 | 1 | 0 | 2 |
+| scene-002 | 1 | 0 | 1 | 2 |
+| scene-003 | 1 | 1 | 1 | 3 |
+| 合计 | 3 | 2 | 2 | 7 |
+
+数量一致只是最低要求，不能证明坐标正确。提交前还要逐框检查：
+
+- `scene-002` 和 `scene-003` 的杯子框是否包含把手；
+- 两个瓶子框是否包含瓶盖；
+- `scene-003` 的纸箱框是否贴到左边界；
+- 是否误框了目标下方的椭圆阴影；
+- 是否存在两个高度重合、实际标注同一对象的重复框。
+
+标注过程中放大图片只改变界面显示比例，不应改变框相对原图的位置。Label Studio 会根据原始图片
+尺寸保存区域坐标，而不是保存屏幕上的鼠标像素。
+
+### 7. 导出、换算坐标并进行质检
+
+完成后导出原始 JSON。一个矩形框结果大致如下：
+
+```json
+{
+  "from_name": "objects",
+  "to_name": "image",
+  "type": "rectanglelabels",
+  "original_width": 640,
+  "original_height": 400,
+  "image_rotation": 0,
+  "value": {
+    "x": 12.5,
+    "y": 40,
+    "width": 28.125,
+    "height": 32.5,
+    "rotation": 0,
+    "rectanglelabels": ["纸箱"]
+  }
+}
+```
+
+`x`、`y`、`width` 和 `height` 不是像素，而是相对于整张图片的百分比，范围是 0 到 100。`x`、
+`y` 表示框左上角，换算公式为：
+
+```text
+pixel_x      = x / 100 × original_width
+pixel_y      = y / 100 × original_height
+pixel_width  = width / 100 × original_width
+pixel_height = height / 100 × original_height
+```
+
+上面的纸箱框换算后为：
+
+```text
+x = 12.5 / 100 × 640 = 80 px
+y = 40 / 100 × 400 = 160 px
+width = 28.125 / 100 × 640 = 180 px
+height = 32.5 / 100 × 400 = 130 px
+```
+
+Label Studio 官方导出文档也说明图片区域以原图百分比保存，见
+[Export Annotations](https://labelstud.io/guide/export.html)。百分比坐标可以适应不同显示尺寸，但转换
+到 COCO、Pascal VOC 或自定义训练格式时必须使用原图宽高还原像素。
+
+材料中的 [`answer-key.json`](../label-studio-lab/05-image-annotation/answer-key.json)同时提供像素和百分比
+参考框。假设原始导出文件为 `export.json`，运行：
+
+```bash
+cd label-studio-lab/05-image-annotation
+node validate-export.mjs export.json
+```
+
+脚本检查 3 张图片、7 个框、合法类别、单个有效标注和坐标范围，并允许每个百分比坐标与参考框
+最多相差 5 个百分点。自测命令为：
+
+```bash
+node validate-export.mjs --self-test
+```
+
+真实目标检测项目常使用 IoU（交并比）比较两个框的重合程度，再按阈值决定是否合格。本课程材料
+使用坐标容差是为了让初学者更容易定位“哪一条边偏差过大”，不能直接替代生产级检测评测。
+
+### 本节练习与验收
+
+完成下面的检查表：
+
+```text
+[ ] 启动本地图片资源服务器
+[ ] 浏览器能打开 3 张 SVG
+[ ] 创建 ecommerce-object-detection-v1 项目
+[ ] 导入 3 条图片任务
+[ ] 配置 Image + RectangleLabels
+[ ] 完成 7 个矩形框
+[ ] 杯子框包含把手，瓶子框包含瓶盖
+[ ] scene-003 纸箱只框可见部分
+[ ] 导出原始 JSON
+[ ] 使用 validate-export.mjs 完成校验
+```
+
+再回答四个问题：
+
+1. 为什么图片分类数据不能直接用于训练目标检测模型？
+2. 为什么阴影不应包含在目标框中？
+3. 为什么导出的 `x = 12.5` 不是 12.5 个像素？
+4. 图片显示尺寸发生变化后，百分比框为什么仍能对应原始目标？
+
+参考答案：整图分类没有目标位置；阴影不是物体自身；图片坐标以原图百分比保存；百分比描述的是
+相对位置和大小，可以结合原图宽高还原像素坐标。
+
+### 本节小结
+
+本案例完成了图片目标检测标注的完整链路：
+
+```text
+确定任务粒度
+  ↓
+通过 URL 提供图片
+  ↓
+配置 Image + RectangleLabels
+  ↓
+按统一规范绘制紧致框
+  ↓
+检查漏框、错框和边界
+  ↓
+导出百分比坐标并还原像素
+```
+
+图片标注最容易被低估的不是界面操作，而是边界规范。如果是否包含把手、瓶盖、阴影和不可见
+区域没有统一约定，即使所有标注者都认真工作，也会产出相互矛盾的数据。
+
+下一节将使用选择题构造监督样本，理解问题、候选项、标准答案和训练格式之间的映射。
+
+---
+
+## 06 案例 3：用选择题训练模型
+
+### 本节目标
+
+学完这一节，应该能够：
+
+- 把一道单项选择题拆成题干、候选项和标准答案；
+- 使用动态 `Choices` 配置一次导入不同题目和选项；
+- 在 Label Studio 中完成单选答案标注并识别题目缺陷；
+- 读懂选择题在原始 JSON 导出中的结构；
+- 把标注结果按训练集、验证集和测试集转换为 SFT JSONL；
+- 解释答案泄漏、数据泄漏和选项位置偏差为什么会让模型评估失真。
+
+本节配套材料位于
+[`label-studio-lab/06-multiple-choice-training`](../label-studio-lab/06-multiple-choice-training/README.md)，
+包含 12 道复习题、标注配置、规范、参考答案、校验脚本和格式转换脚本。
+
+### 1. 选择题数据能训练什么？
+
+一道最小的单项选择题包含三部分：
+
+```text
+题干：数据标注的核心是什么？
+候选项：A / B / C / D
+标准答案：B
+```
+
+把它用于监督学习时，可以建立下面的映射：
+
+```text
+模型输入：题干 + A/B/C/D 候选项
+监督目标：标准答案字母
+```
+
+模型训练时反复比较自己的输出与标准答案，并由训练框架根据误差更新参数。Label Studio 在这条
+链路中负责展示题目、收集人工答案和导出结构化结果，**它本身不会更新大模型参数**：
+
+```text
+题库
+  ↓
+Label Studio 人工标注
+  ↓
+已标注 JSON
+  ↓
+格式转换与数据质检
+  ↓
+训练框架执行监督微调（SFT）
+  ↓
+验证集选方案，测试集做最终评估
+```
+
+Label Studio 官方的
+[Generative AI Supervised Fine-tuning 模板](https://labelstud.io/templates/generative-supervised-llm)
+同样把 SFT 数据描述为提示词与期望回答的配对。本案例把期望回答限制为一个答案字母，便于看清
+数据流，但这只会教模型遵守“输出 A/B/C/D”的目标格式。若希望模型解释原因，还必须单独标注
+准确、完整的解释，不能从答案字母自动编造训练目标。
+
+12 道题只适合验证流程，远不足以训练出有用的通用选择题模型。真实项目还需要更多高质量、覆盖
+全面且难度合理的样本。
+
+### 2. 准备并导入动态选项任务
+
+打开
+[`multiple-choice-tasks.json`](../label-studio-lab/06-multiple-choice-training/multiple-choice-tasks.json)，
+其中一条任务的结构类似：
+
+```json
+{
+  "data": {
+    "question_id": "mcq-001",
+    "split": "train",
+    "knowledge_area": "数据标注基础",
+    "question": "下面哪一项最准确地描述了数据标注？",
+    "options": [
+      {
+        "value": "A",
+        "html": "<strong>A.</strong> 把原始数据压缩成更小的文件"
+      },
+      {
+        "value": "B",
+        "html": "<strong>B.</strong> 按统一规则为原始数据添加机器可读的语义信息或参考答案"
+      }
+    ],
+    "option_texts": {
+      "A": "把原始数据压缩成更小的文件",
+      "B": "按统一规则为原始数据添加机器可读的语义信息或参考答案"
+    }
+  }
+}
+```
+
+实际文件中每道题都有完整的 A、B、C、D。各字段的职责是：
+
+| 字段 | 用途 | 是否作为模型输入 |
+| --- | --- | --- |
+| `question_id` | 稳定定位题目，防止重复与遗漏 | 否 |
+| `split` | 固定训练、验证或测试切分 | 否 |
+| `knowledge_area` | 统计知识点覆盖 | 否 |
+| `question` | 显示题干 | 是 |
+| `options` | 给 Label Studio 动态生成选项 | 间接使用 |
+| `option_texts` | 让转换脚本生成无 HTML 的模型输入 | 是 |
+
+`options` 中的 `value` 是导出的稳定答案编码，`html` 是界面显示内容。这种结构遵循 Label
+Studio 官方 [`Choices` 标签文档](https://labelstud.io/tags/choices.html)中的动态选项格式。
+
+特别注意：任务文件中没有 `answer` 字段。标准答案单独保存在
+[`answer-key.json`](../label-studio-lab/06-multiple-choice-training/answer-key.json)，只供完成标注后的
+校验脚本使用。若把标准答案放进任务数据，再原样传给模型，就会产生答案泄漏。
+
+在 Label Studio 中执行：
+
+1. 创建项目 `course-mcq-sft-v1`；
+2. 进入项目的导入页面；
+3. 上传 `multiple-choice-tasks.json`；
+4. 确认预览包含 12 条任务；
+5. 完成导入，但暂时不要打开 `answer-key.json`。
+
+### 3. 配置选择题标注界面
+
+进入项目的 **Settings → Labeling Interface → Code**，粘贴
+[`labeling-config.xml`](../label-studio-lab/06-multiple-choice-training/labeling-config.xml)：
+
+```xml
+<View>
+  <Header value="请选择唯一正确答案" />
+  <Header value="题目编号：$question_id｜主题：$knowledge_area" />
+  <Text name="question" value="$question" />
+  <Choices
+    name="answer"
+    toName="question"
+    value="$options"
+    choice="single-radio"
+    required="true"
+    requiredMessage="请选择 A、B、C 或 D"
+    layout="vertical"
+  />
+</View>
+```
+
+这里有三组必须对应的关系：
+
+```text
+$question_id / $knowledge_area / $question / $options
+                    ↕
+data.question_id / data.knowledge_area / data.question / data.options
+
+Choices.toName="question"
+                    ↕
+Text.name="question"
+
+导出结果 from_name="answer"
+                    ↕
+Choices.name="answer"
+```
+
+`choice="single-radio"` 让界面显示单选按钮，`required="true"` 阻止没有选择答案时提交。
+`value="$options"` 表示每条任务从自己的 `data.options` 读取候选项，因此不需要为 12 道题分别
+编写配置。
+
+保存后检查第一道和第二道题：题干应该不同，选项也应随任务变化。如果界面直接显示
+`$question` 或 `$options`，通常是任务字段名与配置引用不一致。
+
+### 4. 统一答案标注规则
+
+先阅读
+[`annotation-guidelines.md`](../label-studio-lab/06-multiple-choice-training/annotation-guidelines.md)。
+本案例的核心规则是：
+
+1. 每道题只能有一个最佳答案；
+2. 先读题干限定条件，再逐项判断，不能根据答案位置猜测；
+3. “最合适”“主要作用”等题型应选择最直接、最完整满足题意的一项；
+4. 如果生产题库出现两个同样正确的选项、没有正确选项、题干缺失或选项显示不全，应退回修题，
+   不能强行猜一个答案；
+5. 总体答案分布只能用于发现异常，不能反过来决定单题答案；
+6. 独立标注期间不得查看参考答案。
+
+为什么不能只规定“选正确答案”？例如下面两个选项可能都与题目相关，但只有一个直接回答了
+“验证集的主要用途”：
+
+```text
+A. 数据集的一部分
+C. 比较方案、选择超参数并观察过拟合
+```
+
+没有“选择最直接、最完整答案”的规则，不同标注者可能采用不同判断标准。标注规范的作用就是
+把这些隐含判断变成可重复的操作规则。
+
+### 5. 完成标注并检查位置偏差
+
+依次打开 12 道题，每题选择一个答案并提交。全部完成后再打开 Data Manager，检查是否存在：
+
+- 没有完成的任务；
+- 同一个题号重复出现；
+- 某一道题有多个有效标注，但尚未完成复核；
+- A/B/C/D 中某个位置异常集中；
+- 标注者在很短时间内连续提交，可能没有认真阅读。
+
+本材料刻意平衡了正确答案位置：
+
+| 集合 | 题数 | 正确答案位置 |
+| --- | ---: | --- |
+| 训练集 | 8 | A/B/C/D 各 2 次 |
+| 验证集 | 2 | B、C 各 1 次 |
+| 测试集 | 2 | A、D 各 1 次 |
+| 合计 | 12 | A/B/C/D 各 3 次 |
+
+如果训练数据中 80% 的正确答案都是 C，模型可能学会“多猜 C”而不是理解题目，这叫选项位置
+偏差。平衡位置能降低这种捷径，但不能保证没有偏差。真实题库还应检查知识点、题型、难度、文本
+长度和语言风格等分布，必要时对选项顺序做受控打乱，并同步更新答案。
+
+另一项检查是题目本身是否可标。若两个标注者答案不同，应先比较他们的理由，再判断是有人标错、
+规范不清，还是题目存在歧义；不能只用多数票掩盖坏题。
+
+### 6. 读懂导出结果
+
+完成后选择 **Export → JSON**，保存原始导出文件，例如 `export.json`。一条有效答案通常包含：
+
+```json
+{
+  "data": {
+    "question_id": "mcq-001",
+    "split": "train",
+    "question": "下面哪一项最准确地描述了数据标注？"
+  },
+  "annotations": [
+    {
+      "result": [
+        {
+          "from_name": "answer",
+          "to_name": "question",
+          "type": "choices",
+          "value": {
+            "choices": ["B"]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+定位答案时不要依赖数组下标，而应同时检查：
+
+```text
+from_name == "answer"
+to_name   == "question"
+type      == "choices"
+```
+
+真正的答案位于 `value.choices[0]`。虽然它仍是数组，但因为界面配置为单选，所以合格结果必须
+恰好包含一个元素。
+
+进入材料目录并运行校验：
+
+```bash
+cd label-studio-lab/06-multiple-choice-training
+node validate-export.mjs export.json
+```
+
+脚本会检查 12 个唯一题号、完整选项、8/2/2 切分、唯一有效标注、A/B/C/D 合法性，并与隐藏的
+参考答案逐题比较。先验证材料本身可以运行：
+
+```bash
+node validate-export.mjs --self-test
+```
+
+如果同一道题存在多个标注，脚本不会擅自选择“最新一个”，而会报错要求先完成复核。这可以防止
+把未解决的分歧静默带入训练数据。
+
+### 7. 转换为训练、验证和测试数据
+
+Label Studio 的原始 JSON 保留了任务、标注和过程信息，适合追溯，但通常不是训练框架直接使用的
+格式。本案例的
+[`convert-export-to-sft.mjs`](../label-studio-lab/06-multiple-choice-training/convert-export-to-sft.mjs)
+把每道题转换为一行 JSON，也就是 JSONL：
+
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "你是一个严谨的单项选择题助手。只输出正确选项的字母，不要解释。"
+    },
+    {
+      "role": "user",
+      "content": "题目：下面哪一项最准确地描述了数据标注？\n选项：\nA. ……\nB. ……\nC. ……\nD. ……\n请只回答 A、B、C 或 D。"
+    },
+    {
+      "role": "assistant",
+      "content": "B"
+    }
+  ],
+  "metadata": {
+    "question_id": "mcq-001",
+    "split": "train",
+    "knowledge_area": "数据标注基础",
+    "guideline_version": "1.0"
+  }
+}
+```
+
+分别转换三个集合：
+
+```bash
+node convert-export-to-sft.mjs export.json train > train.sft.jsonl
+node convert-export-to-sft.mjs export.json validation > validation.sft.jsonl
+node convert-export-to-sft.mjs export.json test > test.sft.jsonl
+```
+
+脚本要求显式给出集合名称，避免把测试题误放进训练文件。转换后应得到：
+
+```text
+train.sft.jsonl       8 行
+validation.sft.jsonl  2 行
+test.sft.jsonl        2 行
+```
+
+三个文件的职责不同：
+
+| 集合 | 是否更新参数 | 用途 |
+| --- | --- | --- |
+| 训练集 | 是 | 训练模型学习题目到答案的映射 |
+| 验证集 | 否 | 选择超参数、训练轮数或模型版本 |
+| 测试集 | 否 | 所有方案确定后做一次独立评估 |
+
+把转换后的文件交给具体训练工具前，还要确认它要求的字段名和聊天格式。不同训练框架可能使用
+`messages`、`prompt/completion` 或其他结构；转换格式不同不会改变“输入不含答案、目标是标准答案、
+三个集合严格隔离”这三条原则。
+
+### 本节练习与验收
+
+完成下面的操作检查表：
+
+```text
+[ ] 创建 course-mcq-sft-v1 项目
+[ ] 导入 12 道题且界面能动态显示不同选项
+[ ] 配置 single-radio 和 required
+[ ] 不查看 answer-key.json，独立完成 12 道题
+[ ] 导出原始 JSON
+[ ] validate-export.mjs 校验通过
+[ ] 分别生成 8/2/2 条 SFT JSONL
+[ ] 确认模型输入中没有标准答案或判定理由
+[ ] 确认训练文件中没有 validation 和 test 样本
+[ ] 随机检查一行 JSONL 的题目、选项和答案映射
+```
+
+再回答四个问题：
+
+1. 为什么 Label Studio 导出数据后，模型参数还没有发生变化？
+2. 为什么不能把 `answer-key.json` 合并进任务输入？
+3. 为什么选项位置严重失衡可能让模型得到虚高成绩？
+4. 为什么不能使用验证集或测试集继续增加训练样本？
+
+参考答案：Label Studio 负责标注而不是执行训练；标准答案进入输入会造成答案泄漏；模型可能利用
+答案位置分布走捷径；验证集和测试集一旦参与参数学习，就无法继续提供独立、可信的评估。
+
+### 本节小结
+
+本案例完成了选择题监督数据从标注到训练前处理的完整链路：
+
+```text
+定义题干、选项和唯一答案
+  ↓
+导入无答案的动态选择题任务
+  ↓
+使用 Choices 收集标准答案
+  ↓
+检查歧义、遗漏和位置偏差
+  ↓
+校验 Label Studio 原始 JSON
+  ↓
+严格按 8/2/2 切分转换为 SFT JSONL
+  ↓
+交给训练框架训练、验证和测试
+```
+
+这一章的三个案例分别产生了情绪类别、图片类别与位置、选择题标准答案。界面控件和结果结构虽然
+不同，底层方法始终相同：先定义模型真正需要学习的目标，再制定一致规则，最后通过结构校验和
+质量检查，得到可训练、可评估、可追溯的数据。

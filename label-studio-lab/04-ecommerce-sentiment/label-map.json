@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "task": "ecommerce_sentiment",
+  "labels": [
+    {
+      "display": "正向",
+      "code": "positive",
+      "id": 0
+    },
+    {
+      "display": "负向",
+      "code": "negative",
+      "id": 1
+    },
+    {
+      "display": "混合",
+      "code": "mixed",
+      "id": 2
+    },
+    {
+      "display": "无法判断",
+      "code": "unknown",
+      "id": 3
+    }
+  ]
+}

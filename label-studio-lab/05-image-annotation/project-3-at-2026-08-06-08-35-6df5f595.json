@@ -1,0 +1,269 @@
+[
+  {
+    "id": 13,
+    "annotations": [
+      {
+        "id": 13,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 640,
+            "original_height": 400,
+            "image_rotation": 0,
+            "value": {
+              "x": 12.166666666666666,
+              "y": 39.599999999999994,
+              "width": 28.77777777777778,
+              "height": 33.599999999999994,
+              "rotation": 0,
+              "rectanglelabels": ["纸箱"]
+            },
+            "id": "HLN9gHDQnC",
+            "from_name": "objects",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 640,
+            "original_height": 400,
+            "image_rotation": 0,
+            "value": {
+              "x": 58.94444444444444,
+              "y": 24.311111111111117,
+              "width": 11.555555555555573,
+              "height": 44.08888888888888,
+              "rotation": 0,
+              "rectanglelabels": ["瓶子"]
+            },
+            "id": "8pXEEHtgOX",
+            "from_name": "objects",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T08:03:56.082940Z",
+        "updated_at": "2026-08-06T08:03:56.082955Z",
+        "draft_created_at": "2026-08-06T08:03:45.715161Z",
+        "lead_time": 25.625,
+        "prediction": {},
+        "result_count": 2,
+        "unique_id": "2ffbfd10-7463-43ce-890e-b5d1eafadf5e",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 13,
+        "project": 3,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "ce1239a2-scene-001.svg",
+    "drafts": [],
+    "predictions": [],
+    "data": { "image": "\/data\/upload\/3\/ce1239a2-scene-001.svg" },
+    "meta": {},
+    "created_at": "2026-08-06T08:01:22.913218Z",
+    "updated_at": "2026-08-06T08:03:56.103856Z",
+    "allow_skip": true,
+    "inner_id": 1,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 3,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 14,
+    "annotations": [
+      {
+        "id": 14,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 640,
+            "original_height": 400,
+            "image_rotation": 0,
+            "value": {
+              "x": 54.27777777777778,
+              "y": 41.733333333333334,
+              "width": 29.000000000000007,
+              "height": 31.466666666666654,
+              "rotation": 0,
+              "rectanglelabels": ["纸箱"]
+            },
+            "id": "Gf5pkGcP2U",
+            "from_name": "objects",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 640,
+            "original_height": 400,
+            "image_rotation": 0,
+            "value": {
+              "x": 13.38888888888889,
+              "y": 33.91111111111111,
+              "width": 27.555555555555554,
+              "height": 36.8,
+              "rotation": 0,
+              "rectanglelabels": ["杯子"]
+            },
+            "id": "oCa-L_1fdY",
+            "from_name": "objects",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T08:04:39.005606Z",
+        "updated_at": "2026-08-06T08:04:39.005623Z",
+        "draft_created_at": "2026-08-06T08:04:34.621987Z",
+        "lead_time": 16.045,
+        "prediction": {},
+        "result_count": 2,
+        "unique_id": "f13bc0fb-5b30-4df7-b753-4ec85f295512",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 14,
+        "project": 3,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "cb4d02fd-scene-002.svg",
+    "drafts": [],
+    "predictions": [],
+    "data": { "image": "\/data\/upload\/3\/cb4d02fd-scene-002.svg" },
+    "meta": {},
+    "created_at": "2026-08-06T08:01:22.913278Z",
+    "updated_at": "2026-08-06T08:04:39.026685Z",
+    "allow_skip": true,
+    "inner_id": 2,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 3,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 15,
+    "annotations": [
+      {
+        "id": 15,
+        "completed_by": 1,
+        "result": [
+          {
+            "original_width": 640,
+            "original_height": 400,
+            "image_rotation": 0,
+            "value": {
+              "x": 0.1111111111111111,
+              "y": 46.48888888888889,
+              "width": 25.444444444444443,
+              "height": 39.288888888888884,
+              "rotation": 0,
+              "rectanglelabels": ["纸箱"]
+            },
+            "id": "-M6O1Bj1sD",
+            "from_name": "objects",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 640,
+            "original_height": 400,
+            "image_rotation": 0,
+            "value": {
+              "x": 41.888888888888886,
+              "y": 21.244444444444444,
+              "width": 12.555555555555564,
+              "height": 49.42222222222223,
+              "rotation": 0,
+              "rectanglelabels": ["瓶子"]
+            },
+            "id": "n1xVpYLECX",
+            "from_name": "objects",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          },
+          {
+            "original_width": 640,
+            "original_height": 400,
+            "image_rotation": 0,
+            "value": {
+              "x": 66.11111111111111,
+              "y": 38.844444444444434,
+              "width": 26,
+              "height": 34.84444444444445,
+              "rotation": 0,
+              "rectanglelabels": ["杯子"]
+            },
+            "id": "u6L0W84k6f",
+            "from_name": "objects",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T08:07:42.568596Z",
+        "updated_at": "2026-08-06T08:07:42.568609Z",
+        "draft_created_at": "2026-08-06T08:07:32.283497Z",
+        "lead_time": 45.972,
+        "prediction": {},
+        "result_count": 3,
+        "unique_id": "b34b8833-f306-49cd-bbf0-728a1532cffb",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 15,
+        "project": 3,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "a99ae56a-scene-003.svg",
+    "drafts": [],
+    "predictions": [],
+    "data": { "image": "\/data\/upload\/3\/a99ae56a-scene-003.svg" },
+    "meta": {},
+    "created_at": "2026-08-06T08:01:22.913318Z",
+    "updated_at": "2026-08-06T08:07:42.595868Z",
+    "allow_skip": true,
+    "inner_id": 3,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 3,
+    "updated_by": 1,
+    "comment_authors": []
+  }
+]

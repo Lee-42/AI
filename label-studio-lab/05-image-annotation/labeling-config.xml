@@ -1,0 +1,18 @@
+<View>
+  <Header value="请用紧致矩形框标出图片中的所有目标" />
+  <Header value="图片编号：$image_id" />
+
+  <Image
+    name="image"
+    value="$image"
+    maxWidth="900px"
+    zoom="true"
+    zoomControl="true"
+  />
+
+  <RectangleLabels name="objects" toName="image">
+    <Label value="纸箱" background="#E59A3A" />
+    <Label value="瓶子" background="#4F8DD6" />
+    <Label value="杯子" background="#D65362" />
+  </RectangleLabels>
+</View>

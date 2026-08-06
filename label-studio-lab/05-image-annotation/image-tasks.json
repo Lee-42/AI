@@ -1,0 +1,20 @@
+[
+  {
+    "data": {
+      "image_id": "scene-001",
+      "image": "http://127.0.0.1:8001/scene-001.svg"
+    }
+  },
+  {
+    "data": {
+      "image_id": "scene-002",
+      "image": "http://127.0.0.1:8001/scene-002.svg"
+    }
+  },
+  {
+    "data": {
+      "image_id": "scene-003",
+      "image": "http://127.0.0.1:8001/scene-003.svg"
+    }
+  }
+]

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400">
+  <title>Scene 002: one cup and one cardboard box</title>
+  <rect width="640" height="400" fill="#f6f1e8" />
+  <rect y="300" width="640" height="100" fill="#d6b98e" />
+  <path d="M0 300H640" stroke="#a47e54" stroke-width="4" />
+
+  <ellipse cx="170" cy="290" rx="100" ry="12" fill="#9a7d5e" opacity="0.35" />
+  <g id="cup">
+    <circle cx="220" cy="210" r="30" fill="none" stroke="#26737f" stroke-width="18" />
+    <rect x="90" y="150" width="130" height="130" rx="12" fill="#3d9aa7" stroke="#226571" stroke-width="5" />
+    <ellipse cx="155" cy="150" rx="62" ry="12" fill="#d6f0f2" stroke="#226571" stroke-width="5" />
+    <path d="M112 185H198" stroke="#8bd0d7" stroke-width="10" opacity="0.8" />
+  </g>
+
+  <ellipse cx="440" cy="300" rx="110" ry="12" fill="#9a7d5e" opacity="0.35" />
+  <g id="cardboard-box">
+    <rect x="350" y="170" width="180" height="120" rx="4" fill="#cf8e48" stroke="#805426" stroke-width="5" />
+    <path d="M440 170V290" stroke="#f0cc91" stroke-width="22" />
+    <path d="M350 212H530" stroke="#95622e" stroke-width="4" />
+    <path d="M475 245H505" stroke="#70471f" stroke-width="5" />
+  </g>
+</svg>

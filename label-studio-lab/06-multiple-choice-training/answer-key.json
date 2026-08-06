@@ -1,0 +1,77 @@
+{
+  "version": "1.0",
+  "answers": [
+    {
+      "question_id": "mcq-001",
+      "split": "train",
+      "answer": "B",
+      "rationale": "数据标注的核心是按规则补充机器可读的语义信息或参考答案。"
+    },
+    {
+      "question_id": "mcq-002",
+      "split": "train",
+      "answer": "C",
+      "rationale": "验证集用于方案和超参数选择；测试集才用于最终的独立评估。"
+    },
+    {
+      "question_id": "mcq-003",
+      "split": "train",
+      "answer": "A",
+      "rationale": "Label Studio 是数据标注与工作流平台，不是模型参数训练框架。"
+    },
+    {
+      "question_id": "mcq-004",
+      "split": "train",
+      "answer": "D",
+      "rationale": "$text 引用任务对象中的 data.text。"
+    },
+    {
+      "question_id": "mcq-005",
+      "split": "train",
+      "answer": "B",
+      "rationale": "single-radio 限制单选，required=true 阻止空答案提交。"
+    },
+    {
+      "question_id": "mcq-006",
+      "split": "train",
+      "answer": "C",
+      "rationale": "目标检测需要同时识别目标类别和目标位置。"
+    },
+    {
+      "question_id": "mcq-007",
+      "split": "train",
+      "answer": "A",
+      "rationale": "640 × 12.5% = 80 像素。"
+    },
+    {
+      "question_id": "mcq-008",
+      "split": "train",
+      "answer": "D",
+      "rationale": "训练集和测试集出现相同或高度相似样本，会让测试成绩失去独立性。"
+    },
+    {
+      "question_id": "mcq-009",
+      "split": "validation",
+      "answer": "B",
+      "rationale": "评论同时表达包装负面体验和商品正面判断，应标为混合。"
+    },
+    {
+      "question_id": "mcq-010",
+      "split": "validation",
+      "answer": "C",
+      "rationale": "预标注可以节省操作时间，但模型错误仍需人工审核。"
+    },
+    {
+      "question_id": "mcq-011",
+      "split": "test",
+      "answer": "A",
+      "rationale": "模型看到题干和候选项，学习输出对应的标准答案字母。"
+    },
+    {
+      "question_id": "mcq-012",
+      "split": "test",
+      "answer": "D",
+      "rationale": "规则含糊且缺少边界案例会让标注者形成不同但各自合理的判断。"
+    }
+  ]
+}

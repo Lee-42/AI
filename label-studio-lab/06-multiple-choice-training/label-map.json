@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "labels": [
+    { "display": "A", "code": "A" },
+    { "display": "B", "code": "B" },
+    { "display": "C", "code": "C" },
+    { "display": "D", "code": "D" }
+  ]
+}

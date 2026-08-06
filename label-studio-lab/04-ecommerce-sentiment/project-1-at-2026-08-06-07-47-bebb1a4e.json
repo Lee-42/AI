@@ -1,0 +1,686 @@
+[
+  {
+    "id": 1,
+    "annotations": [
+      {
+        "id": 1,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["正向"] },
+            "id": "L8rg3q-5bV",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:45:12.295405Z",
+        "updated_at": "2026-08-06T07:45:12.295449Z",
+        "draft_created_at": null,
+        "lead_time": 8.084,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "52c28f88-8ed5-4e34-a319-60d463164c76",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 1,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "review_id": "review-001",
+      "text": "质量很好，物流也快，下次还会买。"
+    },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169451Z",
+    "updated_at": "2026-08-06T07:45:12.317418Z",
+    "allow_skip": true,
+    "inner_id": 1,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 2,
+    "annotations": [
+      {
+        "id": 2,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["负向"] },
+            "id": "nHZ4SmAq1p",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:45:18.088345Z",
+        "updated_at": "2026-08-06T07:45:18.088361Z",
+        "draft_created_at": null,
+        "lead_time": 3.252,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "13d9efaa-3414-49ce-8874-5cd777952831",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 2,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "review_id": "review-002",
+      "text": "刚穿一天鞋底就开胶，太失望了。"
+    },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169513Z",
+    "updated_at": "2026-08-06T07:45:18.110716Z",
+    "allow_skip": true,
+    "inner_id": 2,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 3,
+    "annotations": [
+      {
+        "id": 3,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["混合"] },
+            "id": "vTUS-BWgBZ",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:45:23.495118Z",
+        "updated_at": "2026-08-06T07:45:23.495132Z",
+        "draft_created_at": null,
+        "lead_time": 3.902,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "9af927c7-d387-4714-a34b-73cec73a5954",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 3,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "review_id": "review-003",
+      "text": "外观漂亮，但续航比宣传的差很多。"
+    },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169548Z",
+    "updated_at": "2026-08-06T07:45:23.516416Z",
+    "allow_skip": true,
+    "inner_id": 3,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 4,
+    "annotations": [
+      {
+        "id": 4,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["无法判断"] },
+            "id": "UJ8bMqzMmB",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:45:27.539968Z",
+        "updated_at": "2026-08-06T07:45:27.539984Z",
+        "draft_created_at": null,
+        "lead_time": 3.02,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "b0d04709-849a-4411-8425-c77f985ab840",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 4,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": { "review_id": "review-004", "text": "已于周三签收。" },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169580Z",
+    "updated_at": "2026-08-06T07:45:27.561639Z",
+    "allow_skip": true,
+    "inner_id": 4,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 5,
+    "annotations": [
+      {
+        "id": 5,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["正向"] },
+            "id": "pTqqAj4o3B",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:45:32.316208Z",
+        "updated_at": "2026-08-06T07:45:32.316224Z",
+        "draft_created_at": null,
+        "lead_time": 3.722,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "42d6c4cb-bc0e-41b2-8e57-380ae2b88589",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 5,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "review_id": "review-005",
+      "text": "客服响应很快，问题顺利解决。"
+    },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169612Z",
+    "updated_at": "2026-08-06T07:45:32.340721Z",
+    "allow_skip": true,
+    "inner_id": 5,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 6,
+    "annotations": [
+      {
+        "id": 6,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["混合"] },
+            "id": "kMHBz-Aq4U",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:45:36.581701Z",
+        "updated_at": "2026-08-06T07:45:36.581721Z",
+        "draft_created_at": null,
+        "lead_time": 3.412,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "b41b6cb4-c0c3-455e-93a5-2d886e36d4e1",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 6,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "review_id": "review-006",
+      "text": "包装破损，好在商品没有问题。"
+    },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169644Z",
+    "updated_at": "2026-08-06T07:45:36.603907Z",
+    "allow_skip": true,
+    "inner_id": 6,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 7,
+    "annotations": [
+      {
+        "id": 7,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["负向"] },
+            "id": "7Sc0VToQKi",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:45:55.426019Z",
+        "updated_at": "2026-08-06T07:45:55.426031Z",
+        "draft_created_at": null,
+        "lead_time": 11.055,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "c9a357fd-34ab-4767-883c-3d759b68cb8e",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 7,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": { "review_id": "review-007", "text": "一般般。" },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169695Z",
+    "updated_at": "2026-08-06T07:45:55.443431Z",
+    "allow_skip": true,
+    "inner_id": 7,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 8,
+    "annotations": [
+      {
+        "id": 8,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["负向"] },
+            "id": "wNpWGwVSJz",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:46:01.687701Z",
+        "updated_at": "2026-08-06T07:46:01.687718Z",
+        "draft_created_at": null,
+        "lead_time": 3.523,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "f93c9619-51db-431b-a7dc-78ded7a02900",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 8,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "review_id": "review-008",
+      "text": "真是‘太好了’，第二天就坏了。"
+    },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169728Z",
+    "updated_at": "2026-08-06T07:46:01.709102Z",
+    "allow_skip": true,
+    "inner_id": 8,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 9,
+    "annotations": [
+      {
+        "id": 9,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["正向"] },
+            "id": "YcXfliilzG",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:46:05.235617Z",
+        "updated_at": "2026-08-06T07:46:05.235633Z",
+        "draft_created_at": null,
+        "lead_time": 2.571,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "610d975f-df69-454d-895e-9a6624723658",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 9,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": { "review_id": "review-009", "text": "尺码合适，面料也很舒服。" },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169759Z",
+    "updated_at": "2026-08-06T07:46:05.257795Z",
+    "allow_skip": true,
+    "inner_id": 9,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 10,
+    "annotations": [
+      {
+        "id": 10,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["负向"] },
+            "id": "JIxyFuKPB3",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:46:08.759962Z",
+        "updated_at": "2026-08-06T07:46:08.759984Z",
+        "draft_created_at": null,
+        "lead_time": 2.321,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "97352156-e8f3-471e-9bd1-6d27e23720d0",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 10,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "review_id": "review-010",
+      "text": "颜色不符，客服也一直不回复。"
+    },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169791Z",
+    "updated_at": "2026-08-06T07:46:08.783154Z",
+    "allow_skip": true,
+    "inner_id": 10,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 11,
+    "annotations": [
+      {
+        "id": 11,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["混合"] },
+            "id": "zgyN-hU_Vi",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:46:13.539721Z",
+        "updated_at": "2026-08-06T07:46:13.539739Z",
+        "draft_created_at": null,
+        "lead_time": 3.103,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "ed255787-931f-4956-a88e-554e45e298db",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 11,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": {
+      "review_id": "review-011",
+      "text": "商品不错，但是配送慢了两天。"
+    },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169822Z",
+    "updated_at": "2026-08-06T07:46:13.559395Z",
+    "allow_skip": true,
+    "inner_id": 11,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  },
+  {
+    "id": 12,
+    "annotations": [
+      {
+        "id": 12,
+        "completed_by": 1,
+        "result": [
+          {
+            "value": { "choices": ["无法判断"] },
+            "id": "njGRtMQME1",
+            "from_name": "sentiment",
+            "to_name": "review",
+            "type": "choices",
+            "origin": "manual"
+          }
+        ],
+        "was_cancelled": false,
+        "ground_truth": false,
+        "created_at": "2026-08-06T07:46:17.275157Z",
+        "updated_at": "2026-08-06T07:46:17.275185Z",
+        "draft_created_at": null,
+        "lead_time": 2.558,
+        "prediction": {},
+        "result_count": 1,
+        "unique_id": "2edc1492-987f-426d-887c-9467f7c61c39",
+        "import_id": null,
+        "last_action": null,
+        "bulk_created": false,
+        "task": 12,
+        "project": 1,
+        "updated_by": 1,
+        "parent_prediction": null,
+        "parent_annotation": null,
+        "last_created_by": null
+      }
+    ],
+    "file_upload": "1af17d97-ecommerce-reviews.json",
+    "drafts": [],
+    "predictions": [],
+    "data": { "review_id": "review-012", "text": "收到了，还没开始用。" },
+    "meta": {},
+    "created_at": "2026-08-06T07:40:40.169854Z",
+    "updated_at": "2026-08-06T07:46:17.296386Z",
+    "allow_skip": true,
+    "inner_id": 12,
+    "total_annotations": 1,
+    "cancelled_annotations": 0,
+    "total_predictions": 0,
+    "comment_count": 0,
+    "unresolved_comment_count": 0,
+    "last_comment_updated_at": null,
+    "project": 1,
+    "updated_by": 1,
+    "comment_authors": []
+  }
+]
