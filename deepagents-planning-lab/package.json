@@ -1,0 +1,43 @@
+{
+  "name": "deepagents-planning-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.12.0",
+  "description": "TypeScript examples for learning Deep Agents planning, Todo state and context offloading.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "example:env": "node --import tsx src/index.ts",
+    "lesson:02": "node --import tsx src/examples/02-planning-todo.ts",
+    "lesson:03": "node --import tsx src/examples/03-offload.ts",
+    "lesson:05": "node --import tsx src/examples/05-first-demo.ts",
+    "lesson:06": "node --import tsx src/examples/06-virtual-fs.ts",
+    "lesson:07": "node --import tsx src/examples/07-why-virtual-fs.ts",
+    "lesson:08": "node --import tsx src/examples/08-virtual-fs-long-text.ts",
+    "lesson:09": "node --import tsx src/examples/09-100k-context.ts",
+    "lesson:10": "node --import tsx src/examples/10-custom-tools.ts",
+    "lesson:11": "node --import tsx src/examples/11-subagents.ts",
+    "lesson:12": "node --import tsx src/examples/12-subagent-guardrails.ts",
+    "lesson:13": "node --import tsx src/examples/13-graph-vs-deepagent.ts",
+    "lesson:15": "node --import tsx src/examples/15-interrupts.ts",
+    "check": "tsc --noEmit",
+    "test": "node --test --import tsx tests/*.test.ts"
+  },
+  "dependencies": {
+    "@langchain/core": "1.2.5",
+    "@langchain/langgraph": "1.4.9",
+    "@langchain/openai": "1.5.6",
+    "deepagents": "1.12.2",
+    "dotenv": "17.4.2",
+    "langchain": "1.5.5",
+    "langsmith": "0.7.17",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.12",
+    "tsx": "4.23.11",
+    "typescript": "7.0.2"
+  }
+}
